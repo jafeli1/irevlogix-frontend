@@ -1,0 +1,18 @@
+{
+  "name": "irevlogix-frontend",
+  "version": "1.0.0",
+  "description": "Front end implementation code base",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "@eslint/js": "^9.0.0"
+  },
+  "keywords": ["frontend", "irevlogix"],
+  "author": "jafeli1",
+  "license": "ISC"
+}
