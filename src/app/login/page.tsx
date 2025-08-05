@@ -57,8 +57,8 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-            <div className="text-green-600 dark:text-green-400 text-2xl">🌱</div>
+          <div className="mx-auto h-16 w-auto flex items-center justify-center">
+            <div className="text-green-600 dark:text-green-400 text-2xl font-bold">iRevLogix</div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
             Sign in to your account
