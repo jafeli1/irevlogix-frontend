@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import AppLayout from '../../../../components/AppLayout';
 
 interface MaterialType {
   id: number;
@@ -168,18 +169,18 @@ export default function ShipmentDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <AppLayout>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading shipment details...</p>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (error || !shipment) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <AppLayout>
         <div className="max-w-md mx-auto">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-red-100">
@@ -198,12 +199,12 @@ export default function ShipmentDetail() {
             </div>
           </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <AppLayout>
       <div className="max-w-7xl mx-auto">
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -528,6 +529,6 @@ export default function ShipmentDetail() {
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

@@ -164,8 +164,8 @@ export default function Navigation({ currentPath, isCollapsed, onToggleCollapse 
   );
 
   return (
-    <nav className={`bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>
-      <div className="p-4">
+    <nav className={`bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 h-screen overflow-y-auto transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>
+      <div className="p-4 h-full flex flex-col">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -195,7 +195,7 @@ export default function Navigation({ currentPath, isCollapsed, onToggleCollapse 
           </button>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1 flex-1 overflow-y-auto">
           {visibleItems.map((item) => (
             <div key={item.name}>
               {item.subItems ? (
