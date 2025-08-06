@@ -4,16 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Navigation from '../../components/Navigation';
+import UserSettings from '../../components/UserSettings';
 import { UserPermissions, fetchUserPermissions } from '../../utils/rbac';
-
-interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  clientId: string;
-  roles: string[];
-}
+import { User } from '../../types/user';
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -83,15 +76,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Welcome, {user.firstName} {user.lastName}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Logout
-                </button>
+                <UserSettings user={user} onLogout={handleLogout} />
               </div>
             </div>
           </div>
