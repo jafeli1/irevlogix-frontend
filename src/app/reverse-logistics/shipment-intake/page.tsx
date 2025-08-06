@@ -722,6 +722,8 @@ export default function ShipmentIntake() {
                   </table>
                 </div>
               )}
+                </div>
+              )}
 
               {activeTab === 'bulk' && (
                 <div className="space-y-4">
