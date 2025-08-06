@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { UserPermissions, fetchUserPermissions, hasPermission } from '../utils/rbac';
 
@@ -21,6 +21,16 @@ interface NavigationItem {
 }
 
 const navigationItems: NavigationItem[] = [
+  {
+    name: 'Authentication',
+    module: 'Authentication',
+    action: 'Read',
+    icon: '🔐',
+    subItems: [
+      { name: 'Login Settings', href: '/auth/settings', module: 'Authentication', action: 'Read' },
+      { name: 'Security', href: '/auth/security', module: 'Authentication', action: 'Update' },
+    ]
+  },
   {
     name: 'Reverse Logistics',
     module: 'ReverseLogistics',
@@ -103,9 +113,11 @@ const navigationItems: NavigationItem[] = [
 
 interface NavigationProps {
   currentPath: string;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-export default function Navigation({ currentPath }: NavigationProps) {
+export default function Navigation({ currentPath, isCollapsed, onToggleCollapse }: NavigationProps) {
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({ roles: [], permissions: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
@@ -135,7 +147,7 @@ export default function Navigation({ currentPath }: NavigationProps) {
 
   if (isLoading) {
     return (
-      <nav className="bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 w-64">
+      <nav className={`bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>
         <div className="p-4">
           <div className="animate-pulse space-y-2">
             {[...Array(8)].map((_, i) => (
@@ -152,20 +164,35 @@ export default function Navigation({ currentPath }: NavigationProps) {
   );
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 w-64 h-full overflow-y-auto">
+    <nav className={`bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>
       <div className="p-4">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link
             href="/dashboard"
             className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               currentPath === '/dashboard'
                 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
                 : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-            }`}
+            } ${isCollapsed ? 'justify-center' : ''}`}
+            title={isCollapsed ? 'Dashboard' : ''}
           >
-            <span className="mr-3">🏠</span>
-            Dashboard / Home
+            <span className={isCollapsed ? '' : 'mr-3'}>🏠</span>
+            {!isCollapsed && 'Dashboard'}
           </Link>
+          <button
+            onClick={onToggleCollapse}
+            className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+            title={isCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+          >
+            <svg
+              className={`w-4 h-4 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
         </div>
 
         <div className="space-y-1">
@@ -174,26 +201,31 @@ export default function Navigation({ currentPath }: NavigationProps) {
               {item.subItems ? (
                 <div>
                   <button
-                    onClick={() => toggleModule(item.name)}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                    onClick={() => !isCollapsed && toggleModule(item.name)}
+                    className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                      isCollapsed ? 'justify-center' : 'justify-between'
+                    }`}
+                    title={isCollapsed ? item.name : ''}
                   >
-                    <div className="flex items-center">
-                      <span className="mr-3">{item.icon}</span>
-                      {item.name}
+                    <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
+                      <span className={isCollapsed ? '' : 'mr-3'}>{item.icon}</span>
+                      {!isCollapsed && item.name}
                     </div>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${
-                        expandedModules.has(item.name) ? 'rotate-90' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                    {!isCollapsed && (
+                      <svg
+                        className={`w-4 h-4 transition-transform ${
+                          expandedModules.has(item.name) ? 'rotate-90' : ''
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    )}
                   </button>
                   
-                  {expandedModules.has(item.name) && (
+                  {!isCollapsed && expandedModules.has(item.name) && (
                     <div className="ml-6 mt-1 space-y-1">
                       {item.subItems
                         .filter(subItem => hasPermission(userPermissions, subItem.module, subItem.action))
@@ -220,10 +252,11 @@ export default function Navigation({ currentPath }: NavigationProps) {
                     currentPath === item.href
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                  }`}
+                  } ${isCollapsed ? 'justify-center' : ''}`}
+                  title={isCollapsed ? item.name : ''}
                 >
-                  <span className="mr-3">{item.icon}</span>
-                  {item.name}
+                  <span className={isCollapsed ? '' : 'mr-3'}>{item.icon}</span>
+                  {!isCollapsed && item.name}
                 </Link>
               )}
             </div>
