@@ -134,7 +134,7 @@ export default function ProcessingLotsPage() {
   const fetchMaterialTypes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/MaterialTypes', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/materialtypes', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
