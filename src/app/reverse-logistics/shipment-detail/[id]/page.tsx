@@ -44,6 +44,16 @@ interface ClientContact {
   email: string;
 }
 
+interface Document {
+  id: number;
+  fileName: string;
+  filePath: string;
+  contentType?: string;
+  fileSize: number;
+  description?: string;
+  dateCreated: string;
+}
+
 interface Shipment {
   id: number;
   shipmentNumber: string;
@@ -83,6 +93,8 @@ export default function ShipmentDetail() {
   const [activeTab, setActiveTab] = useState('manifest');
   const [isEditing, setIsEditing] = useState(false);
   const [editedShipment, setEditedShipment] = useState<Partial<Shipment>>({});
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -92,6 +104,7 @@ export default function ShipmentDetail() {
     }
 
     fetchShipment();
+    fetchDocuments();
   }, [router, shipmentId]);
 
   const fetchShipment = async () => {
@@ -119,6 +132,90 @@ export default function ShipmentDetail() {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDocuments = async () => {
+    try {
+      setDocumentsLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}/documents`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDocuments(data);
+      } else {
+        setError('Failed to fetch documents');
+      }
+    } catch {
+      setError('Network error while fetching documents');
+    } finally {
+      setDocumentsLoading(false);
+    }
+  };
+
+  const uploadDocument = async (file: File, description?: string) => {
+    try {
+      setDocumentsLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      if (description) {
+        formData.append('description', description);
+      }
+
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}/documents`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        await fetchDocuments();
+      } else {
+        setError('Failed to upload document');
+      }
+    } catch {
+      setError('Network error while uploading document');
+    } finally {
+      setDocumentsLoading(false);
+    }
+  };
+
+  const deleteDocument = async (documentId: number) => {
+    if (!confirm('Are you sure you want to delete this document?')) {
+      return;
+    }
+
+    try {
+      setDocumentsLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}/documents/${documentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        await fetchDocuments();
+      } else {
+        setError('Failed to delete document');
+      }
+    } catch {
+      setError('Network error while deleting document');
+    } finally {
+      setDocumentsLoading(false);
     }
   };
 
@@ -510,6 +607,13 @@ export default function ShipmentDetail() {
                     </label>
                   </div>
                   
+                  {documentsLoading && (
+                    <div className="text-center py-4">
+                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span className="ml-2">Loading documents...</span>
+                    </div>
+                  )}
+                  
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
@@ -549,7 +653,7 @@ export default function ShipmentDetail() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               <div className="flex space-x-2">
                                 <a
-                                  href={`/api/shipments/${id}/documents/${doc.id}/download`}
+                                  href={`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}/documents/${doc.id}/download`}
                                   className="text-blue-600 hover:text-blue-900"
                                 >
                                   Download
