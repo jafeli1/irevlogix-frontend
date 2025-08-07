@@ -45,7 +45,6 @@ interface CreateLotFormData {
   lotID?: string;
   description: string;
   assignedOperatorId?: number;
-  expectedMaterials: number[];
   processingCost?: number;
 }
 
@@ -72,7 +71,6 @@ export default function ProcessingLotsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createFormData, setCreateFormData] = useState<CreateLotFormData>({
     description: '',
-    expectedMaterials: [],
     processingCost: undefined
   });
   const [createLoading, setCreateLoading] = useState(false);
@@ -226,14 +224,18 @@ export default function ProcessingLotsPage() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(createFormData),
+        body: JSON.stringify({
+          LotId: createFormData.lotID,
+          Description: createFormData.description,
+          OperatorUserId: createFormData.assignedOperatorId,
+          ProcessingCost: createFormData.processingCost
+        }),
       });
 
       if (response.ok) {
         setShowCreateModal(false);
         setCreateFormData({
           description: '',
-          expectedMaterials: [],
           processingCost: undefined
         });
         fetchLots();
@@ -522,28 +524,6 @@ export default function ProcessingLotsPage() {
                     </select>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Expected Materials
-                    </label>
-                    <select
-                      multiple
-                      value={createFormData.expectedMaterials.map(String)}
-                      onChange={(e) => {
-                        const values = Array.from(e.target.selectedOptions, option => parseInt(option.value));
-                        setCreateFormData(prev => ({ ...prev, expectedMaterials: values }));
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      size={4}
-                    >
-                      {materialTypes.map(type => (
-                        <option key={type.id} value={type.id}>
-                          {type.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
-                  </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -566,7 +546,6 @@ export default function ProcessingLotsPage() {
                         setShowCreateModal(false);
                         setCreateFormData({
                           description: '',
-                          expectedMaterials: [],
                           processingCost: undefined
                         });
                       }}
