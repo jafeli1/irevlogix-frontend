@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import AppLayout from '../../components/AppLayout';
 
 interface KnowledgeBaseArticle {
   id: number;
@@ -112,19 +113,18 @@ export default function KnowledgeBasePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <AppLayout>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading knowledge base...</p>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (selectedArticle) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <AppLayout>
           <div className="mb-6">
             <button
               onClick={() => setSelectedArticle(null)}
@@ -180,14 +180,12 @@ export default function KnowledgeBasePage() {
               )}
             </div>
           </div>
-        </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AppLayout>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Knowledge Base</h1>
           <p className="mt-2 text-gray-600">Find answers and learn about recycling operations</p>
@@ -276,7 +274,6 @@ export default function KnowledgeBasePage() {
             ))
           )}
         </div>
-      </div>
-    </div>
+    </AppLayout>
   );
 }
