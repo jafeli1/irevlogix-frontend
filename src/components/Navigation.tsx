@@ -47,8 +47,7 @@ const navigationItems: NavigationItem[] = [
     action: 'Read',
     icon: '⚙️',
     subItems: [
-      { name: 'Processing Lots', href: '/processing/lots', module: 'Processing', action: 'Read' },
-      { name: 'Lot Details', href: '/processing/lot-detail', module: 'Processing', action: 'Read' },
+      { name: 'Lot', href: '/processing/lots', module: 'Processing', action: 'Read' },
     ]
   },
   {
