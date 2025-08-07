@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../components/AppLayout';
@@ -65,8 +65,8 @@ export default function ReverseLogisticsDashboard() {
     materialType: '',
     originator: ''
   });
-  const [materialTypes, setMaterialTypes] = useState<any[]>([]);
-  const [originators, setOriginators] = useState<any[]>([]);
+  const [materialTypes, setMaterialTypes] = useState<Array<{id: number, name: string}>>([]);
+  const [originators, setOriginators] = useState<Array<{id: number, name: string}>>([]);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -117,7 +117,7 @@ export default function ReverseLogisticsDashboard() {
       if (response.ok) {
         const data: ShipmentsResponse = await response.json();
         setShipments(data.data);
-        setPagination(prev => ({
+        setPagination((prev: typeof pagination) => ({
           ...prev,
           totalCount: data.totalCount,
           totalPages: data.totalPages
@@ -134,8 +134,8 @@ export default function ReverseLogisticsDashboard() {
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setFilters((prev: typeof filters) => ({ ...prev, [name]: value }));
+    setPagination((prev: typeof pagination) => ({ ...prev, page: 1 }));
   };
 
   const clearFilters = () => {
@@ -149,7 +149,7 @@ export default function ReverseLogisticsDashboard() {
       materialType: '',
       originator: ''
     });
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev: typeof pagination) => ({ ...prev, page: 1 }));
   };
 
   const fetchMaterialTypes = async () => {
@@ -191,7 +191,7 @@ export default function ReverseLogisticsDashboard() {
   const exportToCSV = () => {
     const csvContent = [
       ['Shipment Number', 'Status', 'Originator', 'Scheduled Date', 'Actual Date', 'Carrier', 'Total Items', 'Total Weight', 'Created Date'].join(','),
-      ...shipments.map(shipment => [
+      ...shipments.map((shipment: Shipment) => [
         shipment.shipmentNumber,
         shipment.status,
         shipment.originatorClient?.companyName || 'N/A',
