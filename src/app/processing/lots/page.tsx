@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import AppLayout from '../../../components/AppLayout';
 
 interface ProcessingLot {
   id: number;
@@ -31,11 +32,6 @@ export default function ProcessingLotsPage() {
   const fetchLots = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
       const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessingLots', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -46,9 +42,6 @@ export default function ProcessingLotsPage() {
       if (response.ok) {
         const data = await response.json();
         setLots(data);
-      } else if (response.status === 401) {
-        localStorage.removeItem('token');
-        router.push('/login');
       } else {
         setError('Failed to fetch processing lots');
       }
@@ -79,22 +72,21 @@ export default function ProcessingLotsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <AppLayout>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading processing lots...</p>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Material Processing</h1>
-          <p className="mt-2 text-gray-600">Manage processing lots and track material transformation</p>
-        </div>
+    <AppLayout>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Material Processing</h1>
+        <p className="mt-2 text-gray-600">Manage processing lots and track material transformation</p>
+      </div>
 
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -226,7 +218,6 @@ export default function ProcessingLotsPage() {
             </table>
           </div>
         </div>
-      </div>
-    </div>
+    </AppLayout>
   );
 }
