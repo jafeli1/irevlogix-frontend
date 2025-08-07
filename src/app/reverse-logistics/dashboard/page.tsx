@@ -5,6 +5,17 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../components/AppLayout';
 
+interface Filters {
+  search: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  actualStartDate: string;
+  actualEndDate: string;
+  materialType: string;
+  originator: string;
+}
+
 interface Shipment {
   id: number;
   shipmentNumber: string;
@@ -13,6 +24,8 @@ interface Shipment {
   actualPickupDate?: string;
   carrier?: string;
   trackingNumber?: string;
+  weight?: number;
+  weightUnit?: string;
   originatorClient?: {
     companyName: string;
   };
@@ -42,12 +55,18 @@ export default function ReverseLogisticsDashboard() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     search: '',
     status: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    actualStartDate: '',
+    actualEndDate: '',
+    materialType: '',
+    originator: ''
   });
+  const [materialTypes, setMaterialTypes] = useState<any[]>([]);
+  const [originators, setOriginators] = useState<any[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -65,6 +84,11 @@ export default function ReverseLogisticsDashboard() {
     fetchShipments();
   }, [router, filters, pagination.page]);
 
+  useEffect(() => {
+    fetchMaterialTypes();
+    fetchOriginators();
+  }, []);
+
   const fetchShipments = async () => {
     try {
       setLoading(true);
@@ -76,7 +100,11 @@ export default function ReverseLogisticsDashboard() {
         ...(filters.search && { search: filters.search }),
         ...(filters.status && { status: filters.status }),
         ...(filters.startDate && { startDate: filters.startDate }),
-        ...(filters.endDate && { endDate: filters.endDate })
+        ...(filters.endDate && { endDate: filters.endDate }),
+        ...(filters.actualStartDate && { actualStartDate: filters.actualStartDate }),
+        ...(filters.actualEndDate && { actualEndDate: filters.actualEndDate }),
+        ...(filters.materialType && { materialTypeId: filters.materialType }),
+        ...(filters.originator && { originatorId: filters.originator })
       });
 
       const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments?${queryParams}`, {
@@ -115,21 +143,63 @@ export default function ReverseLogisticsDashboard() {
       search: '',
       status: '',
       startDate: '',
-      endDate: ''
+      endDate: '',
+      actualStartDate: '',
+      actualEndDate: '',
+      materialType: '',
+      originator: ''
     });
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
+  const fetchMaterialTypes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/materialtypes', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMaterialTypes(data);
+      }
+    } catch (error) {
+      console.error('Error fetching material types:', error);
+    }
+  };
+
+  const fetchOriginators = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/shipments/originators', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setOriginators(data);
+      }
+    } catch (error) {
+      console.error('Error fetching originators:', error);
+    }
+  };
+
   const exportToCSV = () => {
     const csvContent = [
-      ['Shipment Number', 'Status', 'Originator', 'Scheduled Date', 'Carrier', 'Total Items', 'Created Date'].join(','),
+      ['Shipment Number', 'Status', 'Originator', 'Scheduled Date', 'Actual Date', 'Carrier', 'Total Items', 'Total Weight', 'Created Date'].join(','),
       ...shipments.map(shipment => [
         shipment.shipmentNumber,
         shipment.status,
         shipment.originatorClient?.companyName || 'N/A',
         shipment.scheduledPickupDate ? new Date(shipment.scheduledPickupDate).toLocaleDateString() : 'N/A',
+        shipment.actualPickupDate ? new Date(shipment.actualPickupDate).toLocaleDateString() : 'N/A',
         shipment.carrier || 'N/A',
         shipment.shipmentItems.length,
+        shipment.weight ? `${shipment.weight} ${shipment.weightUnit || ''}` : 'N/A',
         new Date(shipment.dateCreated).toLocaleDateString()
       ].join(','))
     ].join('\n');
@@ -198,7 +268,7 @@ export default function ReverseLogisticsDashboard() {
               </div>
             )}
 
-            <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Search
@@ -208,11 +278,30 @@ export default function ReverseLogisticsDashboard() {
                   name="search"
                   value={filters.search}
                   onChange={handleFilterChange}
-                  placeholder="Shipment ID or Originator"
+                  placeholder="Shipment ID"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Originator
+                </label>
+                <select
+                  name="originator"
+                  value={filters.originator}
+                  onChange={handleFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Originators</option>
+                  {originators.map(originator => (
+                    <option key={originator.id} value={originator.id}>
+                      {originator.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status
@@ -231,10 +320,31 @@ export default function ReverseLogisticsDashboard() {
                   <option value="Completed">Completed</option>
                 </select>
               </div>
-
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date
+                  Material Type
+                </label>
+                <select
+                  name="materialType"
+                  value={filters.materialType}
+                  onChange={handleFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Material Types</option>
+                  {materialTypes.map(type => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Scheduled Start Date
                 </label>
                 <input
                   type="date"
@@ -244,15 +354,41 @@ export default function ReverseLogisticsDashboard() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date
+                  Scheduled End Date
                 </label>
                 <input
                   type="date"
                   name="endDate"
                   value={filters.endDate}
+                  onChange={handleFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Actual Start Date
+                </label>
+                <input
+                  type="date"
+                  name="actualStartDate"
+                  value={filters.actualStartDate}
+                  onChange={handleFilterChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Actual End Date
+                </label>
+                <input
+                  type="date"
+                  name="actualEndDate"
+                  value={filters.actualEndDate}
                   onChange={handleFilterChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -307,10 +443,16 @@ export default function ReverseLogisticsDashboard() {
                           Scheduled Date
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actual Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Carrier
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Items
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total Weight
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
@@ -352,10 +494,19 @@ export default function ReverseLogisticsDashboard() {
                             }
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {shipment.actualPickupDate 
+                              ? new Date(shipment.actualPickupDate).toLocaleDateString()
+                              : 'N/A'
+                            }
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {shipment.carrier || 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {shipment.shipmentItems.length} items
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {shipment.weight ? `${shipment.weight} ${shipment.weightUnit || ''}` : 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <Link
