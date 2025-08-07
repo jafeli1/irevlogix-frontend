@@ -354,6 +354,16 @@ export default function ShipmentDetail() {
                     Logistics & History
                   </button>
                   <button
+                    onClick={() => setActiveTab('documents')}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'documents'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Documents
+                  </button>
+                  <button
                     onClick={() => setActiveTab('financials')}
                     className={`py-2 px-1 border-b-2 font-medium text-sm ${
                       activeTab === 'financials'
@@ -480,7 +490,87 @@ export default function ShipmentDetail() {
                   </div>
                 )}
 
-                {activeTab === 'financials' && (
+                {activeTab === 'documents' && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium text-gray-900">Documents</h3>
+                    <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer">
+                      Upload Document
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const description = prompt('Enter document description (optional):');
+                            uploadDocument(file, description || undefined);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            File Name
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Description
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Size
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Uploaded
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {documents.map((doc) => (
+                          <tr key={doc.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {doc.fileName}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900">
+                              {doc.description || 'N/A'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {(doc.fileSize / 1024).toFixed(1)} KB
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {new Date(doc.dateCreated).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <div className="flex space-x-2">
+                                <a
+                                  href={`/api/shipments/${id}/documents/${doc.id}/download`}
+                                  className="text-blue-600 hover:text-blue-900"
+                                >
+                                  Download
+                                </a>
+                                <button
+                                  onClick={() => deleteDocument(doc.id)}
+                                  className="text-red-600 hover:text-red-900"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'financials' && (
                   <div>
                     <h4 className="text-lg font-medium text-gray-900 mb-4">Financial Summary</h4>
                     <div className="bg-gray-50 rounded-lg p-6">
