@@ -482,7 +482,7 @@ export default function ProcessingLotsPage() {
                 <form onSubmit={handleCreateLot} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Lot ID (Optional)
+                      Lot Number (Optional)
                     </label>
                     <input
                       type="text"
@@ -495,7 +495,7 @@ export default function ProcessingLotsPage() {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description *
+                      Lot Description *
                     </label>
                     <textarea
                       value={createFormData.description}
@@ -527,7 +527,7 @@ export default function ProcessingLotsPage() {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Processing Cost (Estimated)
+                      Lot Processing Cost
                     </label>
                     <input
                       type="number"
