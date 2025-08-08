@@ -7,7 +7,7 @@ import AppLayout from '../../../components/AppLayout';
 
 interface ProcessingLot {
   id: number;
-  lotID: string;
+  lotNumber: string;
   status: string;
   description?: string;
   assignedOperator?: string;
@@ -42,7 +42,7 @@ interface Filters {
 }
 
 interface CreateLotFormData {
-  lotID?: string;
+  lotNumber?: string;
   description: string;
   assignedOperatorId?: number;
   processingCost?: number;
@@ -70,7 +70,9 @@ export default function ProcessingLotsPage() {
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createFormData, setCreateFormData] = useState<CreateLotFormData>({
+    lotNumber: '',
     description: '',
+    assignedOperatorId: undefined,
     processingCost: undefined
   });
   const [createLoading, setCreateLoading] = useState(false);
@@ -190,7 +192,7 @@ export default function ProcessingLotsPage() {
     const csvContent = [
       ['Lot ID', 'Status', 'Operator', 'Creation Date', 'Weight', 'Contamination %', 'Processing Cost', 'Expected Revenue'].join(','),
       ...lots.map(lot => [
-        lot.lotID,
+        lot.lotNumber,
         lot.status,
         lot.assignedOperator || 'N/A',
         new Date(lot.dateCreated).toLocaleDateString(),
@@ -225,7 +227,7 @@ export default function ProcessingLotsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          LotId: createFormData.lotID,
+          LotId: createFormData.lotNumber,
           Description: createFormData.description,
           OperatorUserId: createFormData.assignedOperatorId,
           ProcessingCost: createFormData.processingCost
@@ -400,7 +402,7 @@ export default function ProcessingLotsPage() {
                   lots.map((lot) => (
                     <tr key={lot.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{lot.lotID}</div>
+                        <div className="text-sm font-medium text-gray-900">{lot.lotNumber}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -486,8 +488,8 @@ export default function ProcessingLotsPage() {
                     </label>
                     <input
                       type="text"
-                      value={createFormData.lotID || ''}
-                      onChange={(e) => setCreateFormData(prev => ({ ...prev, lotID: e.target.value }))}
+                      value={createFormData.lotNumber || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, lotNumber: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Auto-generated if left blank"
                     />
@@ -545,7 +547,9 @@ export default function ProcessingLotsPage() {
                       onClick={() => {
                         setShowCreateModal(false);
                         setCreateFormData({
+                          lotNumber: '',
                           description: '',
+                          assignedOperatorId: undefined,
                           processingCost: undefined
                         });
                       }}

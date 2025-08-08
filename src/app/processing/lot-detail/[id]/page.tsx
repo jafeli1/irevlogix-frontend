@@ -57,7 +57,7 @@ interface ProcessedMaterial {
 
 interface ProcessingLot {
   id: number;
-  lotID: string;
+  lotNumber: string;
   status: string;
   description?: string;
   assignedOperator?: string;
@@ -253,7 +253,7 @@ export default function LotDetail() {
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Processing Lot {lot.lotID}
+                  Processing Lot {lot.lotNumber}
                 </h1>
                 <p className="mt-1 text-sm text-gray-600">
                   Created {formatDateTime(lot.dateCreated)}
@@ -306,7 +306,7 @@ export default function LotDetail() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Lot ID</label>
-                    <p className="mt-1 text-sm text-gray-900">{lot.lotID}</p>
+                    <p className="mt-1 text-sm text-gray-900">{lot.lotNumber}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Assigned Operator</label>
