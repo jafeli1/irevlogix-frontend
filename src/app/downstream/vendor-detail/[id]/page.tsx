@@ -22,7 +22,7 @@ type Vendor = {
 
 export default function VendorDetailPage() {
   const params = useParams();
-  const id = Array.isArray(params?.id) ? params?.id[0] : (params as any)?.id;
+  const id = Array.isArray(params?.id) ? params?.id[0] : (params as { id?: string })?.id;
 
   const token = useMemo(() => {
     if (typeof window === "undefined") return "";
@@ -44,8 +44,9 @@ export default function VendorDetailPage() {
       if (!res.ok) throw new Error(`Failed: ${res.status}`);
       const json = await res.json();
       setData(json);
-    } catch (e: any) {
-      setError(e?.message || "Failed to load");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to load";
+      setError(msg);
     } finally {
       setLoading(false);
     }
