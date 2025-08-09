@@ -13,10 +13,6 @@ type Vendor = {
   vendorRating?: number | null;
 };
 
-type PagedResponse = {
-  items: Vendor[];
-  total: number;
-};
 
 const pageSizeOptions = [10, 25, 50];
 
@@ -70,8 +66,9 @@ export default function VendorsPage() {
       if (totalHeader) setTotal(parseInt(totalHeader, 10));
       const json: Vendor[] = await res.json();
       setData(json);
-    } catch (e: any) {
-      setError(e?.message || "Failed to load");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to load";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -157,8 +154,9 @@ export default function VendorsPage() {
       if (!res.ok) throw new Error(`Failed to create: ${res.status}`);
       setShowCreate(false);
       await fetchData();
-    } catch (e: any) {
-      setError(e?.message || "Failed to create vendor");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to create vendor";
+      setError(msg);
     } finally {
       setCreateSubmitting(false);
     }

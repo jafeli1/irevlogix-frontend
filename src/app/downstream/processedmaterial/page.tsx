@@ -20,10 +20,6 @@ type ProcessedMaterialListItem = {
   processingLotId?: number | null;
 };
 
-type PagedResponse = {
-  items: ProcessedMaterialListItem[];
-  total: number;
-};
 
 const pageSizeOptions = [10, 25, 50];
 
@@ -98,8 +94,9 @@ export default function ProcessedMaterialsPage() {
       if (totalHeader) setTotal(parseInt(totalHeader, 10));
       const json: ProcessedMaterialListItem[] = await res.json();
       setData(json);
-    } catch (e: any) {
-      setError(e?.message || "Failed to load data");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to load data";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -181,8 +178,9 @@ export default function ProcessedMaterialsPage() {
       }
       setShowCreate(false);
       await fetchData();
-    } catch (e: any) {
-      setError(e?.message || "Failed to create record");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to create record";
+      setError(msg);
     } finally {
       setCreateSubmitting(false);
     }
