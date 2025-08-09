@@ -56,7 +56,7 @@ const navigationItems: NavigationItem[] = [
     action: 'Read',
     icon: '📦',
     subItems: [
-      { name: 'Inventory', href: '/downstream/inventory', module: 'DownstreamMaterials', action: 'Read' },
+      { name: 'Processed Material', href: '/downstream/processedmaterial', module: 'DownstreamMaterials', action: 'Read' },
       { name: 'Vendor Management', href: '/downstream/vendors', module: 'DownstreamMaterials', action: 'Read' },
     ]
   },
