@@ -13,10 +13,6 @@ type Vendor = {
   vendorRating?: number | null;
 };
 
-type PagedResponse = {
-  items: Vendor[];
-  total: number;
-};
 
 const pageSizeOptions = [10, 25, 50];
 
@@ -70,8 +66,9 @@ export default function VendorsPage() {
       if (totalHeader) setTotal(parseInt(totalHeader, 10));
       const json: Vendor[] = await res.json();
       setData(json);
-    } catch (e: any) {
-      setError(e?.message || "Failed to load");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to load";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -85,7 +82,7 @@ export default function VendorsPage() {
 
   const onExportCsv = () => {
     const header = ["Id", "Vendor Name", "Contact Person", "Materials Purchased", "Last Sale Date", "Vendor Rating"];
-    const rows = data.map((v) => [
+    const rows = data.map((v: Vendor) => [
       v.id,
       v.vendorName,
       v.contactPerson || "",
@@ -93,7 +90,7 @@ export default function VendorsPage() {
       v.lastSaleDate || "",
       v.vendorRating ?? "",
     ]);
-    const csv = [header, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = [header, ...rows].map((r: (string | number)[]) => r.map((v: string | number) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -157,8 +154,9 @@ export default function VendorsPage() {
       if (!res.ok) throw new Error(`Failed to create: ${res.status}`);
       setShowCreate(false);
       await fetchData();
-    } catch (e: any) {
-      setError(e?.message || "Failed to create vendor");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to create vendor";
+      setError(msg);
     } finally {
       setCreateSubmitting(false);
     }

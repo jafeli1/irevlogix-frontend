@@ -20,10 +20,6 @@ type ProcessedMaterialListItem = {
   processingLotId?: number | null;
 };
 
-type PagedResponse = {
-  items: ProcessedMaterialListItem[];
-  total: number;
-};
 
 const pageSizeOptions = [10, 25, 50];
 
@@ -98,8 +94,9 @@ export default function ProcessedMaterialsPage() {
       if (totalHeader) setTotal(parseInt(totalHeader, 10));
       const json: ProcessedMaterialListItem[] = await res.json();
       setData(json);
-    } catch (e: any) {
-      setError(e?.message || "Failed to load data");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to load data";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -114,7 +111,7 @@ export default function ProcessedMaterialsPage() {
   const onExportCsv = async () => {
     try {
       const header = ["Id", "Material Type", "Quantity", "UoM", "Quality Grade", "Location", "Availability Status", "Processing Lot Id"];
-      const rows = data.map((row) => [
+      const rows = data.map((row: ProcessedMaterialListItem) => [
         row.id,
         row.materialType?.name || "",
         row.quantity ?? "",
@@ -124,7 +121,7 @@ export default function ProcessedMaterialsPage() {
         row.status || "",
         row.processingLotId ?? "",
       ]);
-      const csv = [header, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const csv = [header, ...rows].map((r: (string | number)[]) => r.map((v: string | number) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -181,8 +178,9 @@ export default function ProcessedMaterialsPage() {
       }
       setShowCreate(false);
       await fetchData();
-    } catch (e: any) {
-      setError(e?.message || "Failed to create record");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to create record";
+      setError(msg);
     } finally {
       setCreateSubmitting(false);
     }

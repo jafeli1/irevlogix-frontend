@@ -24,7 +24,7 @@ type ProcessedMaterial = {
 
 export default function ProcessedMaterialDetailPage() {
   const params = useParams();
-  const id = Array.isArray(params?.id) ? params?.id[0] : (params as any)?.id;
+  const id = Array.isArray(params?.id) ? params?.id[0] : (params as { id?: string })?.id;
   const token = useMemo(() => {
     if (typeof window === "undefined") return "";
     return localStorage.getItem("token") || "";
@@ -48,8 +48,9 @@ export default function ProcessedMaterialDetailPage() {
       const json = await res.json();
       setData(json);
       setStatus(json?.status || "");
-    } catch (e: any) {
-      setError(e?.message || "Failed to load");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to load";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -76,8 +77,9 @@ export default function ProcessedMaterialDetailPage() {
       });
       if (!res.ok) throw new Error(`Failed to save: ${res.status}`);
       await fetchDetail();
-    } catch (e: any) {
-      setError(e?.message || "Failed to save");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to save";
+      setError(msg);
     } finally {
       setSaving(false);
     }
