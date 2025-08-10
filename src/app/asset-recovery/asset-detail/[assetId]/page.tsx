@@ -5,36 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import AppLayout from "../../../../components/AppLayout";
 
 type TabKey = "profile" | "data" | "coc" | "recycling" | "documents";
-type AssetDocument = {
-type AssetDocument = {
-  id: number;
-  assetId: number;
-  fileName: string;
-  filePath: string;
-  contentType: string;
-  description?: string | null;
-  dateCreated?: string;
-};
 
-type Asset = {
-  id: number;
-  assetID?: string;
-  assetId?: string;
-  serialNumber?: string;
-  assetCategory?: { name?: string };
-  manufacturer?: string;
-  model?: string;
-  currentStatus?: { statusName?: string };
-  estimatedResaleValue?: number;
-  actualSalePrice?: number;
-  costOfRecovery?: number;
-  reuseDisposition?: boolean;
-  resaleDisposition?: boolean;
-  buyer?: string;
-  recipient?: string;
-  resalePlatform?: string;
-  purpose?: string;
-};
+type AssetDocument = {
   id: number;
   assetId: number;
   fileName: string;
