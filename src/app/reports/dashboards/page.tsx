@@ -114,7 +114,6 @@ export default function ReportsDashboardsPage() {
 
 
   const [drillOpen, setDrillOpen] = useState(false);
-  const [drillLoading, setDrillLoading] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
