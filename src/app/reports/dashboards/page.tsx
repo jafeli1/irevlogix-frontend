@@ -33,6 +33,34 @@ interface Asset {
   category?: string;
   createdAt?: string;
 }
+interface EsgSummary {
+  totalIncomingWeight: number;
+  totalProcessedWeight: number;
+  diversionRate: number;
+  co2eSavedLbs: number;
+  waterSavedGallons: number;
+  energySavedKwh: number;
+  factors?: {
+    co2ePerLb: number;
+    waterGalPerLb: number;
+    energyKwhPerLb: number;
+  }
+}
+
+interface FinancialSummary {
+  totalActualRevenue: number;
+  totalExpectedRevenue: number;
+  totalProcessingCost: number;
+  totalIncomingMaterialCost: number;
+  netProfit: number;
+}
+
+interface ComplianceSummary {
+  totalLots: number;
+  overdueCertifications: number;
+  pendingCertifications: number;
+}
+
 
 interface ProcessingLot {
   id: number | string;
@@ -61,6 +89,10 @@ export default function ReportsDashboardsPage() {
 
   const [drillTitle, setDrillTitle] = useState('');
   const [drillRows, setDrillRows] = useState<DrillRow[]>([]);
+  const [esgSummary, setEsgSummary] = useState<EsgSummary | null>(null);
+  const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
+  const [complianceSummary, setComplianceSummary] = useState<ComplianceSummary | null>(null);
+
   const [drillOpen, setDrillOpen] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -72,11 +104,14 @@ export default function ReportsDashboardsPage() {
       setError(null);
       try {
         const headers = { Authorization: `Bearer ${token}` };
-        const [shipmentsRes, pmRes, assetsRes, lotsRes] = await Promise.all([
+        const [shipmentsRes, pmRes, assetsRes, lotsRes, esgRes, finRes, compRes] = await Promise.all([
           fetch('https://irevlogix-backend.onrender.com/api/shipments', { headers }),
           fetch('https://irevlogix-backend.onrender.com/api/processedmaterials', { headers }),
           fetch('https://irevlogix-backend.onrender.com/api/assets', { headers }),
           fetch('https://irevlogix-backend.onrender.com/api/processinglots', { headers }),
+          fetch('https://irevlogix-backend.onrender.com/api/reports/esg-summary', { headers }),
+          fetch('https://irevlogix-backend.onrender.com/api/reports/financial-summary', { headers }),
+          fetch('https://irevlogix-backend.onrender.com/api/reports/compliance-summary', { headers }),
         ]);
 
         const parse = async <T,>(res: Response): Promise<T[]> => {
@@ -91,6 +126,16 @@ export default function ReportsDashboardsPage() {
         setProcessedMaterials(await parse(pmRes));
         setAssets(await parse(assetsRes));
         setProcessingLots(await parse(lotsRes));
+
+        try {
+          if (esgRes.ok) setEsgSummary(await esgRes.json());
+        } catch {}
+        try {
+          if (finRes.ok) setFinancialSummary(await finRes.json());
+        } catch {}
+        try {
+          if (compRes.ok) setComplianceSummary(await compRes.json());
+        } catch {}
       } catch {
         setError('Failed to load data');
       } finally {
@@ -213,12 +258,12 @@ export default function ReportsDashboardsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => openDrill('Processed Materials', processedMaterials)}>
                     <div className="text-sm text-gray-500">CO2e Saved</div>
-                    <div className="text-2xl font-semibold">{totals.co2eSaved.toLocaleString(undefined, { maximumFractionDigits: 0 })} lb CO2e</div>
-                    <div className="text-xs text-gray-400 mt-1">Assumption: 0.6 lb CO2e saved per lb processed</div>
+                    <div className="text-2xl font-semibold">{(esgSummary?.co2eSavedLbs ?? totals.co2eSaved).toLocaleString(undefined, { maximumFractionDigits: 0 })} lb CO2e</div>
+                    <div className="text-xs text-gray-400 mt-1">Assumption: {(esgSummary?.factors?.co2ePerLb ?? 0.6)} lb CO2e per lb processed</div>
                   </div>
                   <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => openDrill('Processed Materials', processedMaterials)}>
                     <div className="text-sm text-gray-500">Diversion Rate</div>
-                    <div className="text-2xl font-semibold">{(totals.diversionRate * 100).toFixed(1)}%</div>
+                    <div className="text-2xl font-semibold">{(((esgSummary?.diversionRate ?? totals.diversionRate) * 100)).toFixed(1)}%</div>
                     <div className="text-xs text-gray-400 mt-1">Diverted / Total processed weight</div>
                   </div>
                   <div className="bg-white border rounded p-4">
@@ -231,13 +276,13 @@ export default function ReportsDashboardsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => openDrill('Processed Materials', processedMaterials)}>
                     <div className="text-sm text-gray-500">Water Saved</div>
-                    <div className="text-2xl font-semibold">{totals.waterSaved.toLocaleString(undefined, { maximumFractionDigits: 0 })} gal</div>
-                    <div className="text-xs text-gray-400 mt-1">Assumption: 3.2 gal per lb processed</div>
+                    <div className="text-2xl font-semibold">{(esgSummary?.waterSavedGallons ?? totals.waterSaved).toLocaleString(undefined, { maximumFractionDigits: 0 })} gal</div>
+                    <div className="text-xs text-gray-400 mt-1">Assumption: {(esgSummary?.factors?.waterGalPerLb ?? 3.2)} gal per lb processed</div>
                   </div>
                   <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => openDrill('Processed Materials', processedMaterials)}>
                     <div className="text-sm text-gray-500">Energy Saved</div>
-                    <div className="text-2xl font-semibold">{totals.energySaved.toLocaleString(undefined, { maximumFractionDigits: 0 })} kWh</div>
-                    <div className="text-xs text-gray-400 mt-1">Assumption: 0.8 kWh per lb processed</div>
+                    <div className="text-2xl font-semibold">{(esgSummary?.energySavedKwh ?? totals.energySaved).toLocaleString(undefined, { maximumFractionDigits: 0 })} kWh</div>
+                    <div className="text-xs text-gray-400 mt-1">Assumption: {(esgSummary?.factors?.energyKwhPerLb ?? 0.8)} kWh per lb processed</div>
                   </div>
                   <div className="bg-white border rounded p-4">
                     <div className="text-sm text-gray-500">ESG Impact Forecaster</div>
@@ -252,17 +297,17 @@ export default function ReportsDashboardsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white border rounded p-4">
                     <div className="text-sm text-gray-500">Total Revenue</div>
-                    <div className="text-2xl font-semibold">${totals.totalRevenue.toLocaleString()}</div>
+                    <div className="text-2xl font-semibold">${(financialSummary?.totalActualRevenue ?? totals.totalRevenue).toLocaleString()}</div>
                     <div className="text-xs text-gray-400 mt-1">Breakdown by category shown below</div>
                   </div>
                   <div className="bg-white border rounded p-4">
                     <div className="text-sm text-gray-500">Total Costs</div>
-                    <div className="text-2xl font-semibold">${totals.totalCost.toLocaleString()}</div>
+                    <div className="text-2xl font-semibold">${((financialSummary ? (financialSummary.totalProcessingCost + financialSummary.totalIncomingMaterialCost) : totals.totalCost).toLocaleString())}</div>
                     <div className="text-xs text-gray-400 mt-1">Transportation, Processing, Destruction, Labor</div>
                   </div>
                   <div className="bg-white border rounded p-4">
                     <div className="text-sm text-gray-500">Net Profit/Loss</div>
-                    <div className={`text-2xl font-semibold ${totals.netProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>${totals.netProfit.toLocaleString()}</div>
+                    <div className={`text-2xl font-semibold ${((financialSummary?.netProfit ?? totals.netProfit) >= 0 ? 'text-green-700' : 'text-red-700')}`}>${(financialSummary?.netProfit ?? totals.netProfit).toLocaleString()}</div>
                   </div>
                 </div>
 
@@ -296,7 +341,7 @@ export default function ReportsDashboardsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => openDrill('Overdue Certifications (Processing Lots)', totals.overdueLots)}>
                     <div className="text-sm text-gray-500">Overdue Certifications</div>
-                    <div className="text-2xl font-semibold">{totals.overdueCerts}</div>
+                    <div className="text-2xl font-semibold">{(complianceSummary?.overdueCertifications ?? totals.overdueCerts)}</div>
                     <div className="text-xs text-gray-400 mt-1">Based on CertificationStatus and CompletionDate</div>
                   </div>
                   <div className="bg-white border rounded p-4">
