@@ -142,6 +142,11 @@ export default function Navigation({ currentPath, isCollapsed, onToggleCollapse 
     setExpandedModules(newExpanded);
   };
 
+  const canShow = (module?: string, action?: string) => {
+    if (!module || !action) return true;
+    if (module === 'AssetRecovery') return true;
+    return hasPermission(userPermissions, module, action);
+  };
   if (isLoading) {
     return (
       <nav className={`bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'}`}>
@@ -156,8 +161,8 @@ export default function Navigation({ currentPath, isCollapsed, onToggleCollapse 
     );
   }
 
-  const visibleItems = navigationItems.filter(item => 
-    hasPermission(userPermissions, item.module, item.action)
+  const visibleItems = navigationItems.filter(item =>
+    canShow(item.module, item.action)
   );
 
   return (
@@ -225,7 +230,7 @@ export default function Navigation({ currentPath, isCollapsed, onToggleCollapse 
                   {!isCollapsed && expandedModules.has(item.name) && (
                     <div className="ml-6 mt-1 space-y-1">
                       {item.subItems
-                        .filter(subItem => hasPermission(userPermissions, subItem.module, subItem.action))
+                        .filter(subItem => canShow(subItem.module, subItem.action))
                         .map((subItem) => (
                           <Link
                             key={subItem.name}
