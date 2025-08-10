@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+import AppLayout from "../../../components/AppLayout";
 type TabKey = "profile" | "data" | "coc" | "recycling" | "documents";
 
 type AssetDocument = {
@@ -97,7 +98,7 @@ export default function AssetDetailPage() {
   }, [assetId, router]);
 
   return (
-    <>
+    <AppLayout>
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Asset Detail</h1>
         <p className="mt-2 text-gray-600">View and manage asset lifecycle information</p>
@@ -345,6 +346,6 @@ export default function AssetDetailPage() {
           </div>
         )}
       </div>
-    </>
+    </AppLayout>
   );
 }
