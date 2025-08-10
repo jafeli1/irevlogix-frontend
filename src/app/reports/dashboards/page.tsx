@@ -60,6 +60,24 @@ interface ComplianceSummary {
   overdueCertifications: number;
   pendingCertifications: number;
 }
+interface DrilldownApiItem {
+  recordType: string;
+  id: number;
+  nameOrType?: string | null;
+  date?: string | null;
+  weightLbs?: number | null;
+  status?: string | null;
+}
+
+
+interface DrilldownApiItem {
+  recordType: string;
+  id: number;
+  nameOrType?: string | null;
+  date?: string | null;
+  weightLbs?: number | null;
+  status?: string | null;
+}
 
 
 interface ProcessingLot {
@@ -92,6 +110,8 @@ export default function ReportsDashboardsPage() {
   const [esgSummary, setEsgSummary] = useState<EsgSummary | null>(null);
   const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
   const [complianceSummary, setComplianceSummary] = useState<ComplianceSummary | null>(null);
+  const [drillLoading, setDrillLoading] = useState(false);
+
 
   const [drillOpen, setDrillOpen] = useState(false);
 
@@ -197,6 +217,7 @@ export default function ReportsDashboardsPage() {
       diversionRate,
       co2eSaved,
       waterSaved,
+
       energySaved,
       totalRevenue,
       revenueReuse,
@@ -204,6 +225,7 @@ export default function ReportsDashboardsPage() {
       revenueMaterial,
       totalCost,
       processingCost,
+
       incomingMaterialCost,
       costTransportation,
       costDestruction,
@@ -215,6 +237,58 @@ export default function ReportsDashboardsPage() {
       regulatoryStatus,
     };
   }, [processingLots, processedMaterials, assets]);
+
+  const fetchDrilldown = async (
+    title: string,
+    type: 'processinglots' | 'processedmaterials',
+    opts?: { status?: string; from?: string; to?: string; page?: number; pageSize?: number }
+  ) => {
+    if (!token) return;
+    setDrillTitle(title);
+    setDrillOpen(true);
+    setDrillLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set('type', type);
+      if (opts?.status) params.set('status', opts.status);
+      if (opts?.from) params.set('from', opts.from);
+      if (opts?.to) params.set('to', opts.to);
+      params.set('page', String(opts?.page ?? 1));
+      params.set('pageSize', String(opts?.pageSize ?? 25));
+      const res = await fetch(`https://irevlogix-backend.onrender.com/api/reports/drilldown?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        setDrillRows([]);
+        return;
+      }
+      const data: { items?: DrilldownApiItem[]; totalCount?: number; page?: number; pageSize?: number } = await res.json();
+      const items = data.items ?? [];
+      const mapped: DrillRow[] = items.map((it) => {
+        const rt = (it.recordType || '').toLowerCase();
+        if (rt === 'processinglot') {
+          return {
+            id: it.id,
+            dateCreated: (it as any).date ?? undefined,
+            totalProcessedWeight: it.weightLbs ?? undefined,
+            certificationStatus: it.status ?? undefined,
+          } as unknown as DrillRow;
+        }
+        return {
+          id: it.id,
+          materialType: it.nameOrType ?? undefined,
+          dateCreated: (it as any).date ?? undefined,
+          weightLbs: it.weightLbs ?? undefined,
+          status: it.status ?? undefined,
+        } as unknown as DrillRow;
+      });
+      setDrillRows(mapped);
+    } catch {
+      setDrillRows([]);
+    } finally {
+      setDrillLoading(false);
+    }
+  };
 
   const openDrill = (title: string, rows: DrillRow[]) => {
     setDrillTitle(title);
@@ -256,12 +330,12 @@ export default function ReportsDashboardsPage() {
             {activeTab === 'esg' && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => openDrill('Processed Materials', processedMaterials)}>
+                  <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => fetchDrilldown('Processed Materials', 'processedmaterials')}>
                     <div className="text-sm text-gray-500">CO2e Saved</div>
                     <div className="text-2xl font-semibold">{(esgSummary?.co2eSavedLbs ?? totals.co2eSaved).toLocaleString(undefined, { maximumFractionDigits: 0 })} lb CO2e</div>
                     <div className="text-xs text-gray-400 mt-1">Assumption: {(esgSummary?.factors?.co2ePerLb ?? 0.6)} lb CO2e per lb processed</div>
                   </div>
-                  <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => openDrill('Processed Materials', processedMaterials)}>
+                  <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => fetchDrilldown('Processed Materials', 'processedmaterials')}>
                     <div className="text-sm text-gray-500">Diversion Rate</div>
                     <div className="text-2xl font-semibold">{(((esgSummary?.diversionRate ?? totals.diversionRate) * 100)).toFixed(1)}%</div>
                     <div className="text-xs text-gray-400 mt-1">Diverted / Total processed weight</div>
@@ -274,12 +348,12 @@ export default function ReportsDashboardsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => openDrill('Processed Materials', processedMaterials)}>
+                  <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => fetchDrilldown('Processed Materials', 'processedmaterials')}>
                     <div className="text-sm text-gray-500">Water Saved</div>
                     <div className="text-2xl font-semibold">{(esgSummary?.waterSavedGallons ?? totals.waterSaved).toLocaleString(undefined, { maximumFractionDigits: 0 })} gal</div>
                     <div className="text-xs text-gray-400 mt-1">Assumption: {(esgSummary?.factors?.waterGalPerLb ?? 3.2)} gal per lb processed</div>
                   </div>
-                  <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => openDrill('Processed Materials', processedMaterials)}>
+                  <div className="bg-white border rounded p-4 cursor-pointer" onClick={() => fetchDrilldown('Processed Materials', 'processedmaterials')}>
                     <div className="text-sm text-gray-500">Energy Saved</div>
                     <div className="text-2xl font-semibold">{(esgSummary?.energySavedKwh ?? totals.energySaved).toLocaleString(undefined, { maximumFractionDigits: 0 })} kWh</div>
                     <div className="text-xs text-gray-400 mt-1">Assumption: {(esgSummary?.factors?.energyKwhPerLb ?? 0.8)} kWh per lb processed</div>
@@ -374,59 +448,65 @@ export default function ReportsDashboardsPage() {
               <button className="px-2 py-1 rounded hover:bg-gray-100" onClick={() => setDrillOpen(false)}>✕</button>
             </div>
             <div className="p-4 overflow-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="text-left border-b">
-                    <th className="px-3 py-2">Id</th>
-                    <th className="px-3 py-2">Type</th>
-                    <th className="px-3 py-2">Date</th>
-                    <th className="px-3 py-2">Weight</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Link</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {drillRows.map((r: DrillRow) => {
-                    const isLot = 'certificationStatus' in r || 'processingCost' in r || 'totalProcessedWeight' in r;
-                    const isPM = 'materialType' in r || 'processingLotId' in r;
-                    const dateVal = (() => {
-                      if ('completionDate' in r && r.completionDate) return r.completionDate;
-                      if ('dateCreated' in r && r.dateCreated) return r.dateCreated;
-                      if ('createdAt' in r && r.createdAt) return r.createdAt;
-                      return null;
-                    })();
-                    const weightVal = (() => {
-                      if ('totalProcessedWeight' in r && r.totalProcessedWeight !== undefined) return r.totalProcessedWeight;
-                      if ('totalIncomingWeight' in r && r.totalIncomingWeight !== undefined) return r.totalIncomingWeight;
-                      if ('weightLbs' in r && r.weightLbs !== undefined) return r.weightLbs;
-                      if ('weight' in r && r.weight !== undefined) return r.weight;
-                      return null;
-                    })();
-                    return (
-                      <tr key={r.id} className="border-b hover:bg-gray-50">
-                        <td className="px-3 py-2">{r.id}</td>
-                        <td className="px-3 py-2">{isLot ? 'Processing Lot' : isPM ? 'Processed Material' : ('category' in r ? r.category : '—')}</td>
-                        <td className="px-3 py-2">{dateVal ? new Date(dateVal).toLocaleDateString() : '—'}</td>
-                        <td className="px-3 py-2">{weightVal ?? '—'}</td>
-                        <td className="px-3 py-2">{('certificationStatus' in r && r.certificationStatus) || ('status' in r && r.status) || '—'}</td>
-                        <td className="px-3 py-2">
-                          {isLot ? (
-                            <a className="text-blue-600 underline" href={`/processing/lot-detail/${r.id}`}>View</a>
-                          ) : isPM ? (
-                            <a className="text-blue-600 underline" href={`/downstream/processedmaterial-detail/${r.id}`}>View</a>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
+              {drillLoading ? (
+                <div className="py-6 text-center text-gray-600">Loading...</div>
+              ) : (
+                <>
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="text-left border-b">
+                        <th className="px-3 py-2">Id</th>
+                        <th className="px-3 py-2">Type</th>
+                        <th className="px-3 py-2">Date</th>
+                        <th className="px-3 py-2">Weight</th>
+                        <th className="px-3 py-2">Status</th>
+                        <th className="px-3 py-2">Link</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {drillRows.length === 0 && (
-                <div className="text-center text-gray-500 py-8">No data</div>
-              )}
-            </div>
+                    </thead>
+                    <tbody>
+                      {drillRows.map((r: DrillRow) => {
+                        const isLot = 'certificationStatus' in r || 'processingCost' in r || 'totalProcessedWeight' in r;
+                        const isPM = 'materialType' in r || 'processingLotId' in r;
+                        const dateVal = (() => {
+                          if ('completionDate' in r && r.completionDate) return r.completionDate;
+                          if ('dateCreated' in r && r.dateCreated) return r.dateCreated;
+                          if ('createdAt' in r && r.createdAt) return r.createdAt;
+                          return null;
+                        })();
+                        const weightVal = (() => {
+                          if ('totalProcessedWeight' in r && r.totalProcessedWeight !== undefined) return r.totalProcessedWeight;
+                          if ('totalIncomingWeight' in r && r.totalIncomingWeight !== undefined) return r.totalIncomingWeight;
+                          if ('weightLbs' in r && r.weightLbs !== undefined) return r.weightLbs;
+                          if ('weight' in r && r.weight !== undefined) return r.weight;
+                          return null;
+                        })();
+                        return (
+                          <tr key={r.id} className="border-b hover:bg-gray-50">
+                            <td className="px-3 py-2">{r.id}</td>
+                            <td className="px-3 py-2">{isLot ? 'Processing Lot' : isPM ? 'Processed Material' : ('category' in r ? r.category : '—')}</td>
+                            <td className="px-3 py-2">{dateVal ? new Date(dateVal).toLocaleDateString() : '—'}</td>
+                            <td className="px-3 py-2">{weightVal ?? '—'}</td>
+                            <td className="px-3 py-2">{('certificationStatus' in r && r.certificationStatus) || ('status' in r && r.status) || '—'}</td>
+                            <td className="px-3 py-2">
+                              {isLot ? (
+                                <a className="text-blue-600 underline" href={`/processing/lot-detail/${r.id}`}>View</a>
+                              ) : isPM ? (
+                                <a className="text-blue-600 underline" href={`/downstream/processedmaterial-detail/${r.id}`}>View</a>
+                              ) : (
+                                '—'
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {drillRows.length === 0 && (
+                    <div className="text-center text-gray-500 py-8">No data</div>
+                  )}
+                </>
+              )
+            }
             <div className="px-4 py-3 border-t text-right">
               <button className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200" onClick={() => setDrillOpen(false)}>Close</button>
             </div>
