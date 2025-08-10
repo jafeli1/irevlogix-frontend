@@ -12,6 +12,23 @@ interface AssetTrackingStatus {
   id: number;
   statusName: string;
 }
+
+const FALLBACK_STATUSES: AssetTrackingStatus[] = [
+  { id: 0, statusName: 'Received' },
+  { id: 0, statusName: 'To Audit' },
+  { id: 0, statusName: 'In Audit' },
+  { id: 0, statusName: 'To Repair' },
+  { id: 0, statusName: 'In Repair' },
+  { id: 0, statusName: 'Data Wipe Pending' },
+  { id: 0, statusName: 'Data Wipe In Progress' },
+  { id: 0, statusName: 'Data Wipe Completed' },
+  { id: 0, statusName: 'Physical Destruction' },
+  { id: 0, statusName: 'To Resale Inventory' },
+  { id: 0, statusName: 'Resale Listed' },
+  { id: 0, statusName: 'Resold' },
+  { id: 0, statusName: 'Certified Recycling' },
+  { id: 0, statusName: 'Disposed' },
+];
 interface UserSummary {
   id?: number;
   Id?: number;
