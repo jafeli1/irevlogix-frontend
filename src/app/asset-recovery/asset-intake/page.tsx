@@ -35,7 +35,16 @@ export default function AssetIntakePage() {
     dataSanitizationStatus: 'Not Required',
     currentLocation: '',
     currentStatusId: '',
-    notes: ''
+    notes: '',
+    description: '',
+    dataSanitizationMethod: '',
+    storageCapacity: '',
+    internalAuditNotes: '',
+    internalAuditScore: '',
+    receivedBy: '',
+    receivedLocation: '',
+    receivingTimestamp: '',
+    initialDisposition: ''
   });
 
   useEffect(() => {
@@ -140,7 +149,16 @@ export default function AssetIntakePage() {
           dataSanitizationStatus: 'Not Required',
           currentLocation: '',
           currentStatusId: '',
-          notes: ''
+          notes: '',
+          description: '',
+          dataSanitizationMethod: '',
+          storageCapacity: '',
+          internalAuditNotes: '',
+          internalAuditScore: '',
+          receivedBy: '',
+          receivedLocation: '',
+          receivingTimestamp: '',
+          initialDisposition: ''
         });
         setTimeout(() => {
           router.push('/asset-recovery/asset-tracking');
@@ -364,9 +382,44 @@ export default function AssetIntakePage() {
                       <option value="">Select Type</option>
                       <option value="HDD">Hard Disk Drive (HDD)</option>
                       <option value="SSD">Solid State Drive (SSD)</option>
-                      <option value="Hybrid">Hybrid Drive</option>
-                      <option value="Flash">Flash Storage</option>
+                      <option value="NVMe">NVMe</option>
+                      <option value="USB">USB</option>
                       <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="storageCapacity" className="block text-sm font-medium text-gray-700">
+                      Storage Capacity
+                    </label>
+                    <input
+                      type="number"
+                      id="storageCapacity"
+                      name="storageCapacity"
+                      step="0.01"
+                      min="0"
+                      value={formData.storageCapacity}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 512"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="dataSanitizationMethod" className="block text-sm font-medium text-gray-700">
+                      Data Sanitization Method
+                    </label>
+                    <select
+                      id="dataSanitizationMethod"
+                      name="dataSanitizationMethod"
+                      value={formData.dataSanitizationMethod}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Method</option>
+                      <option value="DoD 5220.22-M">DoD 5220.22-M</option>
+                      <option value="NIST 800-88">NIST 800-88</option>
+                      <option value="Physical Destruction">Physical Destruction</option>
                     </select>
                   </div>
 
@@ -382,11 +435,36 @@ export default function AssetIntakePage() {
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="Not Required">Not Required</option>
-                      <option value="Required">Required</option>
+                      <option value="Pending">Pending</option>
                       <option value="In Progress">In Progress</option>
                       <option value="Completed">Completed</option>
-                      <option value="Certified">Certified</option>
+                      <option value="Failed">Failed</option>
                     </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label htmlFor="dataSanitizationCertificate" className="block text-sm font-medium text-gray-700">
+                      Data Sanitization Certificate
+                    </label>
+                    <input
+                      type="file"
+                      id="dataSanitizationCertificate"
+                      name="dataSanitizationCertificate"
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label htmlFor="evidence" className="block text-sm font-medium text-gray-700">
+                      Physical Destruction Evidence (Photo/Video)
+                    </label>
+                    <input
+                      type="file"
+                      id="evidence"
+                      name="evidence"
+                      multiple
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                    />
                   </div>
                 </div>
               )}
@@ -407,21 +485,52 @@ export default function AssetIntakePage() {
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => router.push('/asset-recovery/asset-tracking')}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                {loading ? 'Creating...' : 'Create Asset'}
-              </button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <input id="bulkUploadInput" type="file" accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" />
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('bulkUploadInput')?.click()}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Bulk Upload (CSV/Excel)
+                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      assetID: '',
+                      manufacturer: '',
+                      model: '',
+                      serialNumber: '',
+                      estimatedValue: '',
+                      notes: ''
+                    }));
+                    setSuccess('Saved. Ready for next asset.');
+                    setTimeout(() => setSuccess(''), 2000);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Save &amp; Add Next
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/asset-recovery/asset-tracking')}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  {loading ? 'Creating...' : 'Create Asset'}
+                </button>
+              </div>
             </div>
           </form>
         </div>

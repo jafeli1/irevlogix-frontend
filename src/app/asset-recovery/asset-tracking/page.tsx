@@ -39,6 +39,12 @@ export default function AssetTrackingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [conditionFilter, setConditionFilter] = useState('');
   const [dataBearingFilter, setDataBearingFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+
+  const [clientFilter, setClientFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -106,7 +112,10 @@ export default function AssetTrackingPage() {
     const matchesDataBearing = !dataBearingFilter || 
                               (dataBearingFilter === 'true' && asset.isDataBearing) ||
                               (dataBearingFilter === 'false' && !asset.isDataBearing);
-    return matchesSearch && matchesCondition && matchesDataBearing;
+    const clientName = (asset as any)?.client?.name || (asset as any)?.clientName || '';
+    const matchesClient = !clientFilter || clientName.toLowerCase().includes(clientFilter.toLowerCase());
+    const matchesLocation = !locationFilter || (asset.currentLocation || '').toLowerCase().includes(locationFilter.toLowerCase());
+    return matchesSearch && matchesCondition && matchesDataBearing && matchesClient && matchesLocation;
   });
 
   const getConditionColor = (condition: string) => {
@@ -269,6 +278,20 @@ export default function AssetTrackingPage() {
                   <option value="true">Data Bearing</option>
                   <option value="false">Non-Data Bearing</option>
                 </select>
+                <input
+                  type="text"
+                  placeholder="Filter by Client"
+                  value={clientFilter}
+                  onChange={(e) => setClientFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Filter by Location"
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
               <button
                 onClick={() => router.push('/asset-recovery/asset-intake')}
@@ -366,6 +389,50 @@ export default function AssetTrackingPage() {
                         </button>
                       </td>
                     </tr>
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+                disabled={page <= 1}
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">Page {page} of {Math.max(1, Math.ceil(total / pageSize))}</span>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+                disabled={page >= Math.ceil(total / pageSize)}
+              >
+                Next
+              </button>
+            </div>
+            <button
+              onClick={async () => {
+                const token = localStorage.getItem('token');
+                const qs = new URLSearchParams();
+                if (searchTerm) qs.set('search', searchTerm);
+                if (conditionFilter) qs.set('condition', conditionFilter);
+                if (dataBearingFilter) qs.set('isDataBearing', dataBearingFilter);
+                if (locationFilter) qs.set('location', locationFilter);
+                qs.set('export', 'csv');
+                const resp = await fetch(`https://irevlogix-backend.onrender.com/api/Assets?${qs.toString()}`, {
+                  headers: { Authorization: token ? \`Bearer \${token}\` : '' }
+                });
+                const blob = await resp.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'assets_export.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+              }}
+              className="px-4 py-2 bg-gray-100 border rounded hover:bg-gray-200"
+            >
+              Export CSV
+            </button>
+          </div>
+
                   ))
                 )}
               </tbody>
