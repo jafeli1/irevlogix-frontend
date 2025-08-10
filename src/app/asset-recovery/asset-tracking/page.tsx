@@ -133,7 +133,7 @@ export default function AssetTrackingPage() {
   return (
     <AppLayout>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Asset Recovery & Tracking</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Asset Intake</h1>
           <p className="mt-2 text-gray-600">Monitor asset lifecycle and recovery operations</p>
         </div>
 
@@ -271,7 +271,7 @@ export default function AssetTrackingPage() {
                 </select>
               </div>
               <button
-                onClick={() => router.push('/asset-recovery/intake-audit')}
+                onClick={() => router.push('/asset-recovery/asset-intake')}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 Add Asset
