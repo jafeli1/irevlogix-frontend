@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import AppLayout from "../../../../components/AppLayout";
 
 type TabKey = "profile" | "data" | "coc" | "recycling" | "documents";
 
@@ -98,7 +97,7 @@ export default function AssetDetailPage() {
   }, [assetId, router]);
 
   return (
-    <AppLayout>
+    <>
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Asset Detail</h1>
         <p className="mt-2 text-gray-600">View and manage asset lifecycle information</p>
@@ -136,12 +135,64 @@ export default function AssetDetailPage() {
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <button onClick={() => setActiveTab("profile")} className={`px-4 py-2 rounded-md border ${activeTab === "profile" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 hover:bg-gray-50"}`}>Asset Profile</button>
-        <button onClick={() => setActiveTab("data")} className={`px-4 py-2 rounded-md border ${activeTab === "data" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 hover:bg-gray-50"}`}>Data Destruction</button>
-        <button onClick={() => setActiveTab("coc")} className={`px-4 py-2 rounded-md border ${activeTab === "coc" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 hover:bg-gray-50"}`}>Chain of Custody</button>
-        <button onClick={() => setActiveTab("recycling")} className={`px-4 py-2 rounded-md border ${activeTab === "recycling" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 hover:bg-gray-50"}`}>Certified Recycling</button>
-        <button onClick={() => setActiveTab("documents")} className={`px-4 py-2 rounded-md border ${activeTab === "documents" ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 hover:bg-gray-50"}`}>Documents</button>
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            type="button"
+            onClick={() => setActiveTab("profile")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "profile"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Asset Profile
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("data")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "data"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Data Destruction
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("coc")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "coc"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Chain of Custody
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("recycling")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "recycling"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Certified Recycling
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("documents")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "documents"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Documents
+          </button>
+        </nav>
       </div>
 
       <div className="rounded-md border bg-white p-4">
@@ -294,6 +345,6 @@ export default function AssetDetailPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

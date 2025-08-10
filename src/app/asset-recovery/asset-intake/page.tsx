@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AppLayout from '../../../components/AppLayout';
 
 interface AssetCategory {
   id: number;
@@ -21,6 +20,16 @@ export default function AssetIntakePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'basic' | 'data' | 'audit' | 'coc' | 'bulk'>('basic');
+  const generateAssetId = () => {
+    const now = new Date();
+    const yyyy = now.getUTCFullYear().toString();
+    const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(now.getUTCDate()).padStart(2, '0');
+    const datePart = `${yyyy}${mm}${dd}`;
+    const seq = Math.floor(Math.random() * 100000);
+    return `AST-${datePart}-${String(seq).padStart(5, '0')}`;
+  };
 
   const [formData, setFormData] = useState({
     assetID: '',
@@ -48,6 +57,7 @@ export default function AssetIntakePage() {
   });
 
   useEffect(() => {
+    setFormData(prev => ({ ...prev, assetID: generateAssetId() }));
     fetchCategories();
     fetchStatuses();
   }, []);
@@ -60,7 +70,7 @@ export default function AssetIntakePage() {
         return;
       }
 
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/AssetCategories', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/assetcategories', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -178,7 +188,7 @@ export default function AssetIntakePage() {
   };
 
   return (
-    <AppLayout>
+    <>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Asset Intake</h1>
           <p className="mt-2 text-gray-600">Register new assets for recovery and tracking</p>
@@ -283,6 +293,53 @@ export default function AssetIntakePage() {
               <div>
                 <label htmlFor="condition" className="block text-sm font-medium text-gray-700">
                   Condition
+          <div className="border-b border-gray-200 mt-6">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                type="button"
+                onClick={() => setActiveTab('basic')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                Basic Info
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('data')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'data' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                Data Bearing
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('audit')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'audit' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                Visual &amp; Internal Audit
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('coc')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'coc' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                Chain of Custody
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('bulk')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'bulk' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                Bulk Upload
+              </button>
+            </nav>
+          </div>
+
+          <div className="mb-4 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-700">
+              <span className="font-medium">AI Suggestion — Automated Asset Categorization & Value Estimation:</span>
+              Using uploaded images or descriptions, AI will suggest Asset Category, Manufacturer, Model, and an initial value estimate. (Placeholder — feature coming soon)
+            </p>
+          </div>
+
                 </label>
                 <select
                   id="condition"
@@ -534,6 +591,6 @@ export default function AssetIntakePage() {
             </div>
           </form>
         </div>
-    </AppLayout>
+    </>
   );
 }
