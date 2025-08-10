@@ -59,7 +59,7 @@ export default function AssetIntakePage() {
         return;
       }
 
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/AssetCategories', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/assetcategories', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
