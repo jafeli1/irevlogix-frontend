@@ -66,9 +66,8 @@ const navigationItems: NavigationItem[] = [
     action: 'Read',
     icon: '🔍',
     subItems: [
-      { name: 'Tracking', href: '/asset-recovery/tracking', module: 'AssetRecovery', action: 'Read' },
-      { name: 'Intake & Audit', href: '/asset-recovery/intake-audit', module: 'AssetRecovery', action: 'Create' },
-      { name: 'Asset Details', href: '/asset-recovery/asset-detail', module: 'AssetRecovery', action: 'Read' },
+      { name: 'Asset Tracking', href: '/asset-recovery/asset-tracking', module: 'AssetRecovery', action: 'Read' },
+      { name: 'Asset Intake', href: '/asset-recovery/asset-intake', module: 'AssetRecovery', action: 'Create' },
     ]
   },
   {

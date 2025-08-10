@@ -14,7 +14,7 @@ interface AssetTrackingStatus {
   statusName: string;
 }
 
-export default function AssetIntakeAuditPage() {
+export default function AssetIntakePage() {
   const [categories, setCategories] = useState<AssetCategory[]>([]);
   const [statuses, setStatuses] = useState<AssetTrackingStatus[]>([]);
   const [loading, setLoading] = useState(false);
@@ -143,7 +143,7 @@ export default function AssetIntakeAuditPage() {
           notes: ''
         });
         setTimeout(() => {
-          router.push('/asset-recovery/tracking');
+          router.push('/asset-recovery/asset-tracking');
         }, 2000);
       } else if (response.status === 401) {
         localStorage.removeItem('token');
@@ -162,7 +162,7 @@ export default function AssetIntakeAuditPage() {
   return (
     <AppLayout>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Asset Intake & Audit</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Asset Tracking</h1>
           <p className="mt-2 text-gray-600">Register new assets for recovery and tracking</p>
         </div>
 
@@ -410,7 +410,7 @@ export default function AssetIntakeAuditPage() {
             <div className="flex justify-end space-x-4">
               <button
                 type="button"
-                onClick={() => router.push('/asset-recovery/tracking')}
+                onClick={() => router.push('/asset-recovery/asset-tracking')}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 Cancel
