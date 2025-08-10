@@ -258,7 +258,7 @@ export default function ReportsDashboardsPage() {
         if (rt === 'processinglot') {
           return {
             id: it.id,
-            dateCreated: (it as any).date ?? undefined,
+            dateCreated: it.date ?? undefined,
             totalProcessedWeight: it.weightLbs ?? undefined,
             certificationStatus: it.status ?? undefined,
           } as unknown as DrillRow;
@@ -266,7 +266,7 @@ export default function ReportsDashboardsPage() {
         return {
           id: it.id,
           materialType: it.nameOrType ?? undefined,
-          dateCreated: (it as any).date ?? undefined,
+          dateCreated: it.date ?? undefined,
           weightLbs: it.weightLbs ?? undefined,
           status: it.status ?? undefined,
         } as unknown as DrillRow;
