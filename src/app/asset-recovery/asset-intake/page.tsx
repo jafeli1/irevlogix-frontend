@@ -91,7 +91,7 @@ export default function AssetIntakePage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/AssetTracking/statuses', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/assettracking/statuses', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -208,10 +208,58 @@ export default function AssetIntakePage() {
 
         <div className="bg-white shadow rounded-lg">
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="assetID" className="block text-sm font-medium text-gray-700">
-                  Asset ID *
+            <div className="border-b border-gray-200 mt-2">
+              <nav className="-mb-px flex space-x-8">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('basic')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                >
+                  Basic Info
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('data')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'data' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                >
+                  Data Bearing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('audit')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'audit' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                >
+                  Visual &amp; Internal Audit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('coc')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'coc' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                >
+                  Chain of Custody
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('bulk')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'bulk' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                >
+                  Bulk Upload
+                </button>
+              </nav>
+            </div>
+
+{activeTab === 'basic' && (
+            <>
+              <div className="mb-4 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">AI Suggestion — Automated Asset Categorization &amp; Value Estimation:</span>
+                  Using uploaded images or descriptions, AI will suggest Asset Category, Manufacturer, Model, and an initial value estimate. (Placeholder — feature coming soon)
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="assetID" className="block text-sm font-medium text-gray-700">
+                    Asset ID *
                 </label>
                 <input
                   type="text"
@@ -293,53 +341,6 @@ export default function AssetIntakePage() {
               <div>
                 <label htmlFor="condition" className="block text-sm font-medium text-gray-700">
                   Condition
-          <div className="border-b border-gray-200 mt-6">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                type="button"
-                onClick={() => setActiveTab('basic')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-              >
-                Basic Info
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('data')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'data' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-              >
-                Data Bearing
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('audit')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'audit' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-              >
-                Visual &amp; Internal Audit
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('coc')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'coc' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-              >
-                Chain of Custody
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('bulk')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'bulk' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-              >
-                Bulk Upload
-              </button>
-            </nav>
-          </div>
-
-          <div className="mb-4 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm text-blue-700">
-              <span className="font-medium">AI Suggestion — Automated Asset Categorization & Value Estimation:</span>
-              Using uploaded images or descriptions, AI will suggest Asset Category, Manufacturer, Model, and an initial value estimate. (Placeholder — feature coming soon)
-            </p>
-          </div>
-
                 </label>
                 <select
                   id="condition"
@@ -407,18 +408,25 @@ export default function AssetIntakePage() {
                 </select>
               </div>
             </div>
+            </>
+          )}
 
+
+            <div className="flex items-center justify-between">
+</div>
+
+          {activeTab === 'data' && (
             <div className="space-y-4">
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  id="isDataBearing"
+                  id="isDataBearing_tab"
                   name="isDataBearing"
                   checked={formData.isDataBearing}
                   onChange={handleInputChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="isDataBearing" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="isDataBearing_tab" className="ml-2 block text-sm text-gray-900">
                   This asset contains data storage devices
                 </label>
               </div>
@@ -426,11 +434,11 @@ export default function AssetIntakePage() {
               {formData.isDataBearing && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="storageDeviceType" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="storageDeviceType_tab" className="block text-sm font-medium text-gray-700">
                       Storage Device Type
                     </label>
                     <select
-                      id="storageDeviceType"
+                      id="storageDeviceType_tab"
                       name="storageDeviceType"
                       value={formData.storageDeviceType}
                       onChange={handleInputChange}
@@ -446,12 +454,12 @@ export default function AssetIntakePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="storageCapacity" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="storageCapacity_tab" className="block text-sm font-medium text-gray-700">
                       Storage Capacity
                     </label>
                     <input
                       type="number"
-                      id="storageCapacity"
+                      id="storageCapacity_tab"
                       name="storageCapacity"
                       step="0.01"
                       min="0"
@@ -463,15 +471,15 @@ export default function AssetIntakePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="dataSanitizationMethod" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="dataSanitizationMethod_tab" className="block text-sm font-medium text-gray-700">
                       Data Sanitization Method
                     </label>
                     <select
-                      id="dataSanitizationMethod"
+                      id="dataSanitizationMethod_tab"
                       name="dataSanitizationMethod"
                       value={formData.dataSanitizationMethod}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                     >
                       <option value="">Select Method</option>
                       <option value="DoD 5220.22-M">DoD 5220.22-M</option>
@@ -481,15 +489,15 @@ export default function AssetIntakePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="dataSanitizationStatus" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="dataSanitizationStatus_tab" className="block text-sm font-medium text-gray-700">
                       Data Sanitization Status
                     </label>
                     <select
-                      id="dataSanitizationStatus"
+                      id="dataSanitizationStatus_tab"
                       name="dataSanitizationStatus"
                       value={formData.dataSanitizationStatus}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                     >
                       <option value="Not Required">Not Required</option>
                       <option value="Pending">Pending</option>
@@ -500,95 +508,126 @@ export default function AssetIntakePage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label htmlFor="dataSanitizationCertificate" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="dataSanitizationCertificate_tab" className="block text-sm font-medium text-gray-700">
                       Data Sanitization Certificate
                     </label>
                     <input
                       type="file"
-                      id="dataSanitizationCertificate"
+                      id="dataSanitizationCertificate_tab"
                       name="dataSanitizationCertificate"
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                     />
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label htmlFor="evidence" className="block text-sm font-medium text-gray-700">
-                      Physical Destruction Evidence (Photo/Video)
-                    </label>
-                    <input
-                      type="file"
-                      id="evidence"
-                      name="evidence"
-                      multiple
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    />
-                  </div>
+                  {formData.dataSanitizationMethod === 'Physical Destruction' && (
+                    <div className="md:col-span-2">
+                      <label htmlFor="evidence_tab" className="block text-sm font-medium text-gray-700">
+                        Physical Destruction Evidence (Photo/Video)
+                      </label>
+                      <input
+                        type="file"
+                        id="evidence_tab"
+                        name="evidence"
+                        multiple
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
+            </div>
+          )}
 
+          {activeTab === 'audit' && (
+            <div className="space-y-4">
               <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                  Notes
+                <label className="block text-sm font-medium text-gray-700">Upload Photos/Videos</label>
+                <input type="file" multiple className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" />
+              </div>
+              <div>
+                <label htmlFor="internalAuditNotes" className="block text-sm font-medium text-gray-700">
+                  Internal Audit Notes
                 </label>
                 <textarea
-                  id="notes"
-                  name="notes"
+                  id="internalAuditNotes"
+                  name="internalAuditNotes"
                   rows={4}
-                  value={formData.notes}
+                  value={formData.internalAuditNotes}
                   onChange={handleInputChange}
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Additional notes about the asset..."
+                  placeholder="Notes from internal audit..."
+                />
+              </div>
+              <div>
+                <label htmlFor="internalAuditScore" className="block text-sm font-medium text-gray-700">
+                  Internal Audit Score
+                </label>
+                <input
+                  type="number"
+                  id="internalAuditScore"
+                  name="internalAuditScore"
+                  value={formData.internalAuditScore}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., 8"
                 />
               </div>
             </div>
+          )}
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <input id="bulkUploadInput" type="file" accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" />
-                <button
-                  type="button"
-                  onClick={() => document.getElementById('bulkUploadInput')?.click()}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  Bulk Upload (CSV/Excel)
-                </button>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      assetID: '',
-                      manufacturer: '',
-                      model: '',
-                      serialNumber: '',
-                      estimatedValue: '',
-                      notes: ''
-                    }));
-                    setSuccess('Saved. Ready for next asset.');
-                    setTimeout(() => setSuccess(''), 2000);
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  Save &amp; Add Next
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push('/asset-recovery/asset-tracking')}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                  {loading ? 'Creating...' : 'Create Asset'}
-                </button>
-              </div>
+
+
+          <div className="flex items-center justify-between mt-6">
+            <div className="flex items-center gap-3">
+              <input id="bulkUploadInput" type="file" accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" />
+              <button
+                type="button"
+                onClick={() => document.getElementById('bulkUploadInput')?.click()}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Bulk Upload (CSV/Excel)
+              </button>
             </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    assetID: generateAssetId(),
+                    manufacturer: '',
+                    model: '',
+                    serialNumber: '',
+                    estimatedValue: '',
+                    notes: ''
+                  }));
+                  setSuccess('Saved. Ready for next asset.');
+                  setTimeout(() => setSuccess(''), 2000);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Save &amp; Add Next
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/asset-recovery/asset-tracking')}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {loading ? 'Creating...' : 'Create Asset'}
+              </button>
+            </div>
+          </div>
+
+
+
+
           </form>
         </div>
     </>
