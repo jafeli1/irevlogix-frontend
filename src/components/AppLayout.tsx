@@ -46,16 +46,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setIsNavCollapsed(!isNavCollapsed);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (!user) {
     return null;
@@ -63,12 +53,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
-      <Navigation 
-        currentPath={pathname} 
+      <Navigation
+        currentPath={pathname}
         isCollapsed={isNavCollapsed}
         onToggleCollapse={toggleNavCollapse}
       />
-      
+
       <div className="flex-1">
         <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -79,7 +69,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <UserSettings user={user} onLogout={handleLogout} />
+                {user && <UserSettings user={user} onLogout={handleLogout} />}
               </div>
             </div>
           </div>
@@ -87,7 +77,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
-            {children}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+                </div>
+              </div>
+            ) : (
+              children
+            )}
           </div>
         </div>
       </div>
