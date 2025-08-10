@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AppLayout from '../../../components/AppLayout';
 
 interface AssetCategory {
   id: number;
@@ -178,7 +177,7 @@ export default function AssetIntakePage() {
   };
 
   return (
-    <AppLayout>
+    <>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Asset Intake</h1>
           <p className="mt-2 text-gray-600">Register new assets for recovery and tracking</p>
@@ -534,6 +533,6 @@ export default function AssetIntakePage() {
             </div>
           </form>
         </div>
-    </AppLayout>
+    </>
   );
 }
