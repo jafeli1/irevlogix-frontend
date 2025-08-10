@@ -225,98 +225,6 @@ export default function ReportsDashboardsPage() {
       revenueMaterial,
       totalCost,
       processingCost,
-  const fetchDrilldown = async (title: string, type: 'processinglots' | 'processedmaterials', opts?: { status?: string; from?: string; to?: string; page?: number; pageSize?: number }) => {
-    if (!token) return;
-    setDrillTitle(title);
-    setDrillOpen(true);
-    setDrillLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set('type', type);
-      if (opts?.status) params.set('status', opts.status);
-      if (opts?.from) params.set('from', opts.from);
-  const fetchDrilldown = async (title: string, type: 'processinglots' | 'processedmaterials', opts?: { status?: string; from?: string; to?: string; page?: number; pageSize?: number }) => {
-    if (!token) return;
-    setDrillTitle(title);
-    setDrillOpen(true);
-    setDrillLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set('type', type);
-      if (opts?.status) params.set('status', opts.status);
-      if (opts?.from) params.set('from', opts.from);
-      if (opts?.to) params.set('to', opts.to);
-      params.set('page', String(opts?.page ?? 1));
-      params.set('pageSize', String(opts?.pageSize ?? 25));
-      const res = await fetch(`https://irevlogix-backend.onrender.com/api/reports/drilldown?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        setDrillRows([]);
-        return;
-      }
-      const data: { items?: DrilldownApiItem[]; totalCount?: number; page?: number; pageSize?: number } = await res.json();
-      const items = data.items ?? [];
-      const mapped: DrillRow[] = items.map((it) => {
-        if (it.recordType?.toLowerCase() === 'processinglot') {
-          return {
-            id: it.id,
-            dateCreated: it.date ?? undefined,
-            totalProcessedWeight: it.weightLbs ?? undefined,
-            certificationStatus: it.status ?? undefined,
-          } as ProcessingLot;
-        }
-        return {
-          id: it.id,
-          materialType: it.nameOrType ?? undefined,
-          dateCreated: it.date ?? undefined,
-          weightLbs: it.weightLbs ?? undefined,
-          status: it.status ?? undefined,
-        } as ProcessedMaterial;
-      });
-      setDrillRows(mapped);
-    } catch {
-      setDrillRows([]);
-    } finally {
-      setDrillLoading(false);
-    }
-  };
-      if (opts?.to) params.set('to', opts.to);
-      params.set('page', String(opts?.page ?? 1));
-      params.set('pageSize', String(opts?.pageSize ?? 25));
-      const res = await fetch(`https://irevlogix-backend.onrender.com/api/reports/drilldown?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        setDrillRows([]);
-        return;
-      }
-      const data: { items?: DrilldownApiItem[]; totalCount?: number; page?: number; pageSize?: number } = await res.json();
-      const items = data.items ?? [];
-      const mapped: DrillRow[] = items.map((it) => {
-        if (it.recordType?.toLowerCase() === 'processinglot') {
-          return {
-            id: it.id,
-            dateCreated: it.date ?? undefined,
-            totalProcessedWeight: it.weightLbs ?? undefined,
-            certificationStatus: it.status ?? undefined,
-          } as ProcessingLot;
-        }
-        return {
-          id: it.id,
-          materialType: it.nameOrType ?? undefined,
-          dateCreated: it.date ?? undefined,
-          weightLbs: it.weightLbs ?? undefined,
-          status: it.status ?? undefined,
-        } as ProcessedMaterial;
-      });
-      setDrillRows(mapped);
-    } catch {
-      setDrillRows([]);
-    } finally {
-      setDrillLoading(false);
-    }
-  };
 
       incomingMaterialCost,
       costTransportation,
@@ -329,6 +237,58 @@ export default function ReportsDashboardsPage() {
       regulatoryStatus,
     };
   }, [processingLots, processedMaterials, assets]);
+
+  const fetchDrilldown = async (
+    title: string,
+    type: 'processinglots' | 'processedmaterials',
+    opts?: { status?: string; from?: string; to?: string; page?: number; pageSize?: number }
+  ) => {
+    if (!token) return;
+    setDrillTitle(title);
+    setDrillOpen(true);
+    setDrillLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set('type', type);
+      if (opts?.status) params.set('status', opts.status);
+      if (opts?.from) params.set('from', opts.from);
+      if (opts?.to) params.set('to', opts.to);
+      params.set('page', String(opts?.page ?? 1));
+      params.set('pageSize', String(opts?.pageSize ?? 25));
+      const res = await fetch(`https://irevlogix-backend.onrender.com/api/reports/drilldown?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        setDrillRows([]);
+        return;
+      }
+      const data: { items?: DrilldownApiItem[]; totalCount?: number; page?: number; pageSize?: number } = await res.json();
+      const items = data.items ?? [];
+      const mapped: DrillRow[] = items.map((it) => {
+        const rt = (it.recordType || '').toLowerCase();
+        if (rt === 'processinglot') {
+          return {
+            id: it.id,
+            dateCreated: (it as any).date ?? undefined,
+            totalProcessedWeight: it.weightLbs ?? undefined,
+            certificationStatus: it.status ?? undefined,
+          } as unknown as DrillRow;
+        }
+        return {
+          id: it.id,
+          materialType: it.nameOrType ?? undefined,
+          dateCreated: (it as any).date ?? undefined,
+          weightLbs: it.weightLbs ?? undefined,
+          status: it.status ?? undefined,
+        } as unknown as DrillRow;
+      });
+      setDrillRows(mapped);
+    } catch {
+      setDrillRows([]);
+    } finally {
+      setDrillLoading(false);
+    }
+  };
 
   const openDrill = (title: string, rows: DrillRow[]) => {
     setDrillTitle(title);
