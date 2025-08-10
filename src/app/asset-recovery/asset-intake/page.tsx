@@ -162,7 +162,7 @@ export default function AssetIntakePage() {
   return (
     <AppLayout>
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Asset Tracking</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Asset Intake</h1>
           <p className="mt-2 text-gray-600">Register new assets for recovery and tracking</p>
         </div>
 
