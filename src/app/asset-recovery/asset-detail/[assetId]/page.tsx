@@ -5,6 +5,65 @@ import { useParams, useRouter } from "next/navigation";
 import AppLayout from "../../../../components/AppLayout";
 
 type TabKey = "profile" | "data" | "coc" | "recycling" | "documents";
+type AssetDocument = {
+type AssetDocument = {
+  id: number;
+  assetId: number;
+  fileName: string;
+  filePath: string;
+  contentType: string;
+  description?: string | null;
+  dateCreated?: string;
+};
+
+type Asset = {
+  id: number;
+  assetID?: string;
+  assetId?: string;
+  serialNumber?: string;
+  assetCategory?: { name?: string };
+  manufacturer?: string;
+  model?: string;
+  currentStatus?: { statusName?: string };
+  estimatedResaleValue?: number;
+  actualSalePrice?: number;
+  costOfRecovery?: number;
+  reuseDisposition?: boolean;
+  resaleDisposition?: boolean;
+  buyer?: string;
+  recipient?: string;
+  resalePlatform?: string;
+  purpose?: string;
+};
+  id: number;
+  assetId: number;
+  fileName: string;
+  filePath: string;
+  contentType: string;
+  description?: string | null;
+  dateCreated?: string;
+};
+
+type Asset = {
+  id: number;
+  assetID?: string;
+  assetId?: string;
+  serialNumber?: string;
+  assetCategory?: { name?: string };
+  manufacturer?: string;
+  model?: string;
+  currentStatus?: { statusName?: string };
+  estimatedResaleValue?: number;
+  actualSalePrice?: number;
+  costOfRecovery?: number;
+  reuseDisposition?: boolean;
+  resaleDisposition?: boolean;
+  buyer?: string;
+  recipient?: string;
+  resalePlatform?: string;
+  purpose?: string;
+};
+
 
 export default function AssetDetailPage() {
   const params = useParams();
@@ -14,10 +73,10 @@ export default function AssetDetailPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("profile");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [documents, setDocuments] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<AssetDocument[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  const [asset, setAsset] = useState<any>(null);
+  const [asset, setAsset] = useState<Asset | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -36,10 +95,11 @@ export default function AssetDetailPage() {
           return;
         }
         if (!res.ok) throw new Error("Failed to fetch asset");
-        const data = await res.json();
+        const data: Asset = await res.json();
         if (!ignore) setAsset(data);
-      } catch (e: any) {
-        if (!ignore) setError(e.message || "Failed to load asset");
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Failed to load asset";
+        if (!ignore) setError(msg);
       } finally {
         if (!ignore) setLoading(false);
       }
@@ -52,7 +112,7 @@ export default function AssetDetailPage() {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
         });
         if (res.ok) {
-          const data = await res.json();
+          const data: AssetDocument[] = await res.json();
           setDocuments(data);
         }
       } catch {}

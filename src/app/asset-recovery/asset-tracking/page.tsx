@@ -7,15 +7,17 @@ import AppLayout from '../../../components/AppLayout';
 interface Asset {
   id: number;
   assetID: string;
-  assetCategory?: { name: string };
+  assetCategory?: { name?: string };
   manufacturer: string;
   model: string;
   condition: string;
   estimatedValue: number;
   isDataBearing: boolean;
   currentLocation: string;
-  currentStatus?: { statusName: string };
+  currentStatus?: { statusName?: string };
   dateCreated: string;
+  client?: { name?: string } | null;
+  clientName?: string | null;
 }
 
 interface TrackingDashboard {
@@ -49,6 +51,9 @@ export default function AssetTrackingPage() {
 
   useEffect(() => {
     fetchAssets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, conditionFilter, dataBearingFilter, locationFilter, page]);
+  useEffect(() => {
     fetchDashboard();
   }, []);
 
@@ -59,15 +64,24 @@ export default function AssetTrackingPage() {
         router.push('/login');
         return;
       }
+      const qs = new URLSearchParams();
+      if (searchTerm) qs.set('search', searchTerm);
+      if (conditionFilter) qs.set('condition', conditionFilter);
+      if (dataBearingFilter) qs.set('isDataBearing', dataBearingFilter);
+      if (locationFilter) qs.set('location', locationFilter);
+      qs.set('page', String(page));
+      qs.set('pageSize', String(pageSize));
 
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/Assets', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Assets?' + qs.toString(), {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': 'Bearer ' + token,
           'Content-Type': 'application/json',
         },
       });
 
       if (response.ok) {
+        const totalHeader = response.headers.get('X-Total-Count');
+        if (totalHeader) setTotal(parseInt(totalHeader, 10) || 0);
         const data = await response.json();
         setAssets(data);
       } else if (response.status === 401) {
@@ -112,7 +126,7 @@ export default function AssetTrackingPage() {
     const matchesDataBearing = !dataBearingFilter || 
                               (dataBearingFilter === 'true' && asset.isDataBearing) ||
                               (dataBearingFilter === 'false' && !asset.isDataBearing);
-    const clientName = (asset as any)?.client?.name || (asset as any)?.clientName || '';
+    const clientName = asset.client?.name ?? asset.clientName ?? '';
     const matchesClient = !clientFilter || clientName.toLowerCase().includes(clientFilter.toLowerCase());
     const matchesLocation = !locationFilter || (asset.currentLocation || '').toLowerCase().includes(locationFilter.toLowerCase());
     return matchesSearch && matchesCondition && matchesDataBearing && matchesClient && matchesLocation;
@@ -389,6 +403,12 @@ export default function AssetTrackingPage() {
                         </button>
                       </td>
                     </tr>
+
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-3">
               <button
@@ -416,8 +436,8 @@ export default function AssetTrackingPage() {
                 if (dataBearingFilter) qs.set('isDataBearing', dataBearingFilter);
                 if (locationFilter) qs.set('location', locationFilter);
                 qs.set('export', 'csv');
-                const resp = await fetch(`https://irevlogix-backend.onrender.com/api/Assets?${qs.toString()}`, {
-                  headers: { Authorization: token ? \`Bearer \${token}\` : '' }
+                const resp = await fetch('https://irevlogix-backend.onrender.com/api/Assets?' + qs.toString(), {
+                  headers: { Authorization: token ? ('Bearer ' + token) : '' }
                 });
                 const blob = await resp.blob();
                 const url = window.URL.createObjectURL(blob);
@@ -433,11 +453,6 @@ export default function AssetTrackingPage() {
             </button>
           </div>
 
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
     </AppLayout>
   );
