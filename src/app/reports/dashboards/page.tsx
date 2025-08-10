@@ -451,59 +451,62 @@ export default function ReportsDashboardsPage() {
               {drillLoading ? (
                 <div className="py-6 text-center text-gray-600">Loading...</div>
               ) : (
-                <table className="min-w-full">
-                <thead>
-                  <tr className="text-left border-b">
-                    <th className="px-3 py-2">Id</th>
-                    <th className="px-3 py-2">Type</th>
-                    <th className="px-3 py-2">Date</th>
-                    <th className="px-3 py-2">Weight</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Link</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {drillRows.map((r: DrillRow) => {
-                    const isLot = 'certificationStatus' in r || 'processingCost' in r || 'totalProcessedWeight' in r;
-                    const isPM = 'materialType' in r || 'processingLotId' in r;
-                    const dateVal = (() => {
-                      if ('completionDate' in r && r.completionDate) return r.completionDate;
-                      if ('dateCreated' in r && r.dateCreated) return r.dateCreated;
-                      if ('createdAt' in r && r.createdAt) return r.createdAt;
-                      return null;
-                    })();
-                    const weightVal = (() => {
-                      if ('totalProcessedWeight' in r && r.totalProcessedWeight !== undefined) return r.totalProcessedWeight;
-                      if ('totalIncomingWeight' in r && r.totalIncomingWeight !== undefined) return r.totalIncomingWeight;
-                      if ('weightLbs' in r && r.weightLbs !== undefined) return r.weightLbs;
-                      if ('weight' in r && r.weight !== undefined) return r.weight;
-                      return null;
-                    })();
-                    return (
-                      <tr key={r.id} className="border-b hover:bg-gray-50">
-                        <td className="px-3 py-2">{r.id}</td>
-                        <td className="px-3 py-2">{isLot ? 'Processing Lot' : isPM ? 'Processed Material' : ('category' in r ? r.category : '—')}</td>
-                        <td className="px-3 py-2">{dateVal ? new Date(dateVal).toLocaleDateString() : '—'}</td>
-                        <td className="px-3 py-2">{weightVal ?? '—'}</td>
-                        <td className="px-3 py-2">{('certificationStatus' in r && r.certificationStatus) || ('status' in r && r.status) || '—'}</td>
-                        <td className="px-3 py-2">
-                          {isLot ? (
-                            <a className="text-blue-600 underline" href={`/processing/lot-detail/${r.id}`}>View</a>
-                          ) : isPM ? (
-                            <a className="text-blue-600 underline" href={`/downstream/processedmaterial-detail/${r.id}`}>View</a>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
+                <>
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="text-left border-b">
+                        <th className="px-3 py-2">Id</th>
+                        <th className="px-3 py-2">Type</th>
+                        <th className="px-3 py-2">Date</th>
+                        <th className="px-3 py-2">Weight</th>
+                        <th className="px-3 py-2">Status</th>
+                        <th className="px-3 py-2">Link</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {drillRows.length === 0 && (
-                <div className="text-center text-gray-500 py-8">No data</div>
-              )}
-            </div>
+                    </thead>
+                    <tbody>
+                      {drillRows.map((r: DrillRow) => {
+                        const isLot = 'certificationStatus' in r || 'processingCost' in r || 'totalProcessedWeight' in r;
+                        const isPM = 'materialType' in r || 'processingLotId' in r;
+                        const dateVal = (() => {
+                          if ('completionDate' in r && r.completionDate) return r.completionDate;
+                          if ('dateCreated' in r && r.dateCreated) return r.dateCreated;
+                          if ('createdAt' in r && r.createdAt) return r.createdAt;
+                          return null;
+                        })();
+                        const weightVal = (() => {
+                          if ('totalProcessedWeight' in r && r.totalProcessedWeight !== undefined) return r.totalProcessedWeight;
+                          if ('totalIncomingWeight' in r && r.totalIncomingWeight !== undefined) return r.totalIncomingWeight;
+                          if ('weightLbs' in r && r.weightLbs !== undefined) return r.weightLbs;
+                          if ('weight' in r && r.weight !== undefined) return r.weight;
+                          return null;
+                        })();
+                        return (
+                          <tr key={r.id} className="border-b hover:bg-gray-50">
+                            <td className="px-3 py-2">{r.id}</td>
+                            <td className="px-3 py-2">{isLot ? 'Processing Lot' : isPM ? 'Processed Material' : ('category' in r ? r.category : '—')}</td>
+                            <td className="px-3 py-2">{dateVal ? new Date(dateVal).toLocaleDateString() : '—'}</td>
+                            <td className="px-3 py-2">{weightVal ?? '—'}</td>
+                            <td className="px-3 py-2">{('certificationStatus' in r && r.certificationStatus) || ('status' in r && r.status) || '—'}</td>
+                            <td className="px-3 py-2">
+                              {isLot ? (
+                                <a className="text-blue-600 underline" href={`/processing/lot-detail/${r.id}`}>View</a>
+                              ) : isPM ? (
+                                <a className="text-blue-600 underline" href={`/downstream/processedmaterial-detail/${r.id}`}>View</a>
+                              ) : (
+                                '—'
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {drillRows.length === 0 && (
+                    <div className="text-center text-gray-500 py-8">No data</div>
+                  )}
+                </>
+              )
+            }
             <div className="px-4 py-3 border-t text-right">
               <button className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200" onClick={() => setDrillOpen(false)}>Close</button>
             </div>
