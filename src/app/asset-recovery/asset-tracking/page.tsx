@@ -145,9 +145,11 @@ export default function AssetTrackingPage() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading asset tracking data...</p>
+        <div className="p-6">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading asset tracking data...</p>
+          </div>
         </div>
       </AppLayout>
     );
@@ -156,6 +158,7 @@ export default function AssetTrackingPage() {
   return (
     <AppLayout>
 
+      <div className="p-6 space-y-6">
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
@@ -450,6 +453,7 @@ export default function AssetTrackingPage() {
           </div>
 
         </div>
+      </div>
     </AppLayout>
   );
 }
