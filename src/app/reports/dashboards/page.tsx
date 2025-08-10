@@ -69,17 +69,6 @@ interface DrilldownApiItem {
   status?: string | null;
 }
 
-
-interface DrilldownApiItem {
-  recordType: string;
-  id: number;
-  nameOrType?: string | null;
-  date?: string | null;
-  weightLbs?: number | null;
-  status?: string | null;
-}
-
-
 interface ProcessingLot {
   id: number | string;
   totalProcessedWeight?: number;
@@ -269,7 +258,7 @@ export default function ReportsDashboardsPage() {
         if (rt === 'processinglot') {
           return {
             id: it.id,
-            dateCreated: (it as any).date ?? undefined,
+            dateCreated: it.date ?? undefined,
             totalProcessedWeight: it.weightLbs ?? undefined,
             certificationStatus: it.status ?? undefined,
           } as unknown as DrillRow;
@@ -277,7 +266,7 @@ export default function ReportsDashboardsPage() {
         return {
           id: it.id,
           materialType: it.nameOrType ?? undefined,
-          dateCreated: (it as any).date ?? undefined,
+          dateCreated: it.date ?? undefined,
           weightLbs: it.weightLbs ?? undefined,
           status: it.status ?? undefined,
         } as unknown as DrillRow;
@@ -505,8 +494,9 @@ export default function ReportsDashboardsPage() {
                     <div className="text-center text-gray-500 py-8">No data</div>
                   )}
                 </>
-              )
-            }
+              )}
+            </div>
+
             <div className="px-4 py-3 border-t text-right">
               <button className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200" onClick={() => setDrillOpen(false)}>Close</button>
             </div>
