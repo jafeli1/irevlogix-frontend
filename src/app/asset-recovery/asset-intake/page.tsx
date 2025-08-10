@@ -144,7 +144,10 @@ export default function AssetIntakePage() {
   const fetchStatuses = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        setStatuses(FALLBACK_STATUSES);
+        return;
+      }
 
       const response = await fetch('https://irevlogix-backend.onrender.com/api/assettracking/statuses', {
         headers: {
@@ -155,10 +158,12 @@ export default function AssetIntakePage() {
 
       if (response.ok) {
         const data = await response.json();
-        setStatuses(data);
+        setStatuses(data && Array.isArray(data) && data.length ? data : FALLBACK_STATUSES);
+      } else {
+        setStatuses(FALLBACK_STATUSES);
       }
-    } catch (error) {
-      console.error('Failed to fetch statuses');
+    } catch {
+      setStatuses(FALLBACK_STATUSES);
     }
   };
 
