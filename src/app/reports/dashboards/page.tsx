@@ -495,6 +495,8 @@ export default function ReportsDashboardsPage() {
                   )}
                 </>
               )}
+            </div>
+
             <div className="px-4 py-3 border-t text-right">
               <button className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200" onClick={() => setDrillOpen(false)}>Close</button>
             </div>
