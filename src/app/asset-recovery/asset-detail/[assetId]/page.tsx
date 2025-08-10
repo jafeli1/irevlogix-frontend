@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import AppLayout from "../../../components/AppLayout";
+import AppLayout from "../../../../components/AppLayout";
 type TabKey = "profile" | "data" | "coc" | "recycling" | "documents";
 
 type AssetDocument = {
