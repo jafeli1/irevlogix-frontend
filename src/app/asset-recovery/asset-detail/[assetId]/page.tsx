@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-
+import Link from "next/link";
 import AppLayout from "../../../../components/AppLayout";
 type TabKey = "profile" | "data" | "coc" | "recycling" | "documents";
 
@@ -47,6 +47,8 @@ export default function AssetDetailPage() {
   const [error, setError] = useState("");
   const [documents, setDocuments] = useState<AssetDocument[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedAsset, setEditedAsset] = useState<Partial<Asset>>({});
 
   const [asset, setAsset] = useState<Asset | null>(null);
 
@@ -68,7 +70,10 @@ export default function AssetDetailPage() {
         }
         if (!res.ok) throw new Error("Failed to fetch asset");
         const data: Asset = await res.json();
-        if (!ignore) setAsset(data);
+        if (!ignore) {
+          setAsset(data);
+          setEditedAsset(data);
+        }
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : "Failed to load asset";
         if (!ignore) setError(msg);
@@ -97,17 +102,84 @@ export default function AssetDetailPage() {
     };
   }, [assetId, router]);
 
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/api/assets/${assetId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editedAsset),
+      });
+
+      if (response.ok) {
+        setAsset(editedAsset as Asset);
+        setIsEditing(false);
+      } else if (response.status === 401) {
+        localStorage.removeItem("token");
+        router.push("/login");
+      } else {
+        setError('Failed to update asset');
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    }
+  };
+
   return (
     <AppLayout>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Asset Detail</h1>
-        <p className="mt-2 text-gray-600">View and manage asset lifecycle information</p>
-      </div>
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Asset Detail</h1>
+              <p className="mt-1 text-sm text-gray-600">View and manage asset lifecycle information</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Link
+                href="/asset-recovery/asset-tracking"
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Back to Assets
+              </Link>
+              {!isEditing ? (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Edit
+                </button>
+              ) : (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditedAsset(asset || {});
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                  >
+                    Save
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-      {error && <div className="mb-4 rounded-md bg-red-50 p-3 text-red-700">{error}</div>}
-      {loading && <div className="mb-4 rounded-md bg-gray-50 p-3 text-gray-700">Loading...</div>}
+        <div className="p-6">
+          {error && <div className="mb-4 rounded-md bg-red-50 p-3 text-red-700">{error}</div>}
+          {loading && <div className="mb-4 rounded-md bg-gray-50 p-3 text-gray-700">Loading...</div>}
 
-      <div className="mb-6 rounded-md border bg-white p-4">
+          <div className="mb-6 rounded-md border bg-white p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
             <div className="text-sm text-gray-500">Asset ID</div>
@@ -136,7 +208,7 @@ export default function AssetDetailPage() {
         </div>
       </div>
 
-      <div className="border-b border-gray-200 mb-6">
+          <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex space-x-8">
           <button
             type="button"
@@ -196,21 +268,39 @@ export default function AssetDetailPage() {
         </nav>
       </div>
 
-      <div className="rounded-md border bg-white p-4">
+          <div className="rounded-md border bg-white p-4">
         {activeTab === "profile" && (
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Estimated Resale Value ($)</label>
-                <input type="number" className="mt-1 w-full rounded-md border px-3 py-2" defaultValue={asset?.estimatedResaleValue || ""} />
+                <input 
+                  type="number" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.estimatedResaleValue || "") : (asset?.estimatedResaleValue || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, estimatedResaleValue: parseFloat(e.target.value) || 0 }))}
+                  disabled={!isEditing}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Actual Sale Price ($)</label>
-                <input type="number" className="mt-1 w-full rounded-md border px-3 py-2" defaultValue={asset?.actualSalePrice || ""} />
+                <input 
+                  type="number" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.actualSalePrice || "") : (asset?.actualSalePrice || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, actualSalePrice: parseFloat(e.target.value) || 0 }))}
+                  disabled={!isEditing}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Cost Of Recovery ($)</label>
-                <input type="number" className="mt-1 w-full rounded-md border px-3 py-2" defaultValue={asset?.costOfRecovery || ""} />
+                <input 
+                  type="number" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.costOfRecovery || "") : (asset?.costOfRecovery || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfRecovery: parseFloat(e.target.value) || 0 }))}
+                  disabled={!isEditing}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Profit / Loss ($)</label>
@@ -227,18 +317,25 @@ export default function AssetDetailPage() {
               <div className="mt-3 grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Buyer / Recipient</label>
-                  <input className="mt-1 w-full rounded-md border px-3 py-2" defaultValue={asset?.buyer || asset?.recipient || ""} />
+                  <input 
+                    className="mt-1 w-full rounded-md border px-3 py-2" 
+                    value={isEditing ? (editedAsset?.buyer || editedAsset?.recipient || "") : (asset?.buyer || asset?.recipient || "")}
+                    onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, buyer: e.target.value }))}
+                    disabled={!isEditing}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Platform / Purpose</label>
-                  <input className="mt-1 w-full rounded-md border px-3 py-2" defaultValue={asset?.resalePlatform || asset?.purpose || ""} />
+                  <input 
+                    className="mt-1 w-full rounded-md border px-3 py-2" 
+                    value={isEditing ? (editedAsset?.resalePlatform || editedAsset?.purpose || "") : (asset?.resalePlatform || asset?.purpose || "")}
+                    onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, resalePlatform: e.target.value }))}
+                    disabled={!isEditing}
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end">
-              <button className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save Changes</button>
-            </div>
           </div>
         )}
 
@@ -282,9 +379,6 @@ export default function AssetDetailPage() {
               </div>
             </div>
 
-            <div className="flex justify-end">
-              <button className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save Changes</button>
-            </div>
           </div>
         )}
 
@@ -327,9 +421,6 @@ export default function AssetDetailPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <input className="rounded-md border px-3 py-2" placeholder="Processing Lot ID (optional)" />
             </div>
-            <div className="flex justify-end">
-              <button className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save</button>
-            </div>
           </div>
         )}
 
@@ -345,6 +436,8 @@ export default function AssetDetailPage() {
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </AppLayout>
   );
