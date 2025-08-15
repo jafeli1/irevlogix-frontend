@@ -390,15 +390,9 @@ export default function AssetTrackingPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => router.push(`/asset-recovery/asset-detail/${asset.id}`)}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
+                          className="text-blue-600 hover:text-blue-900"
                         >
-                          View
-                        </button>
-                        <button
-                          onClick={() => router.push(`/asset-recovery/assets/edit/${asset.id}`)}
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Edit
+                          View Details
                         </button>
                       </td>
                     </tr>
