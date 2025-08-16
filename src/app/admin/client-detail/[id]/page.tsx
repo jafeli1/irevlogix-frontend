@@ -66,7 +66,7 @@ export default function ClientDetailPage() {
 
       try {
         const permissions = await fetchUserPermissions(token);
-        if (!hasPermission(permissions, 'clients', 'read')) {
+        if (!hasPermission(permissions, 'Administration', 'Read')) {
           router.push('/unauthorized');
           return;
         }
