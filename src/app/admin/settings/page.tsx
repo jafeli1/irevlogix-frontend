@@ -86,10 +86,10 @@ export default function AdminSettingsPage() {
         const data = await response.json();
         setSettings(data);
         
-        const settingsMap = data.reduce((acc: any, setting: ApplicationSetting) => {
+        const settingsMap = data.reduce((acc: Record<string, string>, setting: ApplicationSetting) => {
           acc[setting.settingKey] = setting.settingValue;
           return acc;
-        }, {});
+        }, {} as Record<string, string>);
 
         setFormData(prev => ({
           ...prev,
