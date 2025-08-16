@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../components/AppLayout';
-import { hasPermission, fetchUserPermissions } from '../../../utils/rbac';
+import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../utils/rbac';
 
 interface User {
   id: number;
@@ -42,7 +42,7 @@ interface Pagination {
 export default function AdminUsersPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [permissions, setPermissions] = useState<any>(null);
+  const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [filters, setFilters] = useState<Filters>({
@@ -84,14 +84,7 @@ export default function AdminUsersPage() {
     loadPermissions();
   }, [router]);
 
-  useEffect(() => {
-    if (!loading && hasPermission(permissions, 'Administration', 'Read')) {
-      fetchUsers();
-      fetchClients();
-    }
-  }, [loading, permissions, filters, pagination.page, pagination.pageSize]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const queryParams = new URLSearchParams({
         page: pagination.page.toString(),
@@ -123,9 +116,9 @@ export default function AdminUsersPage() {
     } catch (error) {
       console.error('Error fetching users:', error);
     }
-  };
+  }, [pagination.page, pagination.pageSize, filters]);
 
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/clients', {
         headers: {
@@ -142,7 +135,14 @@ export default function AdminUsersPage() {
     } catch (error) {
       console.error('Error fetching clients:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!loading && permissions && hasPermission(permissions, 'Administration', 'Read')) {
+      fetchUsers();
+      fetchClients();
+    }
+  }, [loading, permissions, fetchUsers, fetchClients]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
