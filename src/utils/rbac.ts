@@ -71,7 +71,11 @@ export const fetchUserPermissions = async (token: string): Promise<UserPermissio
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     const userRoles = Array.isArray(userData.roles) ? userData.roles : [userData.roles].filter(Boolean);
     
-    if (userRoles.includes('Administrator')) {
+    const isAdmin =
+      userRoles.includes('Administrator') ||
+      userRoles.includes('System Administrator');
+    
+    if (isAdmin) {
       const adminPermissions = generateAdminPermissions();
       return { roles: userRoles, permissions: adminPermissions };
     }
