@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import AppLayout from '../../../components/AppLayout';
 
 interface ApplicationSetting {
@@ -67,11 +68,7 @@ export default function AdminSettingsPage() {
   });
   const router = useRouter();
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -114,12 +111,16 @@ export default function AdminSettingsPage() {
       } else {
         setError('Failed to fetch settings');
       }
-    } catch (error) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -196,7 +197,7 @@ export default function AdminSettingsPage() {
         }
       }
 
-      const applicationSettings: { [key: string]: any } = {};
+      const applicationSettings: { [key: string]: string | number | boolean } = {};
       settings.filter(s => s.category === 'Application').forEach(setting => {
         if (setting.settingKey === 'SettingKey') {
           applicationSettings[setting.settingKey] = formData.settingKey;
@@ -246,7 +247,7 @@ export default function AdminSettingsPage() {
       } else {
         setError('Failed to save settings');
       }
-    } catch (error) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -428,9 +429,11 @@ export default function AdminSettingsPage() {
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
                   {logoPreview && (
-                    <img
+                    <Image
                       src={logoPreview}
                       alt="Logo preview"
+                      width={64}
+                      height={64}
                       className="h-16 w-16 object-contain border border-gray-300 rounded"
                     />
                   )}
