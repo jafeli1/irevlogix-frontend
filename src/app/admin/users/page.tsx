@@ -42,7 +42,7 @@ interface Pagination {
 export default function AdminUsersPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [permissions, setPermissions] = useState<any[]>([]);
+  const [permissions, setPermissions] = useState<any>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [filters, setFilters] = useState<Filters>({
