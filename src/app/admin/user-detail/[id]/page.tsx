@@ -70,7 +70,7 @@ export default function UserDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [permissions, setPermissions] = useState<any[]>([]);
+  const [permissions, setPermissions] = useState<any>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [formData, setFormData] = useState<FormData>({
     username: '',
@@ -117,7 +117,7 @@ export default function UserDetailPage() {
         fetchUser();
       }
     }
-  }, [loading, permissions, userId, isNewUser]);
+  }, [loading, permissions, userId, isNewUser, fetchUser]);
 
   const fetchClients = async () => {
     try {
