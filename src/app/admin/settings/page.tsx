@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '../../../components/AppLayout';
 
@@ -67,11 +67,8 @@ export default function AdminSettingsPage() {
   });
   const router = useRouter();
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
+  const fetchSettings = useCallback(async () => {
 
-  const fetchSettings = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -89,12 +86,12 @@ export default function AdminSettingsPage() {
         const data = await response.json();
         setSettings(data);
         
-        const settingsMap = data.reduce((acc: any, setting: ApplicationSetting) => {
+        const settingsMap = data.reduce((acc: Record<string, string>, setting: ApplicationSetting) => {
           acc[setting.settingKey] = setting.settingValue;
           return acc;
         }, {});
 
-        setFormData(prev => ({
+        setFormData((prev: SettingsFormData) => ({
           ...prev,
           applicationLogoPath: settingsMap.ApplicationLogoPath || '',
           defaultLogoutPageUrl: settingsMap.DefaultLogoutPageUrl || '',
@@ -114,16 +111,20 @@ export default function AdminSettingsPage() {
       } else {
         setError('Failed to fetch settings');
       }
-    } catch (error) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: SettingsFormData) => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
               type === 'number' ? (value ? parseInt(value) : 0) : value
@@ -169,8 +170,8 @@ export default function AdminSettingsPage() {
       } else {
         throw new Error('Failed to upload logo');
       }
-    } catch (error) {
-      throw error;
+    } catch (uploadError) {
+      throw uploadError;
     }
   };
 
@@ -196,8 +197,8 @@ export default function AdminSettingsPage() {
         }
       }
 
-      const applicationSettings: { [key: string]: any } = {};
-      settings.filter(s => s.category === 'Application').forEach(setting => {
+      const applicationSettings: Record<string, string | boolean> = {};
+      settings.filter((s: ApplicationSetting) => s.category === 'Application').forEach((setting: ApplicationSetting) => {
         if (setting.settingKey === 'SettingKey') {
           applicationSettings[setting.settingKey] = formData.settingKey;
         } else if (setting.settingKey === 'SettingValue') {
@@ -246,7 +247,7 @@ export default function AdminSettingsPage() {
       } else {
         setError('Failed to save settings');
       }
-    } catch (error) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -428,11 +429,13 @@ export default function AdminSettingsPage() {
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
                   {logoPreview && (
-                    <img
-                      src={logoPreview}
-                      alt="Logo preview"
-                      className="h-16 w-16 object-contain border border-gray-300 rounded"
-                    />
+                    <div className="h-16 w-16 border border-gray-300 rounded overflow-hidden">
+                      <img
+                        src={logoPreview}
+                        alt="Logo preview"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
                   )}
                 </div>
                 <p className="mt-1 text-sm text-gray-500">Upload and preview application logo</p>
