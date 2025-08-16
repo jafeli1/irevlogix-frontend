@@ -69,7 +69,6 @@ export default function AdminSettingsPage() {
   const router = useRouter();
 
   const fetchSettings = useCallback(async () => {
-
     try {
       const token = localStorage.getItem('token');
       if (!token) {
