@@ -22,16 +22,6 @@ interface NavigationItem {
 
 const navigationItems: NavigationItem[] = [
   {
-    name: 'Authentication',
-    module: 'Authentication',
-    action: 'Read',
-    icon: '🔐',
-    subItems: [
-      { name: 'Login Settings', href: '/auth/settings', module: 'Authentication', action: 'Read' },
-      { name: 'Security', href: '/auth/security', module: 'Authentication', action: 'Update' },
-    ]
-  },
-  {
     name: 'Reverse Logistics',
     module: 'ReverseLogistics',
     action: 'Read',
