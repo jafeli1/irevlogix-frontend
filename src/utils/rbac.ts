@@ -26,7 +26,9 @@ export interface UserPermissions {
 }
 
 export const hasPermission = (userPermissions: UserPermissions, module: string, action: string): boolean => {
-  return userPermissions.permissions.some(p => p.module === module && p.action === action);
+  const m = module.toLowerCase();
+  const a = action.toLowerCase();
+  return userPermissions.permissions.some(p => p.module?.toLowerCase() === m && p.action?.toLowerCase() === a);
 };
 
 export const hasAnyPermission = (userPermissions: UserPermissions, permissions: Array<{module: string, action: string}>): boolean => {
@@ -34,7 +36,8 @@ export const hasAnyPermission = (userPermissions: UserPermissions, permissions: 
 };
 
 export const getModulePermissions = (userPermissions: UserPermissions, module: string): Permission[] => {
-  return userPermissions.permissions.filter(p => p.module === module);
+  const m = module.toLowerCase();
+  return userPermissions.permissions.filter(p => p.module?.toLowerCase() === m);
 };
 
 export const fetchUserPermissions = async (token: string): Promise<UserPermissions> => {
@@ -51,11 +54,26 @@ export const fetchUserPermissions = async (token: string): Promise<UserPermissio
     }
 
     const roles: Role[] = await rolesResponse.json();
-    const userRoles = JSON.parse(localStorage.getItem('user') || '{}').roles || [];
-    
+
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    const rawRoles = userData?.roles ?? [];
+    let userRoles: string[] = [];
+
+    if (Array.isArray(rawRoles)) {
+      if (rawRoles.length > 0 && typeof rawRoles[0] === 'string') {
+        userRoles = rawRoles as string[];
+      } else {
+        userRoles = (rawRoles as any[]).map(r => (typeof r === 'string' ? r : r?.name)).filter(Boolean);
+      }
+    } else if (typeof rawRoles === 'string') {
+      userRoles = [rawRoles];
+    }
+
+    const userRolesLC = userRoles.map(r => (r || '').toLowerCase());
+
     const permissions: Permission[] = [];
     roles.forEach(role => {
-      if (userRoles.includes(role.name)) {
+      if (userRolesLC.includes((role.name || '').toLowerCase())) {
         role.rolePermissions.forEach(rp => {
           if (!permissions.find(p => p.id === rp.permission.id)) {
             permissions.push(rp.permission);
@@ -69,12 +87,25 @@ export const fetchUserPermissions = async (token: string): Promise<UserPermissio
     console.error('Error fetching user permissions:', error);
     
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
-    const userRoles = Array.isArray(userData.roles) ? userData.roles : [userData.roles].filter(Boolean);
-    
+    const rawRoles = userData?.roles ?? [];
+    let userRoles: string[] = [];
+
+    if (Array.isArray(rawRoles)) {
+      if (rawRoles.length > 0 && typeof rawRoles[0] === 'string') {
+        userRoles = rawRoles as string[];
+      } else {
+        userRoles = (rawRoles as any[]).map(r => (typeof r === 'string' ? r : r?.name)).filter(Boolean);
+      }
+    } else if (typeof rawRoles === 'string') {
+      userRoles = [rawRoles];
+    }
+
+    const userRolesLC = userRoles.map(r => (r || '').toLowerCase());
+
     const isAdmin =
-      userRoles.includes('Administrator') ||
-      userRoles.includes('System Administrator');
-    
+      userRolesLC.includes('administrator'.toLowerCase()) ||
+      userRolesLC.includes('system administrator'.toLowerCase());
+
     if (isAdmin) {
       const adminPermissions = generateAdminPermissions();
       return { roles: userRoles, permissions: adminPermissions };
