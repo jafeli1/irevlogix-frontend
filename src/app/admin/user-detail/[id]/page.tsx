@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../../components/AppLayout';
-import { hasPermission, fetchUserPermissions } from '../../../../utils/rbac';
+import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../../utils/rbac';
 import { US_STATES, COUNTRIES } from '../../../../utils/constants';
 
 interface User {
@@ -70,7 +70,7 @@ export default function UserDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [permissions, setPermissions] = useState<any>(null);
+  const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [formData, setFormData] = useState<FormData>({
     username: '',
@@ -110,16 +110,7 @@ export default function UserDetailPage() {
     loadPermissions();
   }, []);
 
-  useEffect(() => {
-    if (!loading && hasPermission(permissions, 'Administration', 'Read')) {
-      fetchClients();
-      if (!isNewUser) {
-        fetchUser();
-      }
-    }
-  }, [loading, permissions, userId, isNewUser, fetchUser]);
-
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/clients', {
         headers: {
@@ -136,9 +127,9 @@ export default function UserDetailPage() {
     } catch (error) {
       console.error('Error fetching clients:', error);
     }
-  };
+  }, []);
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
         headers: {
@@ -174,7 +165,16 @@ export default function UserDetailPage() {
     } catch (error) {
       console.error('Error fetching user:', error);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!loading && permissions && hasPermission(permissions, 'Administration', 'Read')) {
+      fetchClients();
+      if (!isNewUser) {
+        fetchUser();
+      }
+    }
+  }, [loading, permissions, userId, isNewUser, fetchUser, fetchClients]);
 
   const validatePassword = (password: string): string[] => {
     const errors: string[] = [];
