@@ -59,11 +59,15 @@ export const fetchUserPermissions = async (token: string): Promise<UserPermissio
     const rawRoles = userData?.roles ?? [];
     let userRoles: string[] = [];
 
+    type UserRoleLike = string | { name?: string | null };
     if (Array.isArray(rawRoles)) {
-      if (rawRoles.length > 0 && typeof rawRoles[0] === 'string') {
-        userRoles = rawRoles as string[];
+      const rolesArr = rawRoles as UserRoleLike[];
+      if (rolesArr.length > 0 && typeof rolesArr[0] === 'string') {
+        userRoles = rolesArr as string[];
       } else {
-        userRoles = (rawRoles as any[]).map(r => (typeof r === 'string' ? r : r?.name)).filter(Boolean);
+        userRoles = rolesArr
+          .map(r => (typeof r === 'string' ? r : r?.name ?? ''))
+          .filter((v): v is string => Boolean(v));
       }
     } else if (typeof rawRoles === 'string') {
       userRoles = [rawRoles];
@@ -90,11 +94,15 @@ export const fetchUserPermissions = async (token: string): Promise<UserPermissio
     const rawRoles = userData?.roles ?? [];
     let userRoles: string[] = [];
 
+    type UserRoleLike = string | { name?: string | null };
     if (Array.isArray(rawRoles)) {
-      if (rawRoles.length > 0 && typeof rawRoles[0] === 'string') {
-        userRoles = rawRoles as string[];
+      const rolesArr = rawRoles as UserRoleLike[];
+      if (rolesArr.length > 0 && typeof rolesArr[0] === 'string') {
+        userRoles = rolesArr as string[];
       } else {
-        userRoles = (rawRoles as any[]).map(r => (typeof r === 'string' ? r : r?.name)).filter(Boolean);
+        userRoles = rolesArr
+          .map(r => (typeof r === 'string' ? r : r?.name ?? ''))
+          .filter((v): v is string => Boolean(v));
       }
     } else if (typeof rawRoles === 'string') {
       userRoles = [rawRoles];
