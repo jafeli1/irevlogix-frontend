@@ -216,7 +216,10 @@ export default function RoleDetailPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+    await saveRole();
+  };
+
+  const saveRole = async () => {
     if (!validateForm()) {
       return;
     }
@@ -487,7 +490,7 @@ export default function RoleDetailPage() {
                 {!role.isSystemRole && (
                   <div className="flex justify-end">
                     <button
-                      onClick={handleSubmit}
+                      onClick={saveRole}
                       disabled={saving}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
                     >
