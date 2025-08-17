@@ -58,7 +58,7 @@ export default function AssetTrackingStatusDetailPage() {
     clientId: ''
   });
 
-  const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
   const checkPermissions = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -145,7 +145,7 @@ export default function AssetTrackingStatusDetailPage() {
   }, [loading, fetchClients, fetchStatus]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {};
+    const newErrors: Partial<Record<keyof FormData, string>> = {};
 
     if (!formData.statusName.trim()) {
       newErrors.statusName = 'Status name is required';
