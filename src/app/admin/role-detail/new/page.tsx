@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../../components/AppLayout';
@@ -64,7 +64,7 @@ export default function NewRolePage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (e: any) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev: FormData) => ({ ...prev, [name]: value }));
 
@@ -73,7 +73,7 @@ export default function NewRolePage() {
     }
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -210,7 +210,7 @@ export default function NewRolePage() {
           <div className="mt-4 p-4 bg-blue-50 rounded-md">
             <h3 className="text-sm font-medium text-blue-900 mb-2">Next Steps</h3>
             <p className="text-sm text-blue-700">
-              After creating the role, you'll be redirected to the role details page where you can:
+              After creating the role, you&apos;ll be redirected to the role details page where you can:
             </p>
             <ul className="mt-2 text-sm text-blue-700 list-disc list-inside">
               <li>Configure permissions for different modules</li>
