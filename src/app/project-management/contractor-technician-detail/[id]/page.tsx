@@ -276,7 +276,7 @@ export default function ContractorTechnicianDetailPage() {
       });
 
       if (response.ok) {
-        let contractorId = isNew ? (await response.json()).id : parseInt(id);
+        const contractorId = isNew ? (await response.json()).id : parseInt(id);
 
         if (uploadFiles.backgroundCheck) {
           await uploadFile(uploadFiles.backgroundCheck, contractorId, 'BackgroundCheck');
@@ -362,7 +362,7 @@ export default function ContractorTechnicianDetailPage() {
       <AppLayout>
         <div className="text-center py-8">
           <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-          <p className="mt-2 text-gray-600">You don't have permission to manage contractor technicians.</p>
+          <p className="mt-2 text-gray-600">You don&apos;t have permission to manage contractor technicians.</p>
         </div>
       </AppLayout>
     );

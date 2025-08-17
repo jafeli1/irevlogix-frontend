@@ -20,10 +20,6 @@ interface ContractorTechnician {
   dateUpdated: string;
 }
 
-interface Client {
-  id: number;
-  companyName: string;
-}
 
 interface Pagination {
   page: number;
@@ -42,7 +38,6 @@ interface Filters {
 export default function ContractorTechniciansPage() {
   const router = useRouter();
   const [contractors, setContractors] = useState<ContractorTechnician[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [pagination, setPagination] = useState<Pagination>({
@@ -99,41 +94,27 @@ export default function ContractorTechniciansPage() {
     }
   }, [pagination.page, pagination.pageSize, filters, router]);
 
-  const fetchClients = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const response = await fetch('/api/admin/clients', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setClients(data);
-      }
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-    }
-  }, []);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      const userPermissions = await fetchUserPermissions();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+      
+      const userPermissions = await fetchUserPermissions(token);
       setPermissions(userPermissions);
       
       if (userPermissions && hasPermission(userPermissions, 'ProjectManagement', 'Read')) {
-        await Promise.all([fetchContractors(), fetchClients()]);
+        await fetchContractors();
       }
       setLoading(false);
     };
 
     loadData();
-  }, [fetchContractors, fetchClients]);
+  }, [fetchContractors, router]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -191,7 +172,7 @@ export default function ContractorTechniciansPage() {
       <AppLayout>
         <div className="text-center py-8">
           <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-          <p className="mt-2 text-gray-600">You don't have permission to view contractor technicians.</p>
+          <p className="mt-2 text-gray-600">You don&apos;t have permission to view contractor technicians.</p>
         </div>
       </AppLayout>
     );
