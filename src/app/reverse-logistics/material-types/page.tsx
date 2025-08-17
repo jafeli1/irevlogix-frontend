@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../components/AppLayout';
@@ -92,7 +92,7 @@ export default function MaterialTypesPage() {
       const data = await response.json();
       const totalCount = parseInt(response.headers.get('X-Total-Count') || '0');
       setMaterialTypes(data);
-      setPagination(prev => ({
+      setPagination((prev: Pagination) => ({
         ...prev,
         totalCount,
         totalPages: Math.ceil(totalCount / prev.pageSize)
@@ -110,21 +110,21 @@ export default function MaterialTypesPage() {
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setFilters((prev: Filters) => ({ ...prev, [name]: value }));
+    setPagination((prev: Pagination) => ({ ...prev, page: 1 }));
   };
 
   const clearFilters = () => {
     setFilters({
       name: ''
     });
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev: Pagination) => ({ ...prev, page: 1 }));
   };
 
   const exportToCSV = () => {
     const csvContent = [
       ['Material Type ID', 'Name', 'Description', 'Unit of Measure', 'Default Price Per Unit', 'Is Active'].join(','),
-      ...materialTypes.map(materialType => [
+      ...materialTypes.map((materialType: MaterialType) => [
         materialType.id,
         materialType.name,
         materialType.description || '',
@@ -144,7 +144,7 @@ export default function MaterialTypesPage() {
   };
 
   const handlePageChange = (newPage: number) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
+    setPagination((prev: Pagination) => ({ ...prev, page: newPage }));
   };
 
   if (loading) {
