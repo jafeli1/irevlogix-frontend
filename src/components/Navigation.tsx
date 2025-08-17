@@ -33,6 +33,15 @@ const navigationItems: NavigationItem[] = [
     ]
   },
   {
+    name: 'Project Management',
+    module: 'ProjectManagement',
+    action: 'Read',
+    icon: '📋',
+    subItems: [
+      { name: 'Contractor Technicians', href: '/project-management/contractor-technicians', module: 'ProjectManagement', action: 'Read' },
+    ]
+  },
+  {
     name: 'Material Processing',
     module: 'Processing',
     action: 'Read',
