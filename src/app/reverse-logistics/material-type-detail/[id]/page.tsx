@@ -170,7 +170,7 @@ export default function MaterialTypeDetailPage() {
     }));
 
     if (errors[name]) {
-      setErrors((prev: any) => ({ ...prev, [name]: '' }));
+      setErrors((prev: ValidationErrors) => ({ ...prev, [name]: '' }));
     }
   };
 
