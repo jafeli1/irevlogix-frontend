@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../components/AppLayout';
@@ -105,7 +105,7 @@ export default function AdminRolesPage() {
     }
   }, [loading, permissions, fetchRoles]);
 
-  const handleFilterChange = (e: any) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFilters((prev: Filters) => ({ ...prev, [name]: value }));
     setPagination((prev: Pagination) => ({ ...prev, page: 1 }));
