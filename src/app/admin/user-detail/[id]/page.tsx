@@ -328,7 +328,7 @@ export default function UserDetailPage() {
     );
   }
 
-  if (!hasPermission(permissions, 'Administration', 'Read')) {
+  if (!permissions || !hasPermission(permissions, 'Administration', 'Read')) {
     return (
       <AppLayout>
         <div className="flex justify-center items-center h-64">
