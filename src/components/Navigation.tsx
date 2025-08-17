@@ -29,6 +29,7 @@ const navigationItems: NavigationItem[] = [
     subItems: [
       { name: 'Dashboard', href: '/reverse-logistics/dashboard', module: 'ReverseLogistics', action: 'Read' },
       { name: 'Shipment Intake', href: '/reverse-logistics/shipment-intake', module: 'ReverseLogistics', action: 'Create' },
+      { name: 'Material Types', href: '/reverse-logistics/material-types', module: 'ReverseLogistics', action: 'Read' },
     ]
   },
   {
