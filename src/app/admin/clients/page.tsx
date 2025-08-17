@@ -87,27 +87,25 @@ export default function ClientsPage() {
         params.append('isActive', filters.isActive);
       }
 
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/Clients?${params}`, {
+      const response = await fetch(`/api/admin/clients?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const totalCount = parseInt(response.headers.get('X-Total-Count') || '0');
-        setClients(data);
-        setPagination(prev => ({
-          ...prev,
-          totalCount,
-          totalPages: Math.ceil(totalCount / prev.pageSize)
-        }));
-      } else if (response.status === 403) {
-        router.push('/unauthorized');
-      } else {
-        setError('Failed to fetch clients');
+      if (!response.ok) {
+        throw new Error('Failed to fetch clients');
       }
+
+      const data = await response.json();
+      const totalCount = parseInt(response.headers.get('X-Total-Count') || '0');
+      setClients(data);
+      setPagination(prev => ({
+        ...prev,
+        totalCount,
+        totalPages: Math.ceil(totalCount / prev.pageSize)
+      }));
     } catch {
       setError('Network error. Please try again.');
     } finally {
