@@ -98,17 +98,28 @@ export default function UserDetailPage() {
   useEffect(() => {
     const loadPermissions = async () => {
       try {
-        const userPermissions = await fetchUserPermissions();
+        const token = localStorage.getItem('token');
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+        const userPermissions = await fetchUserPermissions(token);
         setPermissions(userPermissions);
+        if (!hasPermission(userPermissions, 'Administration', 'Read')) {
+          router.push('/unauthorized');
+          return;
+        }
       } catch (error) {
         console.error('Error fetching permissions:', error);
+        router.push('/login');
+        return;
       } finally {
         setLoading(false);
       }
     };
 
     loadPermissions();
-  }, []);
+  }, [router]);
 
   const fetchClients = useCallback(async () => {
     try {
