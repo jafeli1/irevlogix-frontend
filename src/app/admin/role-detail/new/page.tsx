@@ -37,7 +37,7 @@ export default function NewRolePage() {
         }
         const userPermissions = await fetchUserPermissions(token);
         setPermissions(userPermissions);
-        if (!hasPermission(userPermissions, 'Administration', 'Edit')) {
+        if (!hasPermission(userPermissions, 'Administration', 'Read')) {
           router.push('/unauthorized');
           return;
         }
@@ -125,7 +125,7 @@ export default function NewRolePage() {
     );
   }
 
-  if (!permissions || !hasPermission(permissions, 'Administration', 'Edit')) {
+  if (!permissions || !hasPermission(permissions, 'Administration', 'Read')) {
     return (
       <AppLayout>
         <div className="flex justify-center items-center h-64">
