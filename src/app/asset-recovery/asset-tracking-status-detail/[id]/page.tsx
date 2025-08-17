@@ -439,7 +439,7 @@ export default function AssetTrackingStatusDetailPage() {
 
           <div className="flex justify-between pt-6 border-t border-gray-200">
             <div>
-              {!isNew && hasPermission(permissions, 'AssetRecovery', 'Delete') && (
+              {!isNew && permissions && hasPermission(permissions, 'AssetRecovery', 'Delete') && (
                 <button
                   type="button"
                   onClick={handleDelete}
