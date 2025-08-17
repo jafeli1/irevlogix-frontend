@@ -58,6 +58,7 @@ const navigationItems: NavigationItem[] = [
     subItems: [
       { name: 'Asset Tracking', href: '/asset-recovery/asset-tracking', module: 'AssetRecovery', action: 'Read' },
       { name: 'Asset Intake', href: '/asset-recovery/asset-intake', module: 'AssetRecovery', action: 'Create' },
+      { name: 'Asset Categories', href: '/asset-recovery/asset-categories', module: 'AssetRecovery', action: 'Read' },
     ]
   },
   {
