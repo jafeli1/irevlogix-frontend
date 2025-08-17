@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../../components/AppLayout';
@@ -164,13 +164,13 @@ export default function MaterialTypeDetailPage() {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
-    setFormData(prev => ({
+    setFormData((prev: FormData) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : type === 'number' ? parseFloat(value) || 0 : value
     }));
 
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev: any) => ({ ...prev, [name]: '' }));
     }
   };
 
