@@ -100,7 +100,13 @@ export default function ContractorTechnicianDetailPage() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      const userPermissions = await fetchUserPermissions();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+      
+      const userPermissions = await fetchUserPermissions(token);
       setPermissions(userPermissions);
 
       if (userPermissions && hasPermission(userPermissions, 'ProjectManagement', 'Read')) {
@@ -110,7 +116,7 @@ export default function ContractorTechnicianDetailPage() {
     };
 
     loadData();
-  }, [id, isNew]);
+  }, [id, isNew, router]);
 
   const fetchUsers = async () => {
     try {
