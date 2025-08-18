@@ -124,7 +124,7 @@ export const fetchUserPermissions = async (token: string): Promise<UserPermissio
 };
 
 const generateAdminPermissions = (): Permission[] => {
-  const modules = ['ReverseLogistics', 'Processing', 'DownstreamMaterials', 'AssetRecovery', 'Reporting', 'Administration', 'KnowledgeBase', 'Training'];
+  const modules = ['ReverseLogistics', 'Processing', 'DownstreamMaterials', 'AssetRecovery', 'Reporting', 'Administration', 'KnowledgeBase', 'Training', 'ProjectManagement'];
   const actions = ['Read', 'Create', 'Update', 'Delete'];
   
   const permissions: Permission[] = [];
