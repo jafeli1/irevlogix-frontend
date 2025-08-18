@@ -39,6 +39,7 @@ const navigationItems: NavigationItem[] = [
     icon: '📋',
     subItems: [
       { name: 'Contractor Technicians', href: '/project-management/contractor-technicians', module: 'ProjectManagement', action: 'Read' },
+      { name: 'Reverse Requests', href: '/project-management/reverse-requests', module: 'ProjectManagement', action: 'Read' },
     ]
   },
   {
