@@ -114,21 +114,6 @@ export default function FreightLossDamageClaimDetailPage() {
     attachment4?: File;
   }>({});
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
-    fetchPermissions();
-    if (!isNew) {
-      fetchClaim();
-    } else {
-      generateClaimId();
-    }
-  }, [router, id, isNew, fetchPermissions, fetchClaim, generateClaimId]);
-
   const fetchPermissions = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -203,6 +188,21 @@ export default function FreightLossDamageClaimDetailPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    fetchPermissions();
+    if (!isNew) {
+      fetchClaim();
+    } else {
+      generateClaimId();
+    }
+  }, [router, id, isNew, fetchPermissions, fetchClaim, generateClaimId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
