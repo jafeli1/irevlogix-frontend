@@ -5,6 +5,11 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../../components/AppLayout';
 
+interface Permission {
+  module: string;
+  action: string;
+}
+
 interface FreightLossDamageClaim {
   id?: number;
   freightLossDamageClaimId: number;
@@ -122,7 +127,7 @@ export default function FreightLossDamageClaimDetailPage() {
     } else {
       generateClaimId();
     }
-  }, [router, id, isNew]);
+  }, [router, id, isNew, fetchPermissions, fetchClaim, generateClaimId]);
 
   const fetchPermissions = async () => {
     try {
@@ -135,18 +140,18 @@ export default function FreightLossDamageClaimDetailPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        const projectManagementPerms = data.filter((p: any) => p.module === 'ProjectManagement');
+        const data: Permission[] = await response.json();
+        const projectManagementPerms = data.filter((p: Permission) => p.module === 'ProjectManagement');
         
         setPermissions({
-          canRead: projectManagementPerms.some((p: any) => p.action === 'Read'),
-          canCreate: projectManagementPerms.some((p: any) => p.action === 'Create'),
-          canUpdate: projectManagementPerms.some((p: any) => p.action === 'Update'),
-          canDelete: projectManagementPerms.some((p: any) => p.action === 'Delete')
+          canRead: projectManagementPerms.some((p: Permission) => p.action === 'Read'),
+          canCreate: projectManagementPerms.some((p: Permission) => p.action === 'Create'),
+          canUpdate: projectManagementPerms.some((p: Permission) => p.action === 'Update'),
+          canDelete: projectManagementPerms.some((p: Permission) => p.action === 'Delete')
         });
       }
-    } catch (error) {
-      console.error('Error fetching permissions:', error);
+    } catch (err) {
+      console.error('Error fetching permissions:', err);
     }
   };
 
@@ -192,9 +197,9 @@ export default function FreightLossDamageClaimDetailPage() {
       } else {
         setError('Failed to fetch claim details');
       }
-    } catch (error) {
+    } catch (err) {
       setError('Network error. Please try again.');
-    } finally {
+    }finally {
       setLoading(false);
     }
   };
@@ -272,10 +277,8 @@ export default function FreightLossDamageClaimDetailPage() {
       });
 
       if (response.ok) {
-        let claimId = id;
         if (isNew) {
           const result = await response.json();
-          claimId = result.id;
         }
 
         for (const [attachmentType, file] of Object.entries(uploadFiles)) {
@@ -302,9 +305,9 @@ export default function FreightLossDamageClaimDetailPage() {
         const errorData = await response.text();
         setError(errorData || `Failed to ${isNew ? 'create' : 'update'} claim`);
       }
-    } catch (error) {
+    } catch (err) {
       setError('Network error. Please try again.');
-    } finally {
+    }finally {
       setSaving(false);
     }
   };
@@ -324,7 +327,7 @@ export default function FreightLossDamageClaimDetailPage() {
       <AppLayout>
         <div className="text-center py-8">
           <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-          <p className="mt-2 text-gray-600">You don't have permission to view this claim.</p>
+          <p className="mt-2 text-gray-600">You don&apos;t have permission to view this claim.</p>
         </div>
       </AppLayout>
     );
@@ -335,7 +338,7 @@ export default function FreightLossDamageClaimDetailPage() {
       <AppLayout>
         <div className="text-center py-8">
           <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-          <p className="mt-2 text-gray-600">You don't have permission to create claims.</p>
+          <p className="mt-2 text-gray-600">You don&apos;t have permission to create claims.</p>
         </div>
       </AppLayout>
     );

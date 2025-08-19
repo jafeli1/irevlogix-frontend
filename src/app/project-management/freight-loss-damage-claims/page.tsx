@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../components/AppLayout';
 
+interface Permission {
+  module: string;
+  action: string;
+}
+
 interface FreightLossDamageClaim {
   id: number;
   freightLossDamageClaimId: number;
@@ -72,18 +77,18 @@ export default function FreightLossDamageClaimsPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        const projectManagementPerms = data.filter((p: any) => p.module === 'ProjectManagement');
+        const data: Permission[] = await response.json();
+        const projectManagementPerms = data.filter((p: Permission) => p.module === 'ProjectManagement');
         
         setPermissions({
-          canRead: projectManagementPerms.some((p: any) => p.action === 'Read'),
-          canCreate: projectManagementPerms.some((p: any) => p.action === 'Create'),
-          canUpdate: projectManagementPerms.some((p: any) => p.action === 'Update'),
-          canDelete: projectManagementPerms.some((p: any) => p.action === 'Delete')
+          canRead: projectManagementPerms.some((p: Permission) => p.action === 'Read'),
+          canCreate: projectManagementPerms.some((p: Permission) => p.action === 'Create'),
+          canUpdate: projectManagementPerms.some((p: Permission) => p.action === 'Update'),
+          canDelete: projectManagementPerms.some((p: Permission) => p.action === 'Delete')
         });
       }
-    } catch (error) {
-      console.error('Error fetching permissions:', error);
+    } catch (err) {
+      console.error('Error fetching permissions:', err);
     }
   };
 
@@ -119,16 +124,16 @@ export default function FreightLossDamageClaimsPage() {
       } else {
         setError('Failed to fetch freight loss damage claims');
       }
-    } catch (error) {
+    } catch (err) {
       setError('Network error. Please try again.');
-    } finally {
+    }finally {
       setLoading(false);
     }
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
+    setFilters((prev: typeof filters) => ({
       ...prev,
       [name]: value
     }));
@@ -149,7 +154,7 @@ export default function FreightLossDamageClaimsPage() {
     const headers = ['ID', 'Claim ID', 'Description', 'Date of Shipment', 'Date of Claim', 'Company Name', 'City', 'Total Value'];
     const csvContent = [
       headers.join(','),
-      ...claims.map(claim => [
+      ...claims.map((claim: FreightLossDamageClaim) => [
         claim.id,
         claim.freightLossDamageClaimId,
         `"${claim.description || ''}"`,
@@ -192,7 +197,7 @@ export default function FreightLossDamageClaimsPage() {
         setError('Failed to delete claim');
         setTimeout(() => setError(''), 3000);
       }
-    } catch (error) {
+    } catch (err) {
       setError('Network error. Please try again.');
       setTimeout(() => setError(''), 3000);
     }
@@ -205,7 +210,7 @@ export default function FreightLossDamageClaimsPage() {
       <AppLayout>
         <div className="text-center py-8">
           <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-          <p className="mt-2 text-gray-600">You don't have permission to view freight loss damage claims.</p>
+          <p className="mt-2 text-gray-600">You don&apos;t have permission to view freight loss damage claims.</p>
         </div>
       </AppLayout>
     );
