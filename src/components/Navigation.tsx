@@ -41,6 +41,7 @@ const navigationItems: NavigationItem[] = [
       { name: 'Contractor Technicians', href: '/project-management/contractor-technicians', module: 'ProjectManagement', action: 'Read' },
       { name: 'Reverse Requests', href: '/project-management/reverse-requests', module: 'ProjectManagement', action: 'Read' },
       { name: 'Recovery Requests', href: '/project-management/recovery-requests', module: 'ProjectManagement', action: 'Read' },
+      { name: 'Freight Loss Damage Claims', href: '/project-management/freight-loss-damage-claims', module: 'ProjectManagement', action: 'Read' },
     ]
   },
   {
