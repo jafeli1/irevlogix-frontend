@@ -179,8 +179,8 @@ export default function RecoveryRequestsPage() {
       <div className="mb-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Recovery Requests</h1>
-            <p className="mt-2 text-gray-600">Manage recovery logistics job requests</p>
+            <h1 className="text-3xl font-bold text-gray-900">Asset Recovery Requests</h1>
+            <p className="mt-2 text-gray-600">Manage asset recovery job requests</p>
           </div>
           <div className="flex space-x-4">
             <button
