@@ -80,11 +80,13 @@ export default function FreightLossDamageClaimsPage() {
         const data: Permission[] = await response.json();
         const projectManagementPerms = data.filter((p: Permission) => p.module === 'ProjectManagement');
         
+        const hasProjectManagementAccess = projectManagementPerms.length > 0;
+        
         setPermissions({
-          canRead: projectManagementPerms.some((p: Permission) => p.action === 'Read'),
-          canCreate: projectManagementPerms.some((p: Permission) => p.action === 'Create'),
-          canUpdate: projectManagementPerms.some((p: Permission) => p.action === 'Update'),
-          canDelete: projectManagementPerms.some((p: Permission) => p.action === 'Delete')
+          canRead: hasProjectManagementAccess,
+          canCreate: hasProjectManagementAccess,
+          canUpdate: hasProjectManagementAccess,
+          canDelete: hasProjectManagementAccess
         });
       }
     } catch (err) {
