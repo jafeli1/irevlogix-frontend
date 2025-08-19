@@ -85,38 +85,6 @@ export default function ProcessedMaterialDetailPage() {
     }
   };
 
-  const onSaveFinancials = async () => {
-    if (!id) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const body = {
-        expectedSalesPrice: financialForm.expectedSalesPrice ? Number(financialForm.expectedSalesPrice) : null,
-        actualSalesPrice: financialForm.actualSalesPrice ? Number(financialForm.actualSalesPrice) : null,
-        saleDate: financialForm.saleDate || null,
-        invoiceDate: financialForm.invoiceDate || null,
-        dateInvoicePaid: financialForm.dateInvoicePaid || null,
-        invoiceTotal: financialForm.invoiceTotal ? Number(financialForm.invoiceTotal) : null,
-        invoiceStatus: financialForm.invoiceStatus || null,
-      };
-      const res = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterials/${id}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(`Failed to save: ${res.status}`);
-      await fetchDetail();
-      setEditingFinancials(false);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to save";
-      setError(msg);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <AppLayout>
