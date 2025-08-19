@@ -4,11 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../../components/AppLayout';
-
-interface Permission {
-  module: string;
-  action: string;
-}
+import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../../utils/rbac';
 
 interface FreightLossDamageClaim {
   id?: number;
@@ -49,13 +45,6 @@ interface FreightLossDamageClaim {
   clientId?: string;
 }
 
-interface UserPermissions {
-  canRead: boolean;
-  canCreate: boolean;
-  canUpdate: boolean;
-  canDelete: boolean;
-}
-
 export default function FreightLossDamageClaimDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -67,12 +56,7 @@ export default function FreightLossDamageClaimDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [permissions, setPermissions] = useState<UserPermissions>({
-    canRead: false,
-    canCreate: false,
-    canUpdate: false,
-    canDelete: false
-  });
+  const [permissions, setPermissions] = useState<UserPermissions | null>(null);
 
   const [formData, setFormData] = useState<FreightLossDamageClaim>({
     freightLossDamageClaimId: 0,
@@ -114,33 +98,6 @@ export default function FreightLossDamageClaimDetailPage() {
     attachment4?: File;
   }>({});
 
-  const fetchPermissions = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/users/permissions', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data: Permission[] = await response.json();
-        const projectManagementPerms = data.filter((p: Permission) => p.module === 'ProjectManagement');
-        
-        const hasProjectManagementAccess = projectManagementPerms.length > 0;
-        
-        setPermissions({
-          canRead: hasProjectManagementAccess,
-          canCreate: hasProjectManagementAccess,
-          canUpdate: hasProjectManagementAccess,
-          canDelete: hasProjectManagementAccess
-        });
-      }
-    } catch (err) {
-      console.error('Error fetching permissions:', err);
-    }
-  };
 
   const generateClaimId = () => {
     const now = new Date();
@@ -192,19 +149,25 @@ export default function FreightLossDamageClaimDetailPage() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
+    const loadData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
 
-    fetchPermissions();
-    if (!isNew) {
-      fetchClaim();
-    } else {
-      generateClaimId();
-    }
-  }, [router, id, isNew, fetchPermissions, fetchClaim, generateClaimId]);
+      const userPermissions = await fetchUserPermissions(token);
+      setPermissions(userPermissions);
+      
+      if (isNew) {
+        generateClaimId();
+      } else {
+        fetchClaim();
+      }
+    };
+
+    loadData();
+  }, [router, id, isNew, fetchClaim, generateClaimId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -324,23 +287,12 @@ export default function FreightLossDamageClaimDetailPage() {
     );
   }
 
-  if (!isNew && !permissions.canRead) {
+  if (!permissions || !hasPermission(permissions, 'ProjectManagement', 'Read')) {
     return (
       <AppLayout>
         <div className="text-center py-8">
           <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-          <p className="mt-2 text-gray-600">You don&apos;t have permission to view this claim.</p>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (isNew && !permissions.canCreate) {
-    return (
-      <AppLayout>
-        <div className="text-center py-8">
-          <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-          <p className="mt-2 text-gray-600">You don&apos;t have permission to create claims.</p>
+          <p className="mt-2 text-gray-600">You don&apos;t have permission to view freight loss damage claims.</p>
         </div>
       </AppLayout>
     );
@@ -840,7 +792,7 @@ export default function FreightLossDamageClaimDetailPage() {
             >
               Cancel
             </Link>
-            {(isNew ? permissions.canCreate : permissions.canUpdate) && (
+            {permissions && hasPermission(permissions, 'ProjectManagement', 'Read') && (
               <button
                 type="submit"
                 disabled={saving}

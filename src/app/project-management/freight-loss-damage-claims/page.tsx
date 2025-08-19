@@ -1,14 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppLayout from '../../../components/AppLayout';
-
-interface Permission {
-  module: string;
-  action: string;
-}
+import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../utils/rbac';
 
 interface FreightLossDamageClaim {
   id: number;
@@ -24,122 +20,104 @@ interface FreightLossDamageClaim {
   dateUpdated: string;
 }
 
-interface UserPermissions {
-  canRead: boolean;
-  canCreate: boolean;
-  canUpdate: boolean;
-  canDelete: boolean;
+interface Pagination {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+interface Filters {
+  dateOfShipment: string;
+  dateOfClaim: string;
+  claimantCity: string;
+  stateId: string;
 }
 
 export default function FreightLossDamageClaimsPage() {
+  const router = useRouter();
   const [claims, setClaims] = useState<FreightLossDamageClaim[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [permissions, setPermissions] = useState<UserPermissions>({
-    canRead: false,
-    canCreate: false,
-    canUpdate: false,
-    canDelete: false
+  const [permissions, setPermissions] = useState<UserPermissions | null>(null);
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    pageSize: 10,
+    totalCount: 0,
+    totalPages: 0
   });
-
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     dateOfShipment: '',
     dateOfClaim: '',
     claimantCity: '',
     stateId: ''
   });
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [pageSize] = useState(10);
-  const router = useRouter();
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
-    fetchPermissions();
-    fetchClaims();
-  }, [router, currentPage, filters]);
-
-  const fetchPermissions = async () => {
+  const fetchClaims = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/users/permissions', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data: Permission[] = await response.json();
-        const projectManagementPerms = data.filter((p: Permission) => p.module === 'ProjectManagement');
-        
-        const hasProjectManagementAccess = projectManagementPerms.length > 0;
-        
-        setPermissions({
-          canRead: hasProjectManagementAccess,
-          canCreate: hasProjectManagementAccess,
-          canUpdate: hasProjectManagementAccess,
-          canDelete: hasProjectManagementAccess
-        });
+      if (!token) {
+        router.push('/login');
+        return;
       }
-    } catch (err) {
-      console.error('Error fetching permissions:', err);
-    }
-  };
 
-  const fetchClaims = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      
       const queryParams = new URLSearchParams({
-        page: currentPage.toString(),
-        pageSize: pageSize.toString(),
+        page: pagination.page.toString(),
+        pageSize: pagination.pageSize.toString(),
         ...(filters.dateOfShipment && { dateOfShipment: filters.dateOfShipment }),
         ...(filters.dateOfClaim && { dateOfClaim: filters.dateOfClaim }),
         ...(filters.claimantCity && { claimantCity: filters.claimantCity }),
         ...(filters.stateId && { stateId: filters.stateId })
       });
 
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/FreightLossDamageClaims?${queryParams}`, {
+      const response = await fetch(`/api/freightlossdamageclaims?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
+        const totalCount = parseInt(response.headers.get('X-Total-Count') || '0');
         setClaims(data);
-        const totalCountHeader = response.headers.get('X-Total-Count');
-        setTotalCount(totalCountHeader ? parseInt(totalCountHeader) : 0);
+        setPagination(prev => ({
+          ...prev,
+          totalCount,
+          totalPages: Math.ceil(totalCount / prev.pageSize)
+        }));
       } else if (response.status === 401) {
-        localStorage.removeItem('token');
         router.push('/login');
-      } else {
-        setError('Failed to fetch freight loss damage claims');
       }
-    } catch (err) {
-      setError('Network error. Please try again.');
-    }finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching freight loss damage claims:', error);
     }
-  };
+  }, [pagination.page, pagination.pageSize, filters, router]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+      
+      const userPermissions = await fetchUserPermissions(token);
+      setPermissions(userPermissions);
+      
+      if (userPermissions && hasPermission(userPermissions, 'ProjectManagement', 'Read')) {
+        await fetchClaims();
+      }
+      setLoading(false);
+    };
+
+    loadData();
+  }, [fetchClaims, router]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFilters((prev: typeof filters) => ({
-      ...prev,
-      [name]: value
-    }));
-    setCurrentPage(1);
+    setFilters(prev => ({ ...prev, [name]: value }));
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const clearFilters = () => {
@@ -149,14 +127,13 @@ export default function FreightLossDamageClaimsPage() {
       claimantCity: '',
       stateId: ''
     });
-    setCurrentPage(1);
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const exportToCSV = () => {
-    const headers = ['ID', 'Claim ID', 'Description', 'Date of Shipment', 'Date of Claim', 'Company Name', 'City', 'Total Value'];
     const csvContent = [
-      headers.join(','),
-      ...claims.map((claim: FreightLossDamageClaim) => [
+      ['ID', 'Claim ID', 'Description', 'Date of Shipment', 'Date of Claim', 'Company Name', 'City', 'Total Value'].join(','),
+      ...claims.map(claim => [
         claim.id,
         claim.freightLossDamageClaimId,
         `"${claim.description || ''}"`,
@@ -177,37 +154,17 @@ export default function FreightLossDamageClaimsPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this claim?')) {
-      return;
-    }
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+        </div>
+      </AppLayout>
+    );
+  }
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/FreightLossDamageClaims/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        setSuccess('Claim deleted successfully');
-        fetchClaims();
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setError('Failed to delete claim');
-        setTimeout(() => setError(''), 3000);
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
-      setTimeout(() => setError(''), 3000);
-    }
-  };
-
-  const totalPages = Math.ceil(totalCount / pageSize);
-
-  if (!permissions.canRead) {
+  if (!permissions || !hasPermission(permissions, 'ProjectManagement', 'Read')) {
     return (
       <AppLayout>
         <div className="text-center py-8">
@@ -226,100 +183,96 @@ export default function FreightLossDamageClaimsPage() {
             <h1 className="text-3xl font-bold text-gray-900">Freight Loss Damage Claims</h1>
             <p className="mt-2 text-gray-600">Manage freight loss and damage claims</p>
           </div>
-          {permissions.canCreate && (
+          <div className="flex space-x-4">
+            <button
+              onClick={exportToCSV}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+            >
+              Export CSV
+            </button>
             <Link
               href="/project-management/freight-loss-damage-claim-detail/new"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
               Add New Claim
             </Link>
-          )}
+          </div>
         </div>
       </div>
 
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-          {success}
-        </div>
-      )}
-
       <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Filters</h2>
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Filter Freight Loss Damage Claims</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Date of Shipment</label>
+              <label htmlFor="dateOfShipment" className="block text-sm font-medium text-gray-700">
+                Date of Shipment
+              </label>
               <input
                 type="date"
+                id="dateOfShipment"
                 name="dateOfShipment"
                 value={filters.dateOfShipment}
                 onChange={handleFilterChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Date of Claim</label>
+              <label htmlFor="dateOfClaim" className="block text-sm font-medium text-gray-700">
+                Date of Claim
+              </label>
               <input
                 type="date"
+                id="dateOfClaim"
                 name="dateOfClaim"
                 value={filters.dateOfClaim}
                 onChange={handleFilterChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Claimant City</label>
+              <label htmlFor="claimantCity" className="block text-sm font-medium text-gray-700">
+                Claimant City
+              </label>
               <input
                 type="text"
+                id="claimantCity"
                 name="claimantCity"
                 value={filters.claimantCity}
                 onChange={handleFilterChange}
-                placeholder="Enter city"
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Search by city"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">State</label>
+              <label htmlFor="stateId" className="block text-sm font-medium text-gray-700">
+                State ID
+              </label>
               <input
                 type="number"
+                id="stateId"
                 name="stateId"
                 value={filters.stateId}
                 onChange={handleFilterChange}
-                placeholder="State ID"
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Search by state ID"
               />
             </div>
           </div>
-          <div className="mt-4 flex space-x-3">
+          <div className="mt-4">
             <button
               onClick={clearFilters}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >
               Clear Filters
-            </button>
-            <button
-              onClick={exportToCSV}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Export CSV
             </button>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          {loading ? (
+          {claims.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-gray-500">Loading claims...</div>
-            </div>
-          ) : claims.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-gray-500">No claims found</div>
+              <p className="text-gray-500">No freight loss damage claims found.</p>
             </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200">
@@ -382,14 +335,6 @@ export default function FreightLossDamageClaimsPage() {
                       >
                         View Details
                       </Link>
-                      {permissions.canDelete && (
-                        <button
-                          onClick={() => handleDelete(claim.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      )}
                     </td>
                   </tr>
                 ))}
@@ -398,34 +343,57 @@ export default function FreightLossDamageClaimsPage() {
           )}
         </div>
 
-        {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} results
-              </div>
-              <div className="flex space-x-2">
+        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+              disabled={pagination.page === 1}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
+              disabled={pagination.page === pagination.totalPages}
+              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing{' '}
+                <span className="font-medium">{(pagination.page - 1) * pagination.pageSize + 1}</span>
+                {' '}to{' '}
+                <span className="font-medium">
+                  {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)}
+                </span>
+                {' '}of{' '}
+                <span className="font-medium">{pagination.totalCount}</span>
+                {' '}results
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                 <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  disabled={pagination.page === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                 >
                   Previous
                 </button>
-                <span className="px-3 py-1 text-sm">
-                  Page {currentPage} of {totalPages}
-                </span>
                 <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                 >
                   Next
                 </button>
-              </div>
+              </nav>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </AppLayout>
   );
