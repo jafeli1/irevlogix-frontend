@@ -85,6 +85,39 @@ export default function ProcessedMaterialDetailPage() {
     }
   };
 
+  const onSaveFinancials = async () => {
+    if (!id) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const body = {
+        expectedSalesPrice: financialForm.expectedSalesPrice ? Number(financialForm.expectedSalesPrice) : null,
+        actualSalesPrice: financialForm.actualSalesPrice ? Number(financialForm.actualSalesPrice) : null,
+        saleDate: financialForm.saleDate || null,
+        invoiceDate: financialForm.invoiceDate || null,
+        dateInvoicePaid: financialForm.dateInvoicePaid || null,
+        invoiceTotal: financialForm.invoiceTotal ? Number(financialForm.invoiceTotal) : null,
+        invoiceStatus: financialForm.invoiceStatus || null,
+      };
+      const res = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterials/${id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`Failed to save: ${res.status}`);
+      await fetchDetail();
+      setEditingFinancials(false);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to save";
+      setError(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
@@ -173,12 +206,13 @@ export default function ProcessedMaterialDetailPage() {
           {activeTab === "sales" && (
             <div className="space-y-4">
               <div className="bg-white border rounded p-4">
-                <div className="text-lg font-semibold mb-3">Add New Sales Order/Shipment</div>
-                <div className="text-gray-500">Form coming soon.</div>
-              </div>
-              <div className="bg-white border rounded p-4">
-                <div className="text-lg font-semibold mb-3">Sales History</div>
-                <div className="text-gray-500">No sales recorded.</div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-lg font-semibold">Sales Records</div>
+                  <Link href="/downstream/processedmaterial-sales" className="px-3 py-2 bg-blue-600 text-white rounded">
+                    Manage Sales Records
+                  </Link>
+                </div>
+                <div className="text-gray-500">View and manage sales records in the dedicated sales section.</div>
               </div>
             </div>
           )}
