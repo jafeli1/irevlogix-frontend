@@ -37,6 +37,23 @@ export default function ProcessedMaterialDetailPage() {
   const [activeTab, setActiveTab] = useState<"sales" | "qc" | "documents" | "financials">("sales");
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [testResults, setTestResults] = useState<any[]>([]);
+  const [testResultsLoading, setTestResultsLoading] = useState(false);
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [editingTest, setEditingTest] = useState<any | null>(null);
+  const [testFormData, setTestFormData] = useState({
+    testDate: '',
+    lab: '',
+    parameters: '',
+    results: '',
+    complianceStatus: '',
+    reportDocumentUrl: ''
+  });
+  const [testFormErrors, setTestFormErrors] = useState<any>({});
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingTestId, setDeletingTestId] = useState<number | null>(null);
 
   const fetchDetail = async () => {
     setLoading(true);
@@ -63,6 +80,12 @@ export default function ProcessedMaterialDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, id]);
 
+  useEffect(() => {
+    if (activeTab === "qc" && data) {
+      fetchTestResults();
+    }
+  }, [activeTab, data]);
+
   const onSaveStatus = async () => {
     if (!id) return;
     setSaving(true);
@@ -84,6 +107,178 @@ export default function ProcessedMaterialDetailPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const fetchTestResults = async () => {
+    if (!data) return;
+    
+    setTestResultsLoading(true);
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterialTests?processedMaterialId=${data.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch test results');
+      }
+      const responseData = await response.json();
+      setTestResults(responseData.items || []);
+    } catch (err) {
+      console.error('Error fetching test results:', err);
+    } finally {
+      setTestResultsLoading(false);
+    }
+  };
+
+  const handleTestInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setTestFormData(prev => ({ ...prev, [name]: value }));
+    if (testFormErrors[name]) {
+      setTestFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadFile(file);
+    }
+  };
+
+  const uploadTestFile = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessedMaterialTests/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload file');
+    }
+
+    const responseData = await response.json();
+    return responseData.filePath;
+  };
+
+  const validateTestForm = () => {
+    const errors: any = {};
+    
+    if (!testFormData.testDate) errors.testDate = 'Test date is required';
+    if (!testFormData.lab) errors.lab = 'Lab is required';
+    if (!testFormData.parameters) errors.parameters = 'Parameters are required';
+    if (!testFormData.results) errors.results = 'Results are required';
+    if (!testFormData.complianceStatus) errors.complianceStatus = 'Compliance status is required';
+    
+    setTestFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleTestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateTestForm()) return;
+    if (!data) return;
+
+    setUploading(true);
+    try {
+      let reportDocumentUrl = testFormData.reportDocumentUrl;
+      
+      if (uploadFile) {
+        reportDocumentUrl = await uploadTestFile(uploadFile);
+      }
+
+      const submitData = {
+        ...testFormData,
+        processedMaterialId: data.id,
+        reportDocumentUrl
+      };
+
+      const url = editingTest 
+        ? `https://irevlogix-backend.onrender.com/api/ProcessedMaterialTests/${editingTest.id}`
+        : 'https://irevlogix-backend.onrender.com/api/ProcessedMaterialTests';
+      
+      const method = editingTest ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save test result');
+      }
+
+      await fetchTestResults();
+      setShowTestModal(false);
+      setEditingTest(null);
+      setTestFormData({
+        testDate: '',
+        lab: '',
+        parameters: '',
+        results: '',
+        complianceStatus: '',
+        reportDocumentUrl: ''
+      });
+      setUploadFile(null);
+      setTestFormErrors({});
+    } catch (err) {
+      setError('Failed to save test result');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEditTest = (test: any) => {
+    setEditingTest(test);
+    setTestFormData({
+      testDate: test.testDate ? test.testDate.split('T')[0] : '',
+      lab: test.lab || '',
+      parameters: test.parameters || '',
+      results: test.results || '',
+      complianceStatus: test.complianceStatus || '',
+      reportDocumentUrl: test.reportDocumentUrl || ''
+    });
+    setShowTestModal(true);
+  };
+
+  const handleDeleteTest = async (testId: number) => {
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterialTests/${testId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete test result');
+      }
+
+      await fetchTestResults();
+      setShowDeleteConfirm(false);
+      setDeletingTestId(null);
+    } catch (err) {
+      setError('Failed to delete test result');
+    }
+  };
+
+  const openAddTestModal = () => {
+    setEditingTest(null);
+    setTestFormData({
+      testDate: '',
+      lab: '',
+      parameters: '',
+      results: '',
+      complianceStatus: '',
+      reportDocumentUrl: ''
+    });
+    setUploadFile(null);
+    setTestFormErrors({});
+    setShowTestModal(true);
   };
 
 
@@ -193,15 +388,109 @@ export default function ProcessedMaterialDetailPage() {
           )}
 
           {activeTab === "qc" && (
-            <div className="space-y-4">
-              <div className="bg-white border rounded p-4">
-                <div className="text-lg font-semibold mb-3">Add New Test Result</div>
-                <div className="text-gray-500">Form coming soon.</div>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">Quality Control & Testing</h3>
+                <button
+                  onClick={openAddTestModal}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Add New Test Result
+                </button>
               </div>
-              <div className="bg-white border rounded p-4">
-                <div className="text-lg font-semibold mb-3">Test Results</div>
-                <div className="text-gray-500">No test results.</div>
-              </div>
+
+              {testResultsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-500">Loading test results...</p>
+                </div>
+              ) : testResults.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No test results found for this processed material.</p>
+                  <p className="text-sm mt-1">Click &quot;Add New Test Result&quot; to get started.</p>
+                </div>
+              ) : (
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  <ul className="divide-y divide-gray-200">
+                    {testResults.map((test) => (
+                      <li key={test.id} className="px-6 py-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Test Date</p>
+                              <p className="text-sm text-gray-500">
+                                {test.testDate ? new Date(test.testDate).toLocaleDateString() : 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Lab</p>
+                              <p className="text-sm text-gray-500">{test.lab || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Compliance Status</p>
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                test.complianceStatus === 'Pass' ? 'bg-green-100 text-green-800' :
+                                test.complianceStatus === 'Fail' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {test.complianceStatus || 'N/A'}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Report Document</p>
+                              {test.reportDocumentUrl ? (
+                                <a 
+                                  href={`https://irevlogix-backend.onrender.com/${test.reportDocumentUrl}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-600 hover:text-blue-800"
+                                >
+                                  View Document
+                                </a>
+                              ) : (
+                                <p className="text-sm text-gray-500">No document</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2 ml-4">
+                            <button
+                              onClick={() => handleEditTest(test)}
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeletingTestId(test.id);
+                                setShowDeleteConfirm(true);
+                              }}
+                              className="text-red-600 hover:text-red-800 text-sm font-medium"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                        {(test.parameters || test.results) && (
+                          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {test.parameters && (
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">Parameters</p>
+                                <p className="text-sm text-gray-500">{test.parameters}</p>
+                              </div>
+                            )}
+                            {test.results && (
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">Results</p>
+                                <p className="text-sm text-gray-500">{test.results}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -243,6 +532,177 @@ export default function ProcessedMaterialDetailPage() {
             </div>
           )}
         </>
+      )}
+
+      {showTestModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {editingTest ? 'Edit Test Result' : 'Add New Test Result'}
+              </h3>
+              
+              <form onSubmit={handleTestSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Test Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="testDate"
+                      value={testFormData.testDate}
+                      onChange={handleTestInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    {testFormErrors.testDate && (
+                      <p className="mt-1 text-sm text-red-600">{testFormErrors.testDate}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Lab <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="lab"
+                      value={testFormData.lab}
+                      onChange={handleTestInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    {testFormErrors.lab && (
+                      <p className="mt-1 text-sm text-red-600">{testFormErrors.lab}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Parameters <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="parameters"
+                    value={testFormData.parameters}
+                    onChange={handleTestInputChange}
+                    rows={3}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {testFormErrors.parameters && (
+                    <p className="mt-1 text-sm text-red-600">{testFormErrors.parameters}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Results <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="results"
+                    value={testFormData.results}
+                    onChange={handleTestInputChange}
+                    rows={3}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {testFormErrors.results && (
+                    <p className="mt-1 text-sm text-red-600">{testFormErrors.results}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Compliance Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="complianceStatus"
+                    value={testFormData.complianceStatus}
+                    onChange={handleTestInputChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select status</option>
+                    <option value="Pass">Pass</option>
+                    <option value="Fail">Fail</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                  {testFormErrors.complianceStatus && (
+                    <p className="mt-1 text-sm text-red-600">{testFormErrors.complianceStatus}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Report Document
+                  </label>
+                  
+                  {testFormData.reportDocumentUrl && (
+                    <div className="mb-2 text-sm text-green-600">
+                      Current file: {testFormData.reportDocumentUrl}
+                    </div>
+                  )}
+                  
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  />
+                  
+                  {uploadFile && (
+                    <div className="mt-2 text-sm text-blue-600">
+                      Selected: {uploadFile.name}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowTestModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={uploading}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {uploading ? 'Saving...' : (editingTest ? 'Update Test Result' : 'Add Test Result')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium text-gray-900">Confirm Delete</h3>
+              <div className="mt-2 px-7 py-3">
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to delete this test result? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex justify-center space-x-3 mt-4">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deletingTestId && handleDeleteTest(deletingTestId)}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
       </div>
     </AppLayout>
