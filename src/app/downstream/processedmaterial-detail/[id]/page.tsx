@@ -10,17 +10,6 @@ type MaterialType = {
   name: string;
 };
 
-interface ProcessedMaterialTest {
-  id: number;
-  processedMaterialId: number;
-  testDate: string | null;
-  lab: string | null;
-  parameters: string | null;
-  results: string | null;
-  complianceStatus: string | null;
-  reportDocumentUrl: string | null;
-}
-
 type ProcessedMaterial = {
   id: number;
   materialType?: MaterialType | null;
@@ -31,6 +20,17 @@ type ProcessedMaterial = {
   location?: string | null;
   status?: string | null;
   processingLotId?: number | null;
+};
+
+type ProcessedMaterialTest = {
+  id: number;
+  processedMaterialId: number;
+  testDate?: string | null;
+  lab?: string | null;
+  parameters?: string | null;
+  results?: string | null;
+  complianceStatus?: string | null;
+  reportDocumentUrl?: string | null;
 };
 
 export default function ProcessedMaterialDetailPage() {
