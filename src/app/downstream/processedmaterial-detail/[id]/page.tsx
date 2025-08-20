@@ -10,6 +10,17 @@ type MaterialType = {
   name: string;
 };
 
+interface ProcessedMaterialTest {
+  id: number;
+  processedMaterialId: number;
+  testDate: string | null;
+  lab: string | null;
+  parameters: string | null;
+  results: string | null;
+  complianceStatus: string | null;
+  reportDocumentUrl: string | null;
+}
+
 type ProcessedMaterial = {
   id: number;
   materialType?: MaterialType | null;
@@ -37,10 +48,10 @@ export default function ProcessedMaterialDetailPage() {
   const [activeTab, setActiveTab] = useState<"sales" | "qc" | "documents" | "financials">("sales");
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
-  const [testResults, setTestResults] = useState<any[]>([]);
+  const [testResults, setTestResults] = useState<ProcessedMaterialTest[]>([]);
   const [testResultsLoading, setTestResultsLoading] = useState(false);
   const [showTestModal, setShowTestModal] = useState(false);
-  const [editingTest, setEditingTest] = useState<any | null>(null);
+  const [editingTest, setEditingTest] = useState<ProcessedMaterialTest | null>(null);
   const [testFormData, setTestFormData] = useState({
     testDate: '',
     lab: '',
@@ -49,7 +60,7 @@ export default function ProcessedMaterialDetailPage() {
     complianceStatus: '',
     reportDocumentUrl: ''
   });
-  const [testFormErrors, setTestFormErrors] = useState<any>({});
+  const [testFormErrors, setTestFormErrors] = useState<Record<string, string>>({});
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -163,7 +174,7 @@ export default function ProcessedMaterialDetailPage() {
   };
 
   const validateTestForm = () => {
-    const errors: any = {};
+    const errors: Record<string, string> = {};
     
     if (!testFormData.testDate) errors.testDate = 'Test date is required';
     if (!testFormData.lab) errors.lab = 'Lab is required';
@@ -234,7 +245,7 @@ export default function ProcessedMaterialDetailPage() {
     }
   };
 
-  const handleEditTest = (test: any) => {
+  const handleEditTest = (test: ProcessedMaterialTest) => {
     setEditingTest(test);
     setTestFormData({
       testDate: test.testDate ? test.testDate.split('T')[0] : '',
