@@ -20,6 +20,10 @@ type ProcessedMaterial = {
   location?: string | null;
   status?: string | null;
   processingLotId?: number | null;
+  purchaseCostPerUnit?: number | null;
+  processingCostPerUnit?: number | null;
+  actualSalesPrice?: number | null;
+  expectedSalesPrice?: number | null;
 };
 
 type ProcessedMaterialTest = {
@@ -519,6 +523,28 @@ export default function ProcessedMaterialDetailPage() {
     setEditingDocument(null);
   };
 
+  const calculateFinancials = () => {
+    if (!data) return { totalCost: 0, totalRevenue: 0, netProfit: 0 };
+    
+    const quantity = data.quantity || 0;
+    const purchaseCost = data.purchaseCostPerUnit || 0;
+    const processingCost = data.processingCostPerUnit || 0;
+    const salesPrice = data.actualSalesPrice || 0;
+    
+    const totalCost = (purchaseCost + processingCost) * quantity;
+    const totalRevenue = salesPrice * quantity;
+    const netProfit = totalRevenue - totalCost;
+    
+    return { totalCost, totalRevenue, netProfit };
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
 
   return (
     <AppLayout>
@@ -828,15 +854,17 @@ export default function ProcessedMaterialDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <div className="text-sm text-gray-500">Total Purchase/Processing Cost</div>
-                    <div className="font-medium">-</div>
+                    <div className="font-medium">{formatCurrency(calculateFinancials().totalCost)}</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500">Total Revenue</div>
-                    <div className="font-medium">-</div>
+                    <div className="font-medium">{formatCurrency(calculateFinancials().totalRevenue)}</div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-500">Net Profit/Loss</div>
-                    <div className="font-medium">-</div>
+                    <div className={`font-medium ${calculateFinancials().netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(calculateFinancials().netProfit)}
+                    </div>
                   </div>
                 </div>
               </div>
