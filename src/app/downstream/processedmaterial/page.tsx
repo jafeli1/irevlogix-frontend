@@ -242,7 +242,7 @@ export default function ProcessedMaterialsPage() {
         <h1 className="text-2xl font-semibold">Processed Materials</h1>
         <div className="flex gap-3">
           <button onClick={onExportCsv} className="px-3 py-2 border rounded">Export CSV</button>
-          <button onClick={onOpenCreate} className="px-3 py-2 bg-blue-600 text-white rounded">Create New Inventory Record</button>
+          <button onClick={onOpenCreate} className="px-3 py-2 bg-blue-600 text-white rounded">Add New Processed Material</button>
         </div>
       </div>
 
@@ -375,13 +375,14 @@ export default function ProcessedMaterialsPage() {
       </div>
 
       {showCreate && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white w-full max-w-2xl rounded p-6 space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded shadow-lg flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
               <h2 className="text-xl font-semibold">Add New Processed Material</h2>
               <button onClick={() => setShowCreate(false)} className="px-3 py-2 border rounded">Close</button>
             </div>
-            <form onSubmit={onSubmitCreate} className="space-y-4">
+            <form onSubmit={onSubmitCreate} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                 <p className="text-sm text-blue-700">
                   <span className="font-medium">AI Suggestion — Material Quality & Pricing Optimization:</span>
@@ -583,7 +584,8 @@ export default function ProcessedMaterialsPage() {
                   onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))}
                 />
               </div>
-              <div className="flex items-center gap-3 justify-end">
+              </div>
+              <div className="flex items-center gap-3 justify-end p-6 border-t border-gray-200 flex-shrink-0">
                 <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 border rounded">Cancel</button>
                 <button disabled={createSubmitting} type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">{createSubmitting ? "Saving..." : "Add New Processed Material"}</button>
               </div>
