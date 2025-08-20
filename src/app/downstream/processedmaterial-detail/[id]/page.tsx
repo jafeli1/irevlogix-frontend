@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import AppLayout from "../../../../components/AppLayout";
 
 type MaterialType = {
@@ -24,6 +24,7 @@ type ProcessedMaterial = {
 
 export default function ProcessedMaterialDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = Array.isArray(params?.id) ? params?.id[0] : (params as { id?: string })?.id;
   const token = useMemo(() => {
     if (typeof window === "undefined") return "";
@@ -92,6 +93,12 @@ export default function ProcessedMaterialDetailPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Processed Material Detail</h1>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push('/downstream/processedmaterial')}
+            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            Back to Processed Materials
+          </button>
           <select className="border rounded px-2 py-2" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">Select Status</option>
             <option value="Available">Available</option>
@@ -176,7 +183,7 @@ export default function ProcessedMaterialDetailPage() {
               <div className="bg-white border rounded p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-lg font-semibold">Sales Records</div>
-                  <Link href="/downstream/processedmaterial-sales" className="px-3 py-2 bg-blue-600 text-white rounded">
+                  <Link href={`/downstream/processedmaterial-sales?materialId=${id}`} className="px-3 py-2 bg-blue-600 text-white rounded">
                     Manage Sales Records
                   </Link>
                 </div>
