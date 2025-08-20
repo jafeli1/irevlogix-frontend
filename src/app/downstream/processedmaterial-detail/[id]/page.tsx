@@ -33,6 +33,18 @@ type ProcessedMaterialTest = {
   reportDocumentUrl?: string | null;
 };
 
+type ProcessedMaterialDocument = {
+  id: number;
+  processedMaterialId: number;
+  fileName: string;
+  filePath: string;
+  contentType: string | null;
+  fileSize: number;
+  description: string | null;
+  documentType: string | null;
+  dateCreated: string;
+};
+
 export default function ProcessedMaterialDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -66,6 +78,24 @@ export default function ProcessedMaterialDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingTestId, setDeletingTestId] = useState<number | null>(null);
 
+  const [documents, setDocuments] = useState<ProcessedMaterialDocument[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<ProcessedMaterialDocument | null>(null);
+  const [documentFormData, setDocumentFormData] = useState({
+    fileName: '',
+    filePath: '',
+    contentType: '',
+    fileSize: 0,
+    description: '',
+    documentType: ''
+  });
+  const [documentFormErrors, setDocumentFormErrors] = useState<Record<string, string>>({});
+  const [documentUploadFile, setDocumentUploadFile] = useState<File | null>(null);
+  const [documentUploading, setDocumentUploading] = useState(false);
+  const [showDocumentDeleteConfirm, setShowDocumentDeleteConfirm] = useState(false);
+  const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null);
+
   const fetchDetail = async () => {
     setLoading(true);
     setError(null);
@@ -94,6 +124,9 @@ export default function ProcessedMaterialDetailPage() {
   useEffect(() => {
     if (activeTab === "qc" && data) {
       fetchTestResults();
+    }
+    if (activeTab === "documents" && data) {
+      fetchDocuments();
     }
   }, [activeTab, data]);
 
@@ -290,6 +323,200 @@ export default function ProcessedMaterialDetailPage() {
     setUploadFile(null);
     setTestFormErrors({});
     setShowTestModal(true);
+  };
+
+  const fetchDocuments = async () => {
+    if (!data) return;
+    
+    setDocumentsLoading(true);
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterialDocuments?processedMaterialId=${data.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
+      }
+      const responseData = await response.json();
+      setDocuments(responseData.items || []);
+    } catch (err) {
+      console.error('Error fetching documents:', err);
+    } finally {
+      setDocumentsLoading(false);
+    }
+  };
+
+  const handleDocumentInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setDocumentFormData(prev => ({ ...prev, [name]: value }));
+    if (documentFormErrors[name]) {
+      setDocumentFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleDocumentFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setDocumentUploadFile(file);
+    }
+  };
+
+  const uploadDocumentFile = async (file: File): Promise<{ filePath: string; fileName: string; contentType: string; fileSize: number }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessedMaterialDocuments/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload file');
+    }
+
+    const responseData = await response.json();
+    return {
+      filePath: responseData.filePath,
+      fileName: responseData.fileName,
+      contentType: responseData.contentType,
+      fileSize: responseData.fileSize
+    };
+  };
+
+  const validateDocumentForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!documentFormData.documentType) {
+      errors.documentType = 'Document type is required';
+    }
+    
+    if (!editingDocument && !documentUploadFile) {
+      errors.file = 'File upload is required';
+    }
+    
+    setDocumentFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleDocumentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateDocumentForm()) {
+      return;
+    }
+
+    setDocumentUploading(true);
+    try {
+      let fileData = {
+        fileName: documentFormData.fileName,
+        filePath: documentFormData.filePath,
+        contentType: documentFormData.contentType,
+        fileSize: documentFormData.fileSize
+      };
+      
+      if (documentUploadFile) {
+        const uploadResult = await uploadDocumentFile(documentUploadFile);
+        fileData = uploadResult;
+      }
+
+      const submitData = {
+        processedMaterialId: data!.id,
+        fileName: fileData.fileName,
+        filePath: fileData.filePath,
+        contentType: fileData.contentType,
+        fileSize: fileData.fileSize,
+        description: documentFormData.description || null,
+        documentType: documentFormData.documentType || null
+      };
+
+      const url = editingDocument 
+        ? `https://irevlogix-backend.onrender.com/api/ProcessedMaterialDocuments/${editingDocument.id}`
+        : 'https://irevlogix-backend.onrender.com/api/ProcessedMaterialDocuments';
+      
+      const method = editingDocument ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(submitData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save document');
+      }
+
+      await fetchDocuments();
+      setShowDocumentModal(false);
+      resetDocumentForm();
+    } catch (err) {
+      console.error('Error saving document:', err);
+    } finally {
+      setDocumentUploading(false);
+    }
+  };
+
+  const handleEditDocument = (document: ProcessedMaterialDocument) => {
+    setEditingDocument(document);
+    setDocumentFormData({
+      fileName: document.fileName,
+      filePath: document.filePath,
+      contentType: document.contentType || '',
+      fileSize: document.fileSize,
+      description: document.description || '',
+      documentType: document.documentType || ''
+    });
+    setShowDocumentModal(true);
+  };
+
+  const handleDeleteDocument = async (documentId: number) => {
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterialDocuments/${documentId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete document');
+      }
+
+      await fetchDocuments();
+      setShowDocumentDeleteConfirm(false);
+      setDeletingDocumentId(null);
+    } catch (err) {
+      console.error('Error deleting document:', err);
+    }
+  };
+
+  const openAddDocumentModal = () => {
+    setEditingDocument(null);
+    setDocumentFormData({
+      fileName: '',
+      filePath: '',
+      contentType: '',
+      fileSize: 0,
+      description: '',
+      documentType: ''
+    });
+    setDocumentFormErrors({});
+    setDocumentUploadFile(null);
+    setShowDocumentModal(true);
+  };
+
+  const resetDocumentForm = () => {
+    setDocumentFormData({
+      fileName: '',
+      filePath: '',
+      contentType: '',
+      fileSize: 0,
+      description: '',
+      documentType: ''
+    });
+    setDocumentFormErrors({});
+    setDocumentUploadFile(null);
+    setEditingDocument(null);
   };
 
 
@@ -506,15 +733,91 @@ export default function ProcessedMaterialDetailPage() {
           )}
 
           {activeTab === "documents" && (
-            <div className="space-y-4">
-              <div className="bg-white border rounded p-4">
-                <div className="text-lg font-semibold mb-3">Upload Documents</div>
-                <div className="text-gray-500">Upload feature coming soon.</div>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">Documents</h3>
+                <button
+                  onClick={openAddDocumentModal}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Add New Document
+                </button>
               </div>
-              <div className="bg-white border rounded p-4">
-                <div className="text-lg font-semibold mb-3">Documents</div>
-                <div className="text-gray-500">No documents uploaded.</div>
-              </div>
+
+              {documentsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-500">Loading documents...</p>
+                </div>
+              ) : documents.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No documents found for this processed material.</p>
+                  <p className="text-sm mt-1">Click &quot;Add New Document&quot; to get started.</p>
+                </div>
+              ) : (
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  <ul className="divide-y divide-gray-200">
+                    {documents.map((document) => (
+                      <li key={document.id} className="px-6 py-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">File Name</p>
+                              <a 
+                                href={`https://irevlogix-backend.onrender.com/${document.filePath}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:text-blue-800"
+                              >
+                                {document.fileName}
+                              </a>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Document Type</p>
+                              <p className="text-sm text-gray-500">{document.documentType || 'N/A'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">File Size</p>
+                              <p className="text-sm text-gray-500">
+                                {(document.fileSize / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Upload Date</p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(document.dateCreated).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2 ml-4">
+                            <button
+                              onClick={() => handleEditDocument(document)}
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeletingDocumentId(document.id);
+                                setShowDocumentDeleteConfirm(true);
+                              }}
+                              className="text-red-600 hover:text-red-800 text-sm font-medium"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                        {document.description && (
+                          <div className="mt-3">
+                            <p className="text-sm font-medium text-gray-900">Description</p>
+                            <p className="text-sm text-gray-500">{document.description}</p>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -706,6 +1009,134 @@ export default function ProcessedMaterialDetailPage() {
                 </button>
                 <button
                   onClick={() => deletingTestId && handleDeleteTest(deletingTestId)}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDocumentModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {editingDocument ? 'Edit Document' : 'Add New Document'}
+              </h3>
+              
+              <form onSubmit={handleDocumentSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Document Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="documentType"
+                    value={documentFormData.documentType}
+                    onChange={handleDocumentInputChange}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select document type</option>
+                    <option value="Certificate">Certificate</option>
+                    <option value="Report">Report</option>
+                    <option value="Invoice">Invoice</option>
+                    <option value="Specification">Specification</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  {documentFormErrors.documentType && (
+                    <p className="mt-1 text-sm text-red-600">{documentFormErrors.documentType}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={documentFormData.description}
+                    onChange={handleDocumentInputChange}
+                    rows={3}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Optional description of the document"
+                  />
+                  {documentFormErrors.description && (
+                    <p className="mt-1 text-sm text-red-600">{documentFormErrors.description}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    File Upload {!editingDocument && <span className="text-red-500">*</span>}
+                  </label>
+                  
+                  {editingDocument && documentFormData.fileName && (
+                    <div className="mb-2 text-sm text-green-600">
+                      Current file: {documentFormData.fileName}
+                    </div>
+                  )}
+                  
+                  <input
+                    type="file"
+                    onChange={handleDocumentFileChange}
+                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  />
+                  
+                  {documentUploadFile && (
+                    <div className="mt-2 text-sm text-blue-600">
+                      Selected: {documentUploadFile.name}
+                    </div>
+                  )}
+                  
+                  {documentFormErrors.file && (
+                    <p className="mt-1 text-sm text-red-600">{documentFormErrors.file}</p>
+                  )}
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowDocumentModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={documentUploading}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {documentUploading ? 'Saving...' : (editingDocument ? 'Update Document' : 'Add Document')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDocumentDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium text-gray-900">Confirm Delete</h3>
+              <div className="mt-2 px-7 py-3">
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to delete this document? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex justify-center space-x-3 mt-4">
+                <button
+                  onClick={() => setShowDocumentDeleteConfirm(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deletingDocumentId && handleDeleteDocument(deletingDocumentId)}
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
                 >
                   Delete
