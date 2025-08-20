@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import AppLayout from "../../../components/AppLayout";
@@ -37,7 +37,7 @@ type ProcessedMaterialSalesListItem = {
 
 const pageSizeOptions = [10, 25, 50];
 
-export default function ProcessedMaterialSalesPage() {
+function ProcessedMaterialSalesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const materialId = searchParams.get('materialId');
@@ -459,5 +459,13 @@ export default function ProcessedMaterialSalesPage() {
       )}
       </div>
     </AppLayout>
+  );
+}
+
+export default function ProcessedMaterialSalesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProcessedMaterialSalesContent />
+    </Suspense>
   );
 }
