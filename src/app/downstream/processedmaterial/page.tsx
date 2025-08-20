@@ -9,6 +9,11 @@ type MaterialType = {
   name: string;
 };
 
+type ProcessingLot = {
+  id: number;
+  lotNumber: string;
+};
+
 type ProcessedMaterialListItem = {
   id: number;
   materialType?: MaterialType | null;
@@ -32,10 +37,11 @@ export default function ProcessedMaterialsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
+  const [processingLots, setProcessingLots] = useState<ProcessingLot[]>([]);
 
   const [filterMaterialTypeId, setFilterMaterialTypeId] = useState<string>("");
   const [filterQualityGrade, setFilterQualityGrade] = useState("");
-  const [filterLocation, setFilterLocation] = useState("");
+  const [filterProcessingLotId, setFilterProcessingLotId] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
   const [showCreate, setShowCreate] = useState(false);
@@ -50,6 +56,16 @@ export default function ProcessedMaterialsPage() {
     status: "",
     purchaseCostPerUnit: "",
     processingLotId: "",
+    processedWeight: "",
+    weightUnit: "",
+    destinationVendor: "",
+    expectedSalesPrice: "",
+    actualSalesPrice: "",
+    saleDate: "",
+    notes: "",
+    certificationNumber: "",
+    isHazardous: false,
+    hazardousClassification: "",
   });
 
   const token = useMemo(() => {
@@ -68,7 +84,20 @@ export default function ProcessedMaterialsPage() {
         setMaterialTypes(json || []);
       } catch {}
     };
-    if (token) fetchMaterialTypes();
+    const fetchProcessingLots = async () => {
+      try {
+        const res = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessingLots`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        setProcessingLots(json || []);
+      } catch {}
+    };
+    if (token) {
+      fetchMaterialTypes();
+      fetchProcessingLots();
+    }
   }, [token]);
 
   const fetchData = async () => {
@@ -78,7 +107,7 @@ export default function ProcessedMaterialsPage() {
       const params = new URLSearchParams();
       if (filterMaterialTypeId) params.append("materialTypeId", filterMaterialTypeId);
       if (filterQualityGrade) params.append("qualityGrade", filterQualityGrade);
-      if (filterLocation) params.append("location", filterLocation);
+      if (filterProcessingLotId) params.append("processingLotId", filterProcessingLotId);
       if (filterStatus) params.append("status", filterStatus);
       params.append("page", String(page));
       params.append("pageSize", String(pageSize));
@@ -106,7 +135,7 @@ export default function ProcessedMaterialsPage() {
     if (!token) return;
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, page, pageSize, filterMaterialTypeId, filterQualityGrade, filterLocation, filterStatus]);
+  }, [token, page, pageSize, filterMaterialTypeId, filterQualityGrade, filterProcessingLotId, filterStatus]);
 
   const onExportCsv = async () => {
     try {
@@ -145,6 +174,16 @@ export default function ProcessedMaterialsPage() {
       status: "",
       purchaseCostPerUnit: "",
       processingLotId: "",
+      processedWeight: "",
+      weightUnit: "",
+      destinationVendor: "",
+      expectedSalesPrice: "",
+      actualSalesPrice: "",
+      saleDate: "",
+      notes: "",
+      certificationNumber: "",
+      isHazardous: false,
+      hazardousClassification: "",
     });
     setShowCreate(true);
   };
@@ -164,6 +203,16 @@ export default function ProcessedMaterialsPage() {
         status: createForm.status || null,
         purchaseCostPerUnit: createForm.purchaseCostPerUnit ? Number(createForm.purchaseCostPerUnit) : null,
         processingLotId: createForm.processingLotId ? Number(createForm.processingLotId) : null,
+        processedWeight: createForm.processedWeight ? Number(createForm.processedWeight) : null,
+        weightUnit: createForm.weightUnit || null,
+        destinationVendor: createForm.destinationVendor || null,
+        expectedSalesPrice: createForm.expectedSalesPrice ? Number(createForm.expectedSalesPrice) : null,
+        actualSalesPrice: createForm.actualSalesPrice ? Number(createForm.actualSalesPrice) : null,
+        saleDate: createForm.saleDate || null,
+        notes: createForm.notes || null,
+        certificationNumber: createForm.certificationNumber || null,
+        isHazardous: createForm.isHazardous,
+        hazardousClassification: createForm.hazardousClassification || null,
       };
       const res = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterials`, {
         method: "POST",
@@ -213,21 +262,31 @@ export default function ProcessedMaterialsPage() {
         </div>
         <div>
           <label className="block text-sm mb-1">Quality Grade</label>
-          <input
+          <select
             className="w-full border rounded px-2 py-2"
             value={filterQualityGrade}
             onChange={(e) => { setPage(1); setFilterQualityGrade(e.target.value); }}
-            placeholder="e.g. A, B"
-          />
+          >
+            <option value="">All</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+          </select>
         </div>
         <div>
-          <label className="block text-sm mb-1">Location</label>
-          <input
+          <label className="block text-sm mb-1">Processing Lot</label>
+          <select
             className="w-full border rounded px-2 py-2"
-            value={filterLocation}
-            onChange={(e) => { setPage(1); setFilterLocation(e.target.value); }}
-            placeholder="Location"
-          />
+            value={filterProcessingLotId}
+            onChange={(e) => { setPage(1); setFilterProcessingLotId(e.target.value); }}
+          >
+            <option value="">All</option>
+            {processingLots.map((lot) => (
+              <option key={lot.id} value={lot.id}>{lot.lotNumber}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm mb-1">Availability Status</label>
@@ -286,7 +345,7 @@ export default function ProcessedMaterialsPage() {
                 <td className="px-4 py-3">{row.location || ""}</td>
                 <td className="px-4 py-3">{row.status || ""}</td>
                 <td className="px-4 py-3">
-                  <Link className="text-blue-600 underline" href={`/downstream/processedmaterial-detail/${row.id}`}>Details</Link>
+                  <Link className="text-blue-600 underline" href={`/downstream/processedmaterial-detail/${row.id}`}>View Details</Link>
                 </td>
               </tr>
             ))}
@@ -319,10 +378,17 @@ export default function ProcessedMaterialsPage() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
           <div className="bg-white w-full max-w-2xl rounded p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Create New Inventory Record</h2>
+              <h2 className="text-xl font-semibold">Add New Processed Material</h2>
               <button onClick={() => setShowCreate(false)} className="px-3 py-2 border rounded">Close</button>
             </div>
             <form onSubmit={onSubmitCreate} className="space-y-4">
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">AI Suggestion — Material Quality & Pricing Optimization:</span>
+                  AI will suggest optimal quality grades, pricing estimates, and vendor recommendations based on material type and processing history.
+                  <em> (Feature coming soon)</em>
+                </p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm mb-1">Material Type</label>
@@ -339,8 +405,9 @@ export default function ProcessedMaterialsPage() {
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Description</label>
-                  <input
-                    className="w-full border rounded px-2 py-2"
+                  <textarea
+                    className="w-full border rounded px-2 py-2 resize-both overflow-auto"
+                    rows={3}
                     value={createForm.description}
                     onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
                   />
@@ -365,16 +432,24 @@ export default function ProcessedMaterialsPage() {
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Quality Grade</label>
-                  <input
+                  <select
                     className="w-full border rounded px-2 py-2"
                     value={createForm.qualityGrade}
                     onChange={(e) => setCreateForm((f) => ({ ...f, qualityGrade: e.target.value }))}
-                  />
+                  >
+                    <option value="">Select</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Location</label>
-                  <input
-                    className="w-full border rounded px-2 py-2"
+                  <textarea
+                    className="w-full border rounded px-2 py-2 resize-both overflow-auto"
+                    rows={2}
                     value={createForm.location}
                     onChange={(e) => setCreateForm((f) => ({ ...f, location: e.target.value }))}
                   />
@@ -404,18 +479,113 @@ export default function ProcessedMaterialsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-1">Associated Processing Lot Id</label>
-                  <input
-                    type="number"
+                  <label className="block text-sm mb-1">Processing Lot</label>
+                  <select
                     className="w-full border rounded px-2 py-2"
                     value={createForm.processingLotId}
                     onChange={(e) => setCreateForm((f) => ({ ...f, processingLotId: e.target.value }))}
+                  >
+                    <option value="">Select</option>
+                    {processingLots.map((lot) => (
+                      <option key={lot.id} value={lot.id}>{lot.lotNumber}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Processed Weight</label>
+                  <input
+                    type="number"
+                    step="any"
+                    className="w-full border rounded px-2 py-2"
+                    value={createForm.processedWeight}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, processedWeight: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Weight Unit</label>
+                  <input
+                    className="w-full border rounded px-2 py-2"
+                    value={createForm.weightUnit}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, weightUnit: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Destination Vendor</label>
+                  <input
+                    className="w-full border rounded px-2 py-2"
+                    value={createForm.destinationVendor}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, destinationVendor: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Expected Sales Price</label>
+                  <input
+                    type="number"
+                    step="any"
+                    className="w-full border rounded px-2 py-2"
+                    value={createForm.expectedSalesPrice}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, expectedSalesPrice: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Actual Sales Price</label>
+                  <input
+                    type="number"
+                    step="any"
+                    className="w-full border rounded px-2 py-2"
+                    value={createForm.actualSalesPrice}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, actualSalesPrice: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Sale Date</label>
+                  <input
+                    type="date"
+                    className="w-full border rounded px-2 py-2"
+                    value={createForm.saleDate}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, saleDate: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Certification Number</label>
+                  <input
+                    className="w-full border rounded px-2 py-2"
+                    value={createForm.certificationNumber}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, certificationNumber: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Is Hazardous</label>
+                  <select
+                    className="w-full border rounded px-2 py-2"
+                    value={createForm.isHazardous ? "true" : "false"}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, isHazardous: e.target.value === "true" }))}
+                  >
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Hazardous Classification</label>
+                  <input
+                    className="w-full border rounded px-2 py-2"
+                    value={createForm.hazardousClassification}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, hazardousClassification: e.target.value }))}
                   />
                 </div>
               </div>
+              <div>
+                <label className="block text-sm mb-1">Notes</label>
+                <textarea
+                  className="w-full border rounded px-2 py-2 resize-both overflow-auto"
+                  rows={4}
+                  value={createForm.notes}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))}
+                />
+              </div>
               <div className="flex items-center gap-3 justify-end">
                 <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 border rounded">Cancel</button>
-                <button disabled={createSubmitting} type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">{createSubmitting ? "Saving..." : "Save"}</button>
+                <button disabled={createSubmitting} type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">{createSubmitting ? "Saving..." : "Add New Processed Material"}</button>
               </div>
             </form>
           </div>
