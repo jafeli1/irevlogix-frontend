@@ -13,6 +13,12 @@ type Vendor = {
   vendorRating?: number | null;
 };
 
+type MaterialType = {
+  id: number;
+  name: string;
+  description: string;
+};
+
 
 const pageSizeOptions = [10, 25, 50];
 
@@ -29,11 +35,15 @@ export default function VendorsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [vendors, setVendors] = useState<{id: number, vendorName: string}[]>([]);
+  const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
+
   const [filterName, setFilterName] = useState("");
   const [filterMaterialTypeId, setFilterMaterialTypeId] = useState<string>("");
 
   const [showCreate, setShowCreate] = useState(false);
   const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [createForm, setCreateForm] = useState({
     vendorName: "",
     contactPerson: "",
@@ -54,7 +64,7 @@ export default function VendorsPage() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (filterName) params.append("name", filterName);
+      if (filterName) params.append("vendorId", filterName);
       if (filterMaterialTypeId) params.append("materialTypeId", filterMaterialTypeId);
       params.append("page", String(page));
       params.append("pageSize", String(pageSize));
@@ -73,6 +83,33 @@ export default function VendorsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchVendors = async () => {
+      try {
+        const res = await fetch(`https://irevlogix-backend.onrender.com/api/Vendors`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        setVendors(json || []);
+      } catch {}
+    };
+    const fetchMaterialTypes = async () => {
+      try {
+        const res = await fetch(`https://irevlogix-backend.onrender.com/api/MaterialTypes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        setMaterialTypes(json || []);
+      } catch {}
+    };
+    if (token) {
+      fetchVendors();
+      fetchMaterialTypes();
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
@@ -120,15 +157,41 @@ export default function VendorsPage() {
       paymentTerms: "",
       vendorRating: "",
     });
+    setValidationErrors({});
     setShowCreate(true);
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!createForm.vendorName.trim()) {
+      errors.vendorName = 'Vendor Name is required';
+    }
+    if (!createForm.contactPerson.trim()) {
+      errors.contactPerson = 'Contact Person is required';
+    }
+    if (!createForm.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!validateEmail(createForm.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    if (!createForm.phone.trim()) {
+      errors.phone = 'Phone is required';
+    } else if (!validatePhone(createForm.phone)) {
+      errors.phone = 'Please enter a valid phone number';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const onSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createForm.vendorName || !createForm.contactPerson || !validateEmail(createForm.email) || !validatePhone(createForm.phone)) {
-      setError("Please provide required fields with valid formats.");
+    
+    if (!validateForm()) {
       return;
     }
+    
     setCreateSubmitting(true);
     setError(null);
     try {
@@ -176,11 +239,29 @@ export default function VendorsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label className="block text-sm mb-1">Vendor Name</label>
-          <input className="w-full border rounded px-2 py-2" value={filterName} onChange={(e) => { setPage(1); setFilterName(e.target.value); }} />
+          <select 
+            className="w-full border rounded px-2 py-2" 
+            value={filterName} 
+            onChange={(e) => { setPage(1); setFilterName(e.target.value); }}
+          >
+            <option value="">All Vendors</option>
+            {vendors.map((vendor) => (
+              <option key={vendor.id} value={vendor.id}>{vendor.vendorName}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm mb-1">Material Type</label>
-          <input className="w-full border rounded px-2 py-2" value={filterMaterialTypeId} onChange={(e) => { setPage(1); setFilterMaterialTypeId(e.target.value); }} placeholder="Material Type Id" />
+          <select 
+            className="w-full border rounded px-2 py-2" 
+            value={filterMaterialTypeId} 
+            onChange={(e) => { setPage(1); setFilterMaterialTypeId(e.target.value); }}
+          >
+            <option value="">All Material Types</option>
+            {materialTypes.map((mt) => (
+              <option key={mt.id} value={mt.id}>{mt.description}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm mb-1">Page Size</label>
@@ -219,7 +300,7 @@ export default function VendorsPage() {
                 <td className="px-4 py-3">{v.lastSaleDate ? new Date(v.lastSaleDate).toLocaleDateString() : ""}</td>
                 <td className="px-4 py-3">{v.vendorRating ?? ""}</td>
                 <td className="px-4 py-3">
-                  <Link className="text-blue-600 underline" href={`/downstream/vendor-detail/${v.id}`}>Details</Link>
+                  <Link className="text-blue-600 underline" href={`/downstream/vendor-detail/${v.id}`}>View Details</Link>
                 </td>
               </tr>
             ))}
@@ -246,20 +327,69 @@ export default function VendorsPage() {
             <form onSubmit={onSubmitCreate} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm mb-1">Vendor Name</label>
-                  <input className="w-full border rounded px-2 py-2" value={createForm.vendorName} onChange={(e) => setCreateForm((f) => ({ ...f, vendorName: e.target.value }))} required />
+                  <label className="block text-sm mb-1">Vendor Name <span className="text-red-500">*</span></label>
+                  <input 
+                    className="w-full border rounded px-2 py-2" 
+                    value={createForm.vendorName} 
+                    onChange={(e) => {
+                      setCreateForm((f) => ({ ...f, vendorName: e.target.value }));
+                      if (validationErrors.vendorName) {
+                        setValidationErrors(prev => ({ ...prev, vendorName: '' }));
+                      }
+                    }} 
+                  />
+                  {validationErrors.vendorName && (
+                    <p className="text-sm text-red-600">{validationErrors.vendorName}</p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm mb-1">Contact Person</label>
-                  <input className="w-full border rounded px-2 py-2" value={createForm.contactPerson} onChange={(e) => setCreateForm((f) => ({ ...f, contactPerson: e.target.value }))} required />
+                  <label className="block text-sm mb-1">Contact Person <span className="text-red-500">*</span></label>
+                  <input 
+                    className="w-full border rounded px-2 py-2" 
+                    value={createForm.contactPerson} 
+                    onChange={(e) => {
+                      setCreateForm((f) => ({ ...f, contactPerson: e.target.value }));
+                      if (validationErrors.contactPerson) {
+                        setValidationErrors(prev => ({ ...prev, contactPerson: '' }));
+                      }
+                    }} 
+                  />
+                  {validationErrors.contactPerson && (
+                    <p className="text-sm text-red-600">{validationErrors.contactPerson}</p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm mb-1">Email</label>
-                  <input type="email" className="w-full border rounded px-2 py-2" value={createForm.email} onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))} required />
+                  <label className="block text-sm mb-1">Email <span className="text-red-500">*</span></label>
+                  <input 
+                    type="email" 
+                    className="w-full border rounded px-2 py-2" 
+                    value={createForm.email} 
+                    onChange={(e) => {
+                      setCreateForm((f) => ({ ...f, email: e.target.value }));
+                      if (validationErrors.email) {
+                        setValidationErrors(prev => ({ ...prev, email: '' }));
+                      }
+                    }} 
+                  />
+                  {validationErrors.email && (
+                    <p className="text-sm text-red-600">{validationErrors.email}</p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm mb-1">Phone</label>
-                  <input className="w-full border rounded px-2 py-2" value={createForm.phone} onChange={(e) => setCreateForm((f) => ({ ...f, phone: e.target.value }))} required />
+                  <label className="block text-sm mb-1">Phone <span className="text-red-500">*</span></label>
+                  <input 
+                    className="w-full border rounded px-2 py-2" 
+                    value={createForm.phone} 
+                    onChange={(e) => {
+                      setCreateForm((f) => ({ ...f, phone: e.target.value }));
+                      if (validationErrors.phone) {
+                        setValidationErrors(prev => ({ ...prev, phone: '' }));
+                      }
+                    }} 
+                  />
+                  {validationErrors.phone && (
+                    <p className="text-sm text-red-600">{validationErrors.phone}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Address</label>
