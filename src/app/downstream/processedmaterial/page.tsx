@@ -46,6 +46,7 @@ export default function ProcessedMaterialsPage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState({
     materialTypeId: "",
     description: "",
@@ -188,8 +189,22 @@ export default function ProcessedMaterialsPage() {
     setShowCreate(true);
   };
 
+  const validateForm = () => {
+    if (!createForm.materialTypeId || !createForm.processingLotId) {
+      setValidationError("The required fields must be filled out");
+      return false;
+    }
+    setValidationError(null);
+    return true;
+  };
+
   const onSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setCreateSubmitting(true);
     setError(null);
     try {
@@ -242,7 +257,7 @@ export default function ProcessedMaterialsPage() {
         <h1 className="text-2xl font-semibold">Processed Materials</h1>
         <div className="flex gap-3">
           <button onClick={onExportCsv} className="px-3 py-2 border rounded">Export CSV</button>
-          <button onClick={onOpenCreate} className="px-3 py-2 bg-blue-600 text-white rounded">Create New Inventory Record</button>
+          <button onClick={onOpenCreate} className="px-3 py-2 bg-blue-600 text-white rounded">Add New Processed Material</button>
         </div>
       </div>
 
@@ -392,11 +407,14 @@ export default function ProcessedMaterialsPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm mb-1">Material Type</label>
+                  <label className="block text-sm mb-1">Material Type <span className="text-red-500">*</span></label>
                   <select
                     className="w-full border rounded px-2 py-2"
                     value={createForm.materialTypeId}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, materialTypeId: e.target.value }))}
+                    onChange={(e) => {
+                      setCreateForm((f) => ({ ...f, materialTypeId: e.target.value }));
+                      setValidationError(null);
+                    }}
                   >
                     <option value="">Select</option>
                     {materialTypes.map((mt) => (
@@ -480,11 +498,14 @@ export default function ProcessedMaterialsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-1">Processing Lot</label>
+                  <label className="block text-sm mb-1">Processing Lot <span className="text-red-500">*</span></label>
                   <select
                     className="w-full border rounded px-2 py-2"
                     value={createForm.processingLotId}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, processingLotId: e.target.value }))}
+                    onChange={(e) => {
+                      setCreateForm((f) => ({ ...f, processingLotId: e.target.value }));
+                      setValidationError(null);
+                    }}
                   >
                     <option value="">Select</option>
                     {processingLots.map((lot) => (
@@ -585,6 +606,11 @@ export default function ProcessedMaterialsPage() {
                 />
               </div>
               </div>
+              {validationError && (
+                <div className="px-6 py-2">
+                  <p className="text-sm text-red-600">{validationError}</p>
+                </div>
+              )}
               <div className="flex items-center gap-3 justify-end p-6 border-t border-gray-200 flex-shrink-0">
                 <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 border rounded">Cancel</button>
                 <button disabled={createSubmitting} type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">{createSubmitting ? "Saving..." : "Add New Processed Material"}</button>
