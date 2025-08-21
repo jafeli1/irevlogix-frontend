@@ -176,6 +176,17 @@ export default function VendorDetailPage() {
   const [deletingDocumentsId, setDeletingDocumentsId] = useState<number | null>(null);
   const [documentsFile, setDocumentsFile] = useState<File | null>(null);
   const [documentsUploading, setDocumentsUploading] = useState(false);
+
+  const [financialSummary, setFinancialSummary] = useState<{
+    totalRevenue: number;
+    averageDaysToPay: number;
+    averageFreightCost: number;
+    averageLoadingCost: number;
+    averageQuantity: number;
+    unpaidInvoicesCount: number;
+  } | null>(null);
+  const [financialLoading, setFinancialLoading] = useState(false);
+  const [financialError, setFinancialError] = useState<string | null>(null);
   
   const pageSizeOptions = [10, 25, 50];
 
@@ -279,6 +290,12 @@ export default function VendorDetailPage() {
   useEffect(() => {
     if (data && activeTab === "documents") {
       fetchDocuments();
+    }
+  }, [data, activeTab]);
+
+  useEffect(() => {
+    if (data && activeTab === "financials") {
+      fetchFinancialSummary();
     }
   }, [data, activeTab]);
 
@@ -925,6 +942,40 @@ export default function VendorDetailPage() {
     setDocumentsFormErrors({});
   };
 
+  const fetchFinancialSummary = async () => {
+    if (!data) return;
+    
+    setFinancialLoading(true);
+    setFinancialError(null);
+    
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorFinancials/${data.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch financial summary');
+      }
+      
+      const financialData = await response.json();
+      setFinancialSummary(financialData);
+    } catch (error) {
+      console.error('Error fetching financial summary:', error);
+      setFinancialError(error instanceof Error ? error.message : 'Failed to load financial summary');
+    } finally {
+      setFinancialLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
@@ -980,7 +1031,7 @@ export default function VendorDetailPage() {
             <button className={`px-4 py-2 ${activeTab === "contracts" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("contracts")}>Contracts</button>
             <button className={`px-4 py-2 ${activeTab === "pricing" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("pricing")}>Pricing</button>
             <button className={`px-4 py-2 ${activeTab === "communications" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("communications")}>Communications Log</button>
-            <button className={`px-4 py-2 ${activeTab === "financials" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("financials")}>Financial Summary</button>
+            <button className={`px-4 py-2 ${activeTab === "financials" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("financials")}>Financials</button>
             <button className={`px-4 py-2 ${activeTab === "documents" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("documents")}>Documents</button>
           </div>
 
@@ -1403,20 +1454,49 @@ export default function VendorDetailPage() {
             <div className="space-y-4">
               <div className="bg-white border rounded p-4">
                 <div className="text-lg font-semibold mb-3">Financial Summary</div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <div className="text-sm text-gray-500">Total Revenue</div>
-                    <div className="font-medium">-</div>
+                
+                {financialError && (
+                  <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
+                    <p className="text-red-800">{financialError}</p>
                   </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Average Days to Pay</div>
-                    <div className="font-medium">-</div>
+                )}
+
+                {financialLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Outstanding Invoices</div>
-                    <div className="font-medium">-</div>
+                ) : financialSummary ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <div className="text-sm text-gray-500">Total Revenue from Vendor</div>
+                      <div className="font-medium">{formatCurrency(financialSummary.totalRevenue)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">Average Days to Pay</div>
+                      <div className="font-medium">{financialSummary.averageDaysToPay} days</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">Average Freight Cost</div>
+                      <div className="font-medium">{formatCurrency(financialSummary.averageFreightCost)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">Average Loading Cost</div>
+                      <div className="font-medium">{formatCurrency(financialSummary.averageLoadingCost)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">Average Quantity</div>
+                      <div className="font-medium">{financialSummary.averageQuantity.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">Unpaid Invoices</div>
+                      <div className="font-medium">{financialSummary.unpaidInvoicesCount}</div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No financial data available for this vendor.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
