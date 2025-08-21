@@ -1527,15 +1527,24 @@ export default function VendorDetailPage() {
                   <label className="block text-sm font-medium text-gray-700">
                     Type <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={communicationsFormData.type}
                     onChange={(e) => setCommunicationsFormData({ ...communicationsFormData, type: e.target.value })}
                     className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
                       communicationsFormErrors.type ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="e.g., Phone Call, Email, Meeting"
-                  />
+                  >
+                    <option value="">Select communication type...</option>
+                    <option value="Phone Call">Phone Call</option>
+                    <option value="Email">Email</option>
+                    <option value="Meeting">Meeting</option>
+                    <option value="Face to Face Conversation">Face to Face Conversation</option>
+                    <option value="Text Message">Text Message</option>
+                    <option value="Letter">Letter</option>
+                    <option value="Video Call">Video Call</option>
+                    <option value="Instant Message">Instant Message</option>
+                    <option value="Voicemail">Voicemail</option>
+                  </select>
                   {communicationsFormErrors.type && (
                     <p className="mt-1 text-sm text-red-600">{communicationsFormErrors.type}</p>
                   )}
