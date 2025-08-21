@@ -55,6 +55,18 @@ interface VendorContract {
   dateUpdated: string;
 }
 
+interface VendorPricing {
+  id: number;
+  vendorId: number;
+  materialTypeId: number | null;
+  materialType: { id: number; name: string } | null;
+  pricePerUnit: number | null;
+  effectiveStartDate: string | null;
+  effectiveEndDate: string | null;
+  dateCreated: string;
+  dateUpdated: string;
+}
+
 export default function VendorDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -68,7 +80,7 @@ export default function VendorDetailPage() {
   const [data, setData] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"sales" | "contracts" | "communications" | "financials" | "documents">("sales");
+  const [activeTab, setActiveTab] = useState<"sales" | "contracts" | "pricing" | "communications" | "financials" | "documents">("sales");
 
   const [salesData, setSalesData] = useState<ProcessedMaterialSalesListItem[]>([]);
   const [filteredSalesData, setFilteredSalesData] = useState<ProcessedMaterialSalesListItem[]>([]);
@@ -98,6 +110,21 @@ export default function VendorDetailPage() {
   const [contractUploading, setContractUploading] = useState(false);
   const [showContractDeleteConfirm, setShowContractDeleteConfirm] = useState(false);
   const [deletingContractId, setDeletingContractId] = useState<number | null>(null);
+
+  const [pricing, setPricing] = useState<VendorPricing[]>([]);
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [editingPricing, setEditingPricing] = useState<VendorPricing | null>(null);
+  const [pricingFormData, setPricingFormData] = useState({
+    materialTypeId: '',
+    pricePerUnit: '',
+    effectiveStartDate: '',
+    effectiveEndDate: ''
+  });
+  const [pricingFormErrors, setPricingFormErrors] = useState<Record<string, string>>({});
+  const [showPricingDeleteConfirm, setShowPricingDeleteConfirm] = useState(false);
+  const [deletingPricingId, setDeletingPricingId] = useState<number | null>(null);
   
   const pageSizeOptions = [10, 25, 50];
 
@@ -182,6 +209,7 @@ export default function VendorDetailPage() {
     fetchDetail();
     fetchSalesData();
     fetchMaterialTypes();
+    fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, id]);
 
@@ -382,6 +410,152 @@ export default function VendorDetailPage() {
     setEditingContract(null);
   };
 
+  const fetchPricing = async () => {
+    if (!id || !token) return;
+    
+    setPricingLoading(true);
+    setPricingError(null);
+    
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorPricing?vendorId=${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch pricing data');
+      }
+      
+      const result = await response.json();
+      setPricing(result.items || []);
+    } catch (error) {
+      console.error('Error fetching pricing:', error);
+      setPricingError('Failed to load pricing data');
+    } finally {
+      setPricingLoading(false);
+    }
+  };
+
+  const validatePricingForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!pricingFormData.materialTypeId) {
+      errors.materialTypeId = 'Material Type is required';
+    }
+    if (!pricingFormData.pricePerUnit) {
+      errors.pricePerUnit = 'Price Per Unit is required';
+    } else if (isNaN(Number(pricingFormData.pricePerUnit)) || Number(pricingFormData.pricePerUnit) <= 0) {
+      errors.pricePerUnit = 'Price Per Unit must be a positive number';
+    }
+    if (!pricingFormData.effectiveStartDate) {
+      errors.effectiveStartDate = 'Effective Start Date is required';
+    }
+    
+    setPricingFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handlePricingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validatePricingForm()) {
+      return;
+    }
+    
+    try {
+      const submitData = {
+        vendorId: Number(id),
+        materialTypeId: Number(pricingFormData.materialTypeId),
+        pricePerUnit: Number(pricingFormData.pricePerUnit),
+        effectiveStartDate: pricingFormData.effectiveStartDate,
+        effectiveEndDate: pricingFormData.effectiveEndDate || null
+      };
+      
+      const url = editingPricing 
+        ? `https://irevlogix-backend.onrender.com/api/VendorPricing/${editingPricing.id}`
+        : 'https://irevlogix-backend.onrender.com/api/VendorPricing';
+      
+      const method = editingPricing ? 'PATCH' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save pricing');
+      }
+      
+      await fetchPricing();
+      closePricingModal();
+    } catch (error) {
+      console.error('Error saving pricing:', error);
+      setPricingFormErrors({ submit: 'Failed to save pricing. Please try again.' });
+    }
+  };
+
+  const handleEditPricing = (pricing: VendorPricing) => {
+    setEditingPricing(pricing);
+    setPricingFormData({
+      materialTypeId: pricing.materialTypeId?.toString() || '',
+      pricePerUnit: pricing.pricePerUnit?.toString() || '',
+      effectiveStartDate: pricing.effectiveStartDate || '',
+      effectiveEndDate: pricing.effectiveEndDate || ''
+    });
+    setShowPricingModal(true);
+  };
+
+  const handleDeletePricing = async (pricingId: number) => {
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorPricing/${pricingId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete pricing');
+      }
+      
+      await fetchPricing();
+      setShowPricingDeleteConfirm(false);
+      setDeletingPricingId(null);
+    } catch (error) {
+      console.error('Error deleting pricing:', error);
+    }
+  };
+
+  const openAddPricingModal = () => {
+    setEditingPricing(null);
+    setPricingFormData({
+      materialTypeId: '',
+      pricePerUnit: '',
+      effectiveStartDate: '',
+      effectiveEndDate: ''
+    });
+    setPricingFormErrors({});
+    setShowPricingModal(true);
+  };
+
+  const closePricingModal = () => {
+    setShowPricingModal(false);
+    setEditingPricing(null);
+    setPricingFormData({
+      materialTypeId: '',
+      pricePerUnit: '',
+      effectiveStartDate: '',
+      effectiveEndDate: ''
+    });
+    setPricingFormErrors({});
+  };
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
@@ -435,6 +609,7 @@ export default function VendorDetailPage() {
           <div className="flex items-center gap-2 border-b">
             <button className={`px-4 py-2 ${activeTab === "sales" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("sales")}>Sales History</button>
             <button className={`px-4 py-2 ${activeTab === "contracts" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("contracts")}>Contracts</button>
+            <button className={`px-4 py-2 ${activeTab === "pricing" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("pricing")}>Pricing</button>
             <button className={`px-4 py-2 ${activeTab === "communications" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("communications")}>Communications Log</button>
             <button className={`px-4 py-2 ${activeTab === "financials" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("financials")}>Financial Summary</button>
             <button className={`px-4 py-2 ${activeTab === "documents" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("documents")}>Documents</button>
@@ -685,6 +860,89 @@ export default function VendorDetailPage() {
             </div>
           )}
 
+          {activeTab === "pricing" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">Vendor Pricing</h3>
+                <button
+                  onClick={openAddPricingModal}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Add Pricing
+                </button>
+              </div>
+
+              {pricingError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                  <p className="text-red-800">{pricingError}</p>
+                </div>
+              )}
+
+              {pricingLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  {pricing.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No pricing found for this vendor.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full bg-white border border-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material Type</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price Per Unit</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Effective Start Date</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Effective End Date</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {pricing.map((pricingItem) => (
+                            <tr key={pricingItem.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {pricingItem.materialType?.name || '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {pricingItem.pricePerUnit ? `$${pricingItem.pricePerUnit.toFixed(2)}` : '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {pricingItem.effectiveStartDate ? new Date(pricingItem.effectiveStartDate).toLocaleDateString() : '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {pricingItem.effectiveEndDate ? new Date(pricingItem.effectiveEndDate).toLocaleDateString() : '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button
+                                  onClick={() => handleEditPricing(pricingItem)}
+                                  className="text-blue-600 hover:text-blue-800 text-sm font-medium mr-4"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setDeletingPricingId(pricingItem.id);
+                                    setShowPricingDeleteConfirm(true);
+                                  }}
+                                  className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === "communications" && (
             <div className="space-y-4">
               <div className="bg-white border rounded p-4">
@@ -840,6 +1098,143 @@ export default function VendorDetailPage() {
                 </button>
                 <button
                   onClick={() => deletingContractId && handleDeleteContract(deletingContractId)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pricing Modal */}
+      {showPricingModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {editingPricing ? 'Edit Pricing' : 'Add New Pricing'}
+              </h3>
+              <form onSubmit={handlePricingSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Material Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={pricingFormData.materialTypeId}
+                    onChange={(e) => setPricingFormData({ ...pricingFormData, materialTypeId: e.target.value })}
+                    className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      pricingFormErrors.materialTypeId ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select Material Type</option>
+                    {materialTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
+                  {pricingFormErrors.materialTypeId && (
+                    <p className="mt-1 text-sm text-red-600">{pricingFormErrors.materialTypeId}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Price Per Unit <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={pricingFormData.pricePerUnit}
+                    onChange={(e) => setPricingFormData({ ...pricingFormData, pricePerUnit: e.target.value })}
+                    className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      pricingFormErrors.pricePerUnit ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="0.00"
+                  />
+                  {pricingFormErrors.pricePerUnit && (
+                    <p className="mt-1 text-sm text-red-600">{pricingFormErrors.pricePerUnit}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Effective Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={pricingFormData.effectiveStartDate}
+                    onChange={(e) => setPricingFormData({ ...pricingFormData, effectiveStartDate: e.target.value })}
+                    className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      pricingFormErrors.effectiveStartDate ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {pricingFormErrors.effectiveStartDate && (
+                    <p className="mt-1 text-sm text-red-600">{pricingFormErrors.effectiveStartDate}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Effective End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={pricingFormData.effectiveEndDate}
+                    onChange={(e) => setPricingFormData({ ...pricingFormData, effectiveEndDate: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {pricingFormErrors.submit && (
+                  <div className="text-red-600 text-sm">{pricingFormErrors.submit}</div>
+                )}
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closePricingModal}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {editingPricing ? 'Update Pricing' : 'Add Pricing'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pricing Delete Confirmation Modal */}
+      {showPricingDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Pricing</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Are you sure you want to delete this pricing? This action cannot be undone.
+              </p>
+              <div className="flex justify-center space-x-3">
+                <button
+                  onClick={() => {
+                    setShowPricingDeleteConfirm(false);
+                    setDeletingPricingId(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deletingPricingId && handleDeletePricing(deletingPricingId)}
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   Delete
