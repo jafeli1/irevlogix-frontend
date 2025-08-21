@@ -78,6 +78,16 @@ interface VendorCommunications {
   dateUpdated: string;
 }
 
+interface VendorDocuments {
+  id: number;
+  vendorId: number;
+  documentUrl: string | null;
+  filename: string | null;
+  contentType: string | null;
+  dateCreated: string;
+  dateUpdated: string;
+}
+
 export default function VendorDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -151,6 +161,21 @@ export default function VendorDetailPage() {
     nextSteps: ''
   });
   const [communicationsFormErrors, setCommunicationsFormErrors] = useState<Record<string, string>>({});
+
+  const [documents, setDocuments] = useState<VendorDocuments[]>([]);
+  const [documentsFormData, setDocumentsFormData] = useState({
+    filename: '',
+    description: ''
+  });
+  const [documentsFormErrors, setDocumentsFormErrors] = useState<{[key: string]: string}>({});
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [editingDocuments, setEditingDocuments] = useState<VendorDocuments | null>(null);
+  const [showDocumentsDeleteConfirm, setShowDocumentsDeleteConfirm] = useState(false);
+  const [deletingDocumentsId, setDeletingDocumentsId] = useState<number | null>(null);
+  const [documentsFile, setDocumentsFile] = useState<File | null>(null);
+  const [documentsUploading, setDocumentsUploading] = useState(false);
   
   const pageSizeOptions = [10, 25, 50];
 
@@ -248,6 +273,12 @@ export default function VendorDetailPage() {
   useEffect(() => {
     if (data && activeTab === "communications") {
       fetchCommunications();
+    }
+  }, [data, activeTab]);
+
+  useEffect(() => {
+    if (data && activeTab === "documents") {
+      fetchDocuments();
     }
   }, [data, activeTab]);
 
@@ -728,6 +759,170 @@ export default function VendorDetailPage() {
       nextSteps: ''
     });
     setCommunicationsFormErrors({});
+  };
+
+  const fetchDocuments = async () => {
+    if (!data?.id) return;
+    
+    setDocumentsLoading(true);
+    setDocumentsError(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorDocuments?vendorId=${data.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setDocuments(result.items || []);
+      } else {
+        setDocumentsError('Failed to fetch documents');
+      }
+    } catch (error) {
+      setDocumentsError('Error fetching documents');
+    } finally {
+      setDocumentsLoading(false);
+    }
+  };
+
+  const handleDocumentFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setDocumentsFile(file);
+      setDocumentsFormData({ ...documentsFormData, filename: file.name });
+    }
+  };
+
+  const uploadDocumentFile = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('description', documentsFormData.description);
+
+    const token = localStorage.getItem('token');
+    const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorDocuments/${data?.id}/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      return result;
+    } else {
+      throw new Error('Upload failed');
+    }
+  };
+
+  const validateDocumentsForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!documentsFile && !editingDocuments) {
+      errors.file = 'File is required';
+    }
+    
+    setDocumentsFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleDocumentsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateDocumentsForm()) return;
+    
+    setDocumentsUploading(true);
+    setDocumentsError(null);
+    
+    try {
+      if (editingDocuments) {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorDocuments/${editingDocuments.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filename: documentsFormData.filename
+          })
+        });
+        
+        if (response.ok) {
+          await fetchDocuments();
+          closeDocumentsModal();
+        } else {
+          setDocumentsError('Failed to update document');
+        }
+      } else {
+        if (documentsFile) {
+          await uploadDocumentFile(documentsFile);
+          await fetchDocuments();
+          closeDocumentsModal();
+        }
+      }
+    } catch (error) {
+      setDocumentsError('Error saving document');
+    } finally {
+      setDocumentsUploading(false);
+    }
+  };
+
+  const handleEditDocuments = (document: VendorDocuments) => {
+    setEditingDocuments(document);
+    setDocumentsFormData({
+      filename: document.filename || '',
+      description: ''
+    });
+    setShowDocumentsModal(true);
+  };
+
+  const handleDeleteDocuments = async (id: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorDocuments/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        await fetchDocuments();
+        setShowDocumentsDeleteConfirm(false);
+        setDeletingDocumentsId(null);
+      } else {
+        setDocumentsError('Failed to delete document');
+      }
+    } catch (error) {
+      setDocumentsError('Error deleting document');
+    }
+  };
+
+  const openAddDocumentsModal = () => {
+    setEditingDocuments(null);
+    setDocumentsFormData({
+      filename: '',
+      description: ''
+    });
+    setDocumentsFile(null);
+    setDocumentsFormErrors({});
+    setShowDocumentsModal(true);
+  };
+
+  const closeDocumentsModal = () => {
+    setShowDocumentsModal(false);
+    setEditingDocuments(null);
+    setDocumentsFormData({
+      filename: '',
+      description: ''
+    });
+    setDocumentsFile(null);
+    setDocumentsFormErrors({});
   };
 
   return (
@@ -1227,11 +1422,89 @@ export default function VendorDetailPage() {
           )}
 
           {activeTab === "documents" && (
-            <div className="space-y-4">
-              <div className="bg-white border rounded p-4">
-                <div className="text-lg font-semibold mb-3">Documents</div>
-                <div className="text-gray-500">Upload and listing coming soon.</div>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">Vendor Documents</h3>
+                <button
+                  onClick={openAddDocumentsModal}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Add Document
+                </button>
               </div>
+
+              {documentsError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                  <p className="text-red-800">{documentsError}</p>
+                </div>
+              )}
+
+              {documentsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  {documents.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No documents found for this vendor.</p>
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-gray-200">
+                      {documents.map((document) => (
+                        <li key={document.id} className="px-6 py-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">File Name</p>
+                                {document.documentUrl ? (
+                                  <a 
+                                    href={`https://irevlogix-backend.onrender.com/${document.documentUrl}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-blue-600 hover:text-blue-800"
+                                  >
+                                    {document.filename}
+                                  </a>
+                                ) : (
+                                  <p className="text-sm text-gray-500">{document.filename}</p>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">Content Type</p>
+                                <p className="text-sm text-gray-500">{document.contentType || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">Upload Date</p>
+                                <p className="text-sm text-gray-500">
+                                  {new Date(document.dateCreated).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex space-x-2 ml-4">
+                              <button
+                                onClick={() => handleEditDocuments(document)}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDeletingDocumentsId(document.id);
+                                  setShowDocumentsDeleteConfirm(true);
+                                }}
+                                className="text-red-600 hover:text-red-800 text-sm font-medium"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </>
@@ -1627,6 +1900,121 @@ export default function VendorDetailPage() {
                 </button>
                 <button
                   onClick={() => deletingCommunicationsId && handleDeleteCommunications(deletingCommunicationsId)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Documents Modal */}
+      {showDocumentsModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {editingDocuments ? 'Edit Document' : 'Add New Document'}
+              </h3>
+              
+              {documentsError && (
+                <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-3">
+                  <p className="text-red-800 text-sm">{documentsError}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleDocumentsSubmit} className="space-y-4">
+                {!editingDocuments && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      File <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      onChange={handleDocumentFileChange}
+                      className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                        documentsFormErrors.file ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    />
+                    {documentsFormErrors.file && (
+                      <p className="mt-1 text-sm text-red-600">{documentsFormErrors.file}</p>
+                    )}
+                  </div>
+                )}
+
+                {editingDocuments && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      File Name
+                    </label>
+                    <input
+                      type="text"
+                      value={documentsFormData.filename}
+                      onChange={(e) => setDocumentsFormData({ ...documentsFormData, filename: e.target.value })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    value={documentsFormData.description}
+                    onChange={(e) => setDocumentsFormData({ ...documentsFormData, description: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Optional description"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeDocumentsModal}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={documentsUploading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    {documentsUploading ? 'Uploading...' : (editingDocuments ? 'Update Document' : 'Add Document')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Documents Delete Confirmation Modal */}
+      {showDocumentsDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Document</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Are you sure you want to delete this document? This action cannot be undone.
+              </p>
+              <div className="flex justify-center space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDocumentsDeleteConfirm(false);
+                    setDeletingDocumentsId(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deletingDocumentsId && handleDeleteDocuments(deletingDocumentsId)}
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   Delete
