@@ -67,6 +67,17 @@ interface VendorPricing {
   dateUpdated: string;
 }
 
+interface VendorCommunications {
+  id: number;
+  vendorId: number;
+  date: string | null;
+  type: string | null;
+  summary: string | null;
+  nextSteps: string | null;
+  dateCreated: string;
+  dateUpdated: string;
+}
+
 export default function VendorDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -125,6 +136,21 @@ export default function VendorDetailPage() {
   const [pricingFormErrors, setPricingFormErrors] = useState<Record<string, string>>({});
   const [showPricingDeleteConfirm, setShowPricingDeleteConfirm] = useState(false);
   const [deletingPricingId, setDeletingPricingId] = useState<number | null>(null);
+
+  const [communications, setCommunications] = useState<VendorCommunications[]>([]);
+  const [communicationsLoading, setCommunicationsLoading] = useState(false);
+  const [communicationsError, setCommunicationsError] = useState<string | null>(null);
+  const [showCommunicationsModal, setShowCommunicationsModal] = useState(false);
+  const [editingCommunications, setEditingCommunications] = useState<VendorCommunications | null>(null);
+  const [showCommunicationsDeleteConfirm, setShowCommunicationsDeleteConfirm] = useState(false);
+  const [deletingCommunicationsId, setDeletingCommunicationsId] = useState<number | null>(null);
+  const [communicationsFormData, setCommunicationsFormData] = useState({
+    date: '',
+    type: '',
+    summary: '',
+    nextSteps: ''
+  });
+  const [communicationsFormErrors, setCommunicationsFormErrors] = useState<Record<string, string>>({});
   
   const pageSizeOptions = [10, 25, 50];
 
@@ -216,6 +242,12 @@ export default function VendorDetailPage() {
   useEffect(() => {
     if (data && activeTab === "contracts") {
       fetchContracts();
+    }
+  }, [data, activeTab]);
+
+  useEffect(() => {
+    if (data && activeTab === "communications") {
+      fetchCommunications();
     }
   }, [data, activeTab]);
 
@@ -554,6 +586,148 @@ export default function VendorDetailPage() {
       effectiveEndDate: ''
     });
     setPricingFormErrors({});
+  };
+
+  const fetchCommunications = async () => {
+    if (!id) return;
+    
+    setCommunicationsLoading(true);
+    setCommunicationsError(null);
+    
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorCommunications?vendorId=${id}&pageSize=100`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCommunications(data.items || []);
+      } else {
+        setCommunicationsError('Failed to fetch communications');
+      }
+    } catch (error) {
+      setCommunicationsError('Error fetching communications');
+    } finally {
+      setCommunicationsLoading(false);
+    }
+  };
+
+  const validateCommunicationsForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!communicationsFormData.date) {
+      errors.date = 'Date is required';
+    }
+    
+    if (!communicationsFormData.type.trim()) {
+      errors.type = 'Type is required';
+    }
+    
+    if (!communicationsFormData.summary.trim()) {
+      errors.summary = 'Summary is required';
+    }
+    
+    setCommunicationsFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCommunicationsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateCommunicationsForm()) {
+      return;
+    }
+    
+    try {
+      const submitData = {
+        vendorId: parseInt(id!),
+        date: communicationsFormData.date,
+        type: communicationsFormData.type,
+        summary: communicationsFormData.summary,
+        nextSteps: communicationsFormData.nextSteps || null
+      };
+      
+      const url = editingCommunications 
+        ? `https://irevlogix-backend.onrender.com/api/VendorCommunications/${editingCommunications.id}`
+        : 'https://irevlogix-backend.onrender.com/api/VendorCommunications';
+      
+      const method = editingCommunications ? 'PATCH' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(submitData)
+      });
+      
+      if (response.ok) {
+        await fetchCommunications();
+        closeCommunicationsModal();
+      } else {
+        setCommunicationsFormErrors({ submit: 'Failed to save communications' });
+      }
+    } catch (error) {
+      setCommunicationsFormErrors({ submit: 'Error saving communications' });
+    }
+  };
+
+  const handleEditCommunications = (communications: VendorCommunications) => {
+    setEditingCommunications(communications);
+    setCommunicationsFormData({
+      date: communications.date || '',
+      type: communications.type || '',
+      summary: communications.summary || '',
+      nextSteps: communications.nextSteps || ''
+    });
+    setShowCommunicationsModal(true);
+  };
+
+  const handleDeleteCommunications = async (communicationsId: number) => {
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorCommunications/${communicationsId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        await fetchCommunications();
+        setShowCommunicationsDeleteConfirm(false);
+        setDeletingCommunicationsId(null);
+      }
+    } catch (error) {
+      console.error('Error deleting communications:', error);
+    }
+  };
+
+  const openAddCommunicationsModal = () => {
+    setEditingCommunications(null);
+    setCommunicationsFormData({
+      date: '',
+      type: '',
+      summary: '',
+      nextSteps: ''
+    });
+    setCommunicationsFormErrors({});
+    setShowCommunicationsModal(true);
+  };
+
+  const closeCommunicationsModal = () => {
+    setShowCommunicationsModal(false);
+    setEditingCommunications(null);
+    setCommunicationsFormData({
+      date: '',
+      type: '',
+      summary: '',
+      nextSteps: ''
+    });
+    setCommunicationsFormErrors({});
   };
 
   return (
@@ -944,11 +1118,89 @@ export default function VendorDetailPage() {
           )}
 
           {activeTab === "communications" && (
-            <div className="space-y-4">
-              <div className="bg-white border rounded p-4">
-                <div className="text-lg font-semibold mb-3">Communications Log</div>
-                <div className="text-gray-500">No communications logged.</div>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">Communications Log</h3>
+                <button
+                  onClick={openAddCommunicationsModal}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Add Communication
+                </button>
               </div>
+
+              {communicationsError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                  <p className="text-red-800">{communicationsError}</p>
+                </div>
+              )}
+
+              {communicationsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  {communications.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No communications found for this vendor.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full bg-white border border-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Summary</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Steps</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {communications.map((communication) => (
+                            <tr key={communication.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {communication.date ? new Date(communication.date).toLocaleDateString() : '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {communication.type || '-'}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900">
+                                <div className="max-w-xs truncate">
+                                  {communication.summary || '-'}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900">
+                                <div className="max-w-xs truncate">
+                                  {communication.nextSteps || '-'}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button
+                                  onClick={() => handleEditCommunications(communication)}
+                                  className="text-blue-600 hover:text-blue-900 mr-4"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setDeletingCommunicationsId(communication.id);
+                                    setShowCommunicationsDeleteConfirm(true);
+                                  }}
+                                  className="text-red-600 hover:text-red-900"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -1235,6 +1487,137 @@ export default function VendorDetailPage() {
                 </button>
                 <button
                   onClick={() => deletingPricingId && handleDeletePricing(deletingPricingId)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Communications Modal */}
+      {showCommunicationsModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {editingCommunications ? 'Edit Communication' : 'Add New Communication'}
+              </h3>
+              <form onSubmit={handleCommunicationsSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={communicationsFormData.date}
+                    onChange={(e) => setCommunicationsFormData({ ...communicationsFormData, date: e.target.value })}
+                    className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      communicationsFormErrors.date ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {communicationsFormErrors.date && (
+                    <p className="mt-1 text-sm text-red-600">{communicationsFormErrors.date}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Type <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={communicationsFormData.type}
+                    onChange={(e) => setCommunicationsFormData({ ...communicationsFormData, type: e.target.value })}
+                    className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      communicationsFormErrors.type ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., Phone Call, Email, Meeting"
+                  />
+                  {communicationsFormErrors.type && (
+                    <p className="mt-1 text-sm text-red-600">{communicationsFormErrors.type}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Summary <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={communicationsFormData.summary}
+                    onChange={(e) => setCommunicationsFormData({ ...communicationsFormData, summary: e.target.value })}
+                    className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      communicationsFormErrors.summary ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    rows={3}
+                    placeholder="Brief summary of the communication"
+                  />
+                  {communicationsFormErrors.summary && (
+                    <p className="mt-1 text-sm text-red-600">{communicationsFormErrors.summary}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Next Steps
+                  </label>
+                  <textarea
+                    value={communicationsFormData.nextSteps}
+                    onChange={(e) => setCommunicationsFormData({ ...communicationsFormData, nextSteps: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Any follow-up actions or next steps"
+                  />
+                </div>
+
+                {communicationsFormErrors.submit && (
+                  <div className="text-red-600 text-sm">{communicationsFormErrors.submit}</div>
+                )}
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeCommunicationsModal}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {editingCommunications ? 'Update Communication' : 'Add Communication'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Communications Delete Confirmation Modal */}
+      {showCommunicationsDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Communication</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Are you sure you want to delete this communication? This action cannot be undone.
+              </p>
+              <div className="flex justify-center space-x-3">
+                <button
+                  onClick={() => {
+                    setShowCommunicationsDeleteConfirm(false);
+                    setDeletingCommunicationsId(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deletingCommunicationsId && handleDeleteCommunications(deletingCommunicationsId)}
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   Delete
