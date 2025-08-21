@@ -45,6 +45,16 @@ type ProcessedMaterialSalesListItem = {
   invoiceStatus?: string | null;
 };
 
+interface VendorContract {
+  id: number;
+  vendorId: number;
+  documentUrl: string | null;
+  effectiveStartDate: string | null;
+  effectiveEndDate: string | null;
+  dateCreated: string;
+  dateUpdated: string;
+}
+
 export default function VendorDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -72,6 +82,22 @@ export default function VendorDetailPage() {
   
   const [salesPage, setSalesPage] = useState(1);
   const [salesPageSize, setSalesPageSize] = useState(25);
+
+  const [contracts, setContracts] = useState<VendorContract[]>([]);
+  const [contractsLoading, setContractsLoading] = useState(false);
+  const [contractsError, setContractsError] = useState<string | null>(null);
+  const [showContractModal, setShowContractModal] = useState(false);
+  const [editingContract, setEditingContract] = useState<VendorContract | null>(null);
+  const [contractFormData, setContractFormData] = useState({
+    effectiveStartDate: '',
+    effectiveEndDate: '',
+    documentUrl: ''
+  });
+  const [contractFormErrors, setContractFormErrors] = useState<Record<string, string>>({});
+  const [contractUploadFile, setContractUploadFile] = useState<File | null>(null);
+  const [contractUploading, setContractUploading] = useState(false);
+  const [showContractDeleteConfirm, setShowContractDeleteConfirm] = useState(false);
+  const [deletingContractId, setDeletingContractId] = useState<number | null>(null);
   
   const pageSizeOptions = [10, 25, 50];
 
@@ -159,10 +185,201 @@ export default function VendorDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, id]);
 
+  useEffect(() => {
+    if (data && activeTab === "contracts") {
+      fetchContracts();
+    }
+  }, [data, activeTab]);
+
   const clearFilters = () => {
     setStartDate("");
     setEndDate("");
     setFilterMaterialTypeId("");
+  };
+
+  const fetchContracts = async () => {
+    if (!data) return;
+    
+    setContractsLoading(true);
+    setContractsError(null);
+    
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorContracts?vendorId=${data.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch contracts data');
+      }
+      
+      const contractsData = await response.json();
+      setContracts(contractsData.items || []);
+    } catch (err) {
+      setContractsError('Failed to load contracts data');
+      console.error('Error fetching contracts:', err);
+    } finally {
+      setContractsLoading(false);
+    }
+  };
+
+  const handleContractFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setContractUploadFile(file);
+    }
+  };
+
+  const uploadContractFile = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('https://irevlogix-backend.onrender.com/api/VendorContracts/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload file');
+    }
+
+    const responseData = await response.json();
+    return responseData.filePath;
+  };
+
+  const validateContractForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!contractFormData.effectiveStartDate) {
+      errors.effectiveStartDate = 'Effective start date is required';
+    }
+    
+    if (!editingContract && !contractUploadFile) {
+      errors.file = 'File upload is required';
+    }
+    
+    setContractFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleContractSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateContractForm() || !data) return;
+    
+    setContractUploading(true);
+    
+    try {
+      let documentUrl = contractFormData.documentUrl;
+      
+      if (contractUploadFile) {
+        documentUrl = await uploadContractFile(contractUploadFile);
+      }
+
+      const submitData = {
+        vendorId: data.id,
+        effectiveStartDate: contractFormData.effectiveStartDate,
+        effectiveEndDate: contractFormData.effectiveEndDate || null,
+        documentUrl: documentUrl
+      };
+
+      const url = editingContract 
+        ? `https://irevlogix-backend.onrender.com/api/VendorContracts/${editingContract.id}`
+        : 'https://irevlogix-backend.onrender.com/api/VendorContracts';
+      
+      const method = editingContract ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(submitData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save contract');
+      }
+
+      await fetchContracts();
+      setShowContractModal(false);
+      setContractFormData({
+        effectiveStartDate: '',
+        effectiveEndDate: '',
+        documentUrl: ''
+      });
+      setContractUploadFile(null);
+      setContractFormErrors({});
+      setEditingContract(null);
+    } catch (err) {
+      setContractsError('Failed to save contract');
+      console.error('Error saving contract:', err);
+    } finally {
+      setContractUploading(false);
+    }
+  };
+
+  const handleEditContract = (contract: VendorContract) => {
+    setEditingContract(contract);
+    setContractFormData({
+      effectiveStartDate: contract.effectiveStartDate || '',
+      effectiveEndDate: contract.effectiveEndDate || '',
+      documentUrl: contract.documentUrl || ''
+    });
+    setContractFormErrors({});
+    setContractUploadFile(null);
+    setShowContractModal(true);
+  };
+
+  const handleDeleteContract = async (contractId: number) => {
+    try {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorContracts/${contractId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete contract');
+      }
+
+      await fetchContracts();
+      setShowContractDeleteConfirm(false);
+      setDeletingContractId(null);
+    } catch (err) {
+      setContractsError('Failed to delete contract');
+      console.error('Error deleting contract:', err);
+    }
+  };
+
+  const openAddContractModal = () => {
+    setEditingContract(null);
+    setContractFormData({
+      effectiveStartDate: '',
+      effectiveEndDate: '',
+      documentUrl: ''
+    });
+    setContractFormErrors({});
+    setContractUploadFile(null);
+    setShowContractModal(true);
+  };
+
+  const closeContractModal = () => {
+    setShowContractModal(false);
+    setContractFormData({
+      effectiveStartDate: '',
+      effectiveEndDate: '',
+      documentUrl: ''
+    });
+    setContractFormErrors({});
+    setContractUploadFile(null);
+    setEditingContract(null);
   };
 
   return (
@@ -217,7 +434,7 @@ export default function VendorDetailPage() {
 
           <div className="flex items-center gap-2 border-b">
             <button className={`px-4 py-2 ${activeTab === "sales" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("sales")}>Sales History</button>
-            <button className={`px-4 py-2 ${activeTab === "contracts" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("contracts")}>Contracts &amp; Pricing</button>
+            <button className={`px-4 py-2 ${activeTab === "contracts" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("contracts")}>Contracts</button>
             <button className={`px-4 py-2 ${activeTab === "communications" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("communications")}>Communications Log</button>
             <button className={`px-4 py-2 ${activeTab === "financials" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("financials")}>Financial Summary</button>
             <button className={`px-4 py-2 ${activeTab === "documents" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("documents")}>Documents</button>
@@ -380,11 +597,91 @@ export default function VendorDetailPage() {
           )}
 
           {activeTab === "contracts" && (
-            <div className="space-y-4">
-              <div className="bg-white border rounded p-4">
-                <div className="text-lg font-semibold mb-3">Contracts &amp; Pricing</div>
-                <div className="text-gray-500">Upload and pricing management coming soon.</div>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">Vendor Contracts</h3>
+                <button
+                  onClick={openAddContractModal}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Add Contract
+                </button>
               </div>
+
+              {contractsError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                  <p className="text-red-800">{contractsError}</p>
+                </div>
+              )}
+
+              {contractsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                  {contracts.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No contracts found for this vendor.</p>
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-gray-200">
+                      {contracts.map((contract) => (
+                        <li key={contract.id} className="px-6 py-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-4">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    Contract #{contract.id}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {contract.effectiveStartDate && (
+                                      <>Start: {new Date(contract.effectiveStartDate).toLocaleDateString()}</>
+                                    )}
+                                    {contract.effectiveEndDate && (
+                                      <> | End: {new Date(contract.effectiveEndDate).toLocaleDateString()}</>
+                                    )}
+                                  </p>
+                                </div>
+                                {contract.documentUrl && (
+                                  <div>
+                                    <a
+                                      href={`https://irevlogix-backend.onrender.com/${contract.documentUrl}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 text-sm"
+                                    >
+                                      View Document
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleEditContract(contract)}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDeletingContractId(contract.id);
+                                  setShowContractDeleteConfirm(true);
+                                }}
+                                className="text-red-600 hover:text-red-800 text-sm font-medium"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -428,6 +725,129 @@ export default function VendorDetailPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Contract Modal */}
+      {showContractModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {editingContract ? 'Edit Contract' : 'Add New Contract'}
+              </h3>
+              <form onSubmit={handleContractSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Effective Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={contractFormData.effectiveStartDate}
+                    onChange={(e) => setContractFormData({
+                      ...contractFormData,
+                      effectiveStartDate: e.target.value
+                    })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {contractFormErrors.effectiveStartDate && (
+                    <p className="mt-1 text-sm text-red-600">{contractFormErrors.effectiveStartDate}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Effective End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={contractFormData.effectiveEndDate}
+                    onChange={(e) => setContractFormData({
+                      ...contractFormData,
+                      effectiveEndDate: e.target.value
+                    })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Contract Document {!editingContract && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="file"
+                    onChange={handleContractFileChange}
+                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  />
+                  
+                  {contractUploadFile && (
+                    <div className="mt-2 text-sm text-blue-600">
+                      Selected: {contractUploadFile.name}
+                    </div>
+                  )}
+
+                  {editingContract && contractFormData.documentUrl && !contractUploadFile && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      Current: <a href={`https://irevlogix-backend.onrender.com/${contractFormData.documentUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">View Document</a>
+                    </div>
+                  )}
+
+                  {contractFormErrors.file && (
+                    <p className="mt-1 text-sm text-red-600">{contractFormErrors.file}</p>
+                  )}
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeContractModal}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={contractUploading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    {contractUploading ? 'Saving...' : (editingContract ? 'Update Contract' : 'Add Contract')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showContractDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Contract</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Are you sure you want to delete this contract? This action cannot be undone.
+              </p>
+              <div className="flex justify-center space-x-3">
+                <button
+                  onClick={() => {
+                    setShowContractDeleteConfirm(false);
+                    setDeletingContractId(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deletingContractId && handleDeleteContract(deletingContractId)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
       </div>
     </AppLayout>
