@@ -1118,7 +1118,7 @@ export default function VendorDetailPage() {
             <button className={`px-4 py-2 ${activeTab === "pricing" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("pricing")}>Pricing</button>
             <button className={`px-4 py-2 ${activeTab === "communications" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("communications")}>Communications Log</button>
             <button className={`px-4 py-2 ${activeTab === "financials" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("financials")}>Financials</button>
-            <button className={`px-4 py-2 ${activeTab === "documents" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("documents")}>Documents</button>
+            <button className={`px-4 py-2 ${activeTab === "documents" ? "border-b-2 border-blue-600" : ""}`} onClick={() => setActiveTab("documents")}>Compliance Documents</button>
           </div>
 
           {activeTab === "sales" && (
@@ -1590,12 +1590,12 @@ export default function VendorDetailPage() {
           {activeTab === "documents" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">Vendor Documents</h3>
+                <h3 className="text-lg font-medium text-gray-900">Vendor Compliance Documents</h3>
                 <button
                   onClick={openAddDocumentsModal}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  Add Document
+                  Add Compliance Document
                 </button>
               </div>
 
