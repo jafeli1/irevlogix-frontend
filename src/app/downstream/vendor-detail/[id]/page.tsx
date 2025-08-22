@@ -18,6 +18,8 @@ type Vendor = {
   materialsOfInterest?: string | null;
   paymentTerms?: string | null;
   vendorRating?: number | null;
+  vendorTier?: string | null;
+  upstreamTierVendor?: number | null;
 };
 
 type MaterialType = {

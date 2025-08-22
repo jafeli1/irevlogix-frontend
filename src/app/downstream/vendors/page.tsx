@@ -8,9 +8,20 @@ type Vendor = {
   id: number;
   vendorName: string;
   contactPerson?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  materialsOfInterest?: string | null;
+  paymentTerms?: string | null;
+  vendorRating?: number | null;
+  vendorTier?: string | null;
+  upstreamTierVendor?: number | null;
   materialsPurchased?: string | null;
   lastSaleDate?: string | null;
-  vendorRating?: number | null;
 };
 
 type MaterialType = {
