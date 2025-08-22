@@ -958,7 +958,14 @@ export default function VendorDetailPage() {
     setEditingDocuments(document);
     setDocumentsFormData({
       filename: document.filename || '',
-      description: ''
+      description: '',
+      documentType: document.documentType || '',
+      issueDate: document.issueDate ? document.issueDate.split('T')[0] : '',
+      expirationDate: document.expirationDate ? document.expirationDate.split('T')[0] : '',
+      dateReceived: document.dateReceived ? document.dateReceived.split('T')[0] : '',
+      reviewComment: document.reviewComment || '',
+      lastReviewDate: document.lastReviewDate ? document.lastReviewDate.replace('Z', '').replace('.000', '') : '',
+      reviewedBy: document.reviewedBy ? document.reviewedBy.toString() : ''
     });
     setShowDocumentsModal(true);
   };
