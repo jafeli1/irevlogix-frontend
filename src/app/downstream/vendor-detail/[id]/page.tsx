@@ -84,6 +84,13 @@ interface VendorDocuments {
   documentUrl: string | null;
   filename: string | null;
   contentType: string | null;
+  documentType: string | null;
+  issueDate: string | null;
+  expirationDate: string | null;
+  dateReceived: string | null;
+  reviewComment: string | null;
+  lastReviewDate: string | null;
+  reviewedBy: number | null;
   dateCreated: string;
   dateUpdated: string;
 }
@@ -108,6 +115,7 @@ export default function VendorDetailPage() {
   const [salesLoading, setSalesLoading] = useState(false);
   const [salesError, setSalesError] = useState<string | null>(null);
   const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
+  const [users, setUsers] = useState<{id: number, firstName: string, lastName: string}[]>([]);
   
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -165,7 +173,14 @@ export default function VendorDetailPage() {
   const [documents, setDocuments] = useState<VendorDocuments[]>([]);
   const [documentsFormData, setDocumentsFormData] = useState({
     filename: '',
-    description: ''
+    description: '',
+    documentType: '',
+    issueDate: '',
+    expirationDate: '',
+    dateReceived: '',
+    reviewComment: '',
+    lastReviewDate: '',
+    reviewedBy: ''
   });
   const [documentsFormErrors, setDocumentsFormErrors] = useState<{[key: string]: string}>({});
   const [documentsLoading, setDocumentsLoading] = useState(false);
@@ -237,6 +252,19 @@ export default function VendorDetailPage() {
     } catch {}
   };
 
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('https://irevlogix-backend.onrender.com/api/users', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setUsers(data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
   useEffect(() => {
     if (!salesData.length || !id) return;
     
@@ -271,6 +299,7 @@ export default function VendorDetailPage() {
     fetchDetail();
     fetchSalesData();
     fetchMaterialTypes();
+    fetchUsers();
     fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, id]);
@@ -818,6 +847,27 @@ export default function VendorDetailPage() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('description', documentsFormData.description);
+    if (documentsFormData.documentType) {
+      formData.append('documentType', documentsFormData.documentType);
+    }
+    if (documentsFormData.issueDate) {
+      formData.append('issueDate', documentsFormData.issueDate);
+    }
+    if (documentsFormData.expirationDate) {
+      formData.append('expirationDate', documentsFormData.expirationDate);
+    }
+    if (documentsFormData.dateReceived) {
+      formData.append('dateReceived', documentsFormData.dateReceived);
+    }
+    if (documentsFormData.reviewComment) {
+      formData.append('reviewComment', documentsFormData.reviewComment);
+    }
+    if (documentsFormData.lastReviewDate) {
+      formData.append('lastReviewDate', documentsFormData.lastReviewDate);
+    }
+    if (documentsFormData.reviewedBy) {
+      formData.append('reviewedBy', documentsFormData.reviewedBy);
+    }
 
     const token = localStorage.getItem('token');
     const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorDocuments/${data?.id}/upload`, {
@@ -838,6 +888,14 @@ export default function VendorDetailPage() {
 
   const validateDocumentsForm = () => {
     const errors: {[key: string]: string} = {};
+    
+    if (!documentsFormData.documentType) {
+      errors.documentType = 'Document Type is required';
+    }
+    
+    if (!documentsFormData.dateReceived) {
+      errors.dateReceived = 'Date Received is required';
+    }
     
     if (!documentsFile && !editingDocuments) {
       errors.file = 'File is required';
@@ -865,7 +923,14 @@ export default function VendorDetailPage() {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            filename: documentsFormData.filename
+            filename: documentsFormData.filename,
+            documentType: documentsFormData.documentType,
+            issueDate: documentsFormData.issueDate || null,
+            expirationDate: documentsFormData.expirationDate || null,
+            dateReceived: documentsFormData.dateReceived || null,
+            reviewComment: documentsFormData.reviewComment,
+            lastReviewDate: documentsFormData.lastReviewDate || null,
+            reviewedBy: documentsFormData.reviewedBy ? parseInt(documentsFormData.reviewedBy) : null
           })
         });
         
@@ -924,7 +989,14 @@ export default function VendorDetailPage() {
     setEditingDocuments(null);
     setDocumentsFormData({
       filename: '',
-      description: ''
+      description: '',
+      documentType: '',
+      issueDate: '',
+      expirationDate: '',
+      dateReceived: '',
+      reviewComment: '',
+      lastReviewDate: '',
+      reviewedBy: ''
     });
     setDocumentsFile(null);
     setDocumentsFormErrors({});
@@ -936,7 +1008,14 @@ export default function VendorDetailPage() {
     setEditingDocuments(null);
     setDocumentsFormData({
       filename: '',
-      description: ''
+      description: '',
+      documentType: '',
+      issueDate: '',
+      expirationDate: '',
+      dateReceived: '',
+      reviewComment: '',
+      lastReviewDate: '',
+      reviewedBy: ''
     });
     setDocumentsFile(null);
     setDocumentsFormErrors({});
@@ -1996,7 +2075,7 @@ export default function VendorDetailPage() {
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                {editingDocuments ? 'Edit Document' : 'Add New Document'}
+                {editingDocuments ? 'Edit Compliance Document' : 'Add New Compliance Document'}
               </h3>
               
               {documentsError && (
@@ -2006,6 +2085,149 @@ export default function VendorDetailPage() {
               )}
 
               <form onSubmit={handleDocumentsSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Document Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={documentsFormData.documentType}
+                    onChange={(e) => setDocumentsFormData({ ...documentsFormData, documentType: e.target.value })}
+                    className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      documentsFormErrors.documentType ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select Document Type</option>
+                    <option value="Auto Insurance">Auto Insurance</option>
+                    <option value="Business License">Business License</option>
+                    <option value="Certificate of Insurance">Certificate of Insurance</option>
+                    <option value="Commercial General Liability">Commercial General Liability</option>
+                    <option value="Commercial Property Insurance">Commercial Property Insurance</option>
+                    <option value="Cyber Liability Insurance">Cyber Liability Insurance</option>
+                    <option value="Directors and Officers Insurance">Directors and Officers Insurance</option>
+                    <option value="Employment Practices Liability">Employment Practices Liability</option>
+                    <option value="Environmental Liability Insurance">Environmental Liability Insurance</option>
+                    <option value="Equipment Insurance">Equipment Insurance</option>
+                    <option value="Errors and Omissions Insurance">Errors and Omissions Insurance</option>
+                    <option value="Fire Department Permit">Fire Department Permit</option>
+                    <option value="General Liability Insurance">General Liability Insurance</option>
+                    <option value="Health Insurance">Health Insurance</option>
+                    <option value="Inland Marine Insurance">Inland Marine Insurance</option>
+                    <option value="Key Person Life Insurance">Key Person Life Insurance</option>
+                    <option value="Liquor Liability Insurance">Liquor Liability Insurance</option>
+                    <option value="Operating Permit">Operating Permit</option>
+                    <option value="Product Liability Insurance">Product Liability Insurance</option>
+                    <option value="Professional Liability Insurance">Professional Liability Insurance</option>
+                    <option value="Property Insurance">Property Insurance</option>
+                    <option value="Public Liability Insurance">Public Liability Insurance</option>
+                    <option value="Safety Policy">Safety Policy</option>
+                    <option value="Special Event Permit">Special Event Permit</option>
+                    <option value="Umbrella Insurance">Umbrella Insurance</option>
+                    <option value="Vehicle Insurance">Vehicle Insurance</option>
+                    <option value="Workers Compensation Insurance">Workers Compensation Insurance</option>
+                    <option value="Zoning Permit">Zoning Permit</option>
+                  </select>
+                  {documentsFormErrors.documentType && (
+                    <p className="mt-1 text-sm text-red-600">{documentsFormErrors.documentType}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Issue Date
+                  </label>
+                  <input
+                    type="date"
+                    value={documentsFormData.issueDate}
+                    onChange={(e) => setDocumentsFormData({ ...documentsFormData, issueDate: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Expiration Date
+                  </label>
+                  <input
+                    type="date"
+                    value={documentsFormData.expirationDate}
+                    onChange={(e) => setDocumentsFormData({ ...documentsFormData, expirationDate: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Date Received <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={documentsFormData.dateReceived}
+                    onChange={(e) => setDocumentsFormData({ ...documentsFormData, dateReceived: e.target.value })}
+                    className={`mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      documentsFormErrors.dateReceived ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                  {documentsFormErrors.dateReceived && (
+                    <p className="mt-1 text-sm text-red-600">{documentsFormErrors.dateReceived}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Review Comment
+                  </label>
+                  <textarea
+                    value={documentsFormData.reviewComment}
+                    onChange={(e) => setDocumentsFormData({ ...documentsFormData, reviewComment: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-y"
+                    rows={3}
+                    placeholder="Optional review comments"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Last Review Date
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={documentsFormData.lastReviewDate}
+                    onChange={(e) => setDocumentsFormData({ ...documentsFormData, lastReviewDate: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Reviewed By
+                  </label>
+                  <select
+                    value={documentsFormData.reviewedBy}
+                    onChange={(e) => setDocumentsFormData({ ...documentsFormData, reviewedBy: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Reviewer</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.firstName} {user.lastName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    value={documentsFormData.description}
+                    onChange={(e) => setDocumentsFormData({ ...documentsFormData, description: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Optional description"
+                  />
+                </div>
+
                 {!editingDocuments && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
@@ -2038,19 +2260,6 @@ export default function VendorDetailPage() {
                     />
                   </div>
                 )}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <textarea
-                    value={documentsFormData.description}
-                    onChange={(e) => setDocumentsFormData({ ...documentsFormData, description: e.target.value })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    rows={3}
-                    placeholder="Optional description"
-                  />
-                </div>
 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
