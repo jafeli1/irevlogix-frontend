@@ -57,6 +57,8 @@ export default function VendorsPage() {
     materialsOfInterest: "",
     paymentTerms: "",
     vendorRating: "",
+    vendorTier: "",
+    upstreamTierVendor: "",
   });
 
   const fetchData = async () => {
@@ -156,6 +158,8 @@ export default function VendorsPage() {
       materialsOfInterest: "",
       paymentTerms: "",
       vendorRating: "",
+      vendorTier: "",
+      upstreamTierVendor: "",
     });
     setValidationErrors({});
     setShowCreate(true);
@@ -179,6 +183,9 @@ export default function VendorsPage() {
       errors.phone = 'Phone is required';
     } else if (!validatePhone(createForm.phone)) {
       errors.phone = 'Please enter a valid phone number';
+    }
+    if (!createForm.vendorTier.trim()) {
+      errors.vendorTier = 'Vendor Tier is required';
     }
     
     setValidationErrors(errors);
@@ -208,6 +215,8 @@ export default function VendorsPage() {
         materialsOfInterest: createForm.materialsOfInterest || null,
         paymentTerms: createForm.paymentTerms || null,
         vendorRating: createForm.vendorRating ? Number(createForm.vendorRating) : null,
+        vendorTier: createForm.vendorTier,
+        upstreamTierVendor: createForm.upstreamTierVendor ? Number(createForm.upstreamTierVendor) : null,
       };
       const res = await fetch(`https://irevlogix-backend.onrender.com/api/Vendors`, {
         method: "POST",
@@ -318,8 +327,8 @@ export default function VendorsPage() {
       </div>
 
       {showCreate && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white w-full max-w-2xl rounded p-6 space-y-4">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded p-6 space-y-4 overflow-y-auto">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Add New Vendor</h2>
               <button onClick={() => setShowCreate(false)} className="px-3 py-2 border rounded">Close</button>
@@ -413,15 +422,59 @@ export default function VendorsPage() {
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Materials of Interest</label>
-                  <input className="w-full border rounded px-2 py-2" value={createForm.materialsOfInterest} onChange={(e) => setCreateForm((f) => ({ ...f, materialsOfInterest: e.target.value }))} />
+                  <textarea 
+                    className="w-full border rounded px-2 py-2 h-20 overflow-y-auto resize-none" 
+                    value={createForm.materialsOfInterest} 
+                    onChange={(e) => setCreateForm((f) => ({ ...f, materialsOfInterest: e.target.value }))} 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Payment Terms</label>
-                  <input className="w-full border rounded px-2 py-2" value={createForm.paymentTerms} onChange={(e) => setCreateForm((f) => ({ ...f, paymentTerms: e.target.value }))} />
+                  <textarea 
+                    className="w-full border rounded px-2 py-2 h-20 overflow-y-auto resize-none" 
+                    value={createForm.paymentTerms} 
+                    onChange={(e) => setCreateForm((f) => ({ ...f, paymentTerms: e.target.value }))} 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Vendor Rating</label>
                   <input type="number" step="any" className="w-full border rounded px-2 py-2" value={createForm.vendorRating} onChange={(e) => setCreateForm((f) => ({ ...f, vendorRating: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Vendor Tier <span className="text-red-500">*</span></label>
+                  <select 
+                    className="w-full border rounded px-2 py-2" 
+                    value={createForm.vendorTier} 
+                    onChange={(e) => {
+                      setCreateForm((f) => ({ ...f, vendorTier: e.target.value }));
+                      if (validationErrors.vendorTier) {
+                        setValidationErrors(prev => ({ ...prev, vendorTier: '' }));
+                      }
+                    }}
+                  >
+                    <option value="">Select Tier</option>
+                    <option value="Tier 1">Tier 1</option>
+                    <option value="Tier 2">Tier 2</option>
+                    <option value="Tier 3">Tier 3</option>
+                    <option value="Tier 4">Tier 4</option>
+                    <option value="Tier 5">Tier 5</option>
+                  </select>
+                  {validationErrors.vendorTier && (
+                    <p className="text-sm text-red-600">{validationErrors.vendorTier}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Upstream Tier Vendor</label>
+                  <select 
+                    className="w-full border rounded px-2 py-2" 
+                    value={createForm.upstreamTierVendor} 
+                    onChange={(e) => setCreateForm((f) => ({ ...f, upstreamTierVendor: e.target.value }))}
+                  >
+                    <option value="">Select Upstream Vendor</option>
+                    {vendors.map((vendor) => (
+                      <option key={vendor.id} value={vendor.id}>{vendor.vendorName}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="text-sm text-gray-500">AI Suggestion: Vendor Performance Scorecard [Placeholder]</div>
