@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AppLayout from '../../../../components/AppLayout';
 import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../../utils/rbac';
@@ -289,7 +289,7 @@ export default function VendorFacilityDetailPage() {
     }
   };
 
-  const fetchVendorFacility = async () => {
+  const fetchVendorFacility = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -320,7 +320,7 @@ export default function VendorFacilityDetailPage() {
       console.error('Error fetching vendor facility:', error);
       setError('Error loading vendor facility data');
     }
-  };
+  }, [id, router]);
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -1058,7 +1058,7 @@ export default function VendorFacilityDetailPage() {
                         type="text"
                         id={`materialGenerated${num}`}
                         name={`materialGenerated${num}`}
-                        value={(formData as Record<string, any>)[`materialGenerated${num}`] || ''}
+                        value={(formData as Record<string, string>)[`materialGenerated${num}`] || ''}
                         onChange={handleInputChange}
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -1072,7 +1072,7 @@ export default function VendorFacilityDetailPage() {
                         id={`howMaterialsProcessedDisposed${num}`}
                         name={`howMaterialsProcessedDisposed${num}`}
                         rows={3}
-                        value={(formData as Record<string, any>)[`howMaterialsProcessedDisposed${num}`] || ''}
+                        value={(formData as Record<string, string>)[`howMaterialsProcessedDisposed${num}`] || ''}
                         onChange={handleInputChange}
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -1086,7 +1086,7 @@ export default function VendorFacilityDetailPage() {
                         type="text"
                         id={`nextTierVendorNameAddress${num}`}
                         name={`nextTierVendorNameAddress${num}`}
-                        value={(formData as Record<string, any>)[`nextTierVendorNameAddress${num}`] || ''}
+                        value={(formData as Record<string, string>)[`nextTierVendorNameAddress${num}`] || ''}
                         onChange={handleInputChange}
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
