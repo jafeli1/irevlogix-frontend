@@ -109,7 +109,7 @@ interface Vendor {
 
 interface Client {
   id: string;
-  clientName: string;
+  companyName: string;
 }
 
 export default function VendorFacilityDetailPage() {
@@ -231,7 +231,7 @@ export default function VendorFacilityDetailPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('/api/vendors', {
+      const response = await fetch('/api/Vendors', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -252,7 +252,7 @@ export default function VendorFacilityDetailPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('/api/admin/clients', {
+      const response = await fetch('/api/Clients', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -596,7 +596,7 @@ export default function VendorFacilityDetailPage() {
                     <option value="">Select a client</option>
                     {clients.map((client) => (
                       <option key={client.id} value={client.id}>
-                        {client.clientName}
+                        {client.companyName}
                       </option>
                     ))}
                   </select>
@@ -809,6 +809,90 @@ export default function VendorFacilityDetailPage() {
                       type="file"
                       id="siteLayoutUpload"
                       onChange={(e) => handleFileChange(e, 'siteLayoutUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="lastFacilityAuditReportUpload" className="block text-sm font-medium text-gray-700">
+                      Last Facility Audit Report
+                    </label>
+                    <input
+                      type="file"
+                      id="lastFacilityAuditReportUpload"
+                      onChange={(e) => handleFileChange(e, 'lastFacilityAuditReportUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="lastAuditReportFindingsUpload" className="block text-sm font-medium text-gray-700">
+                      Last Audit Report Findings
+                    </label>
+                    <input
+                      type="file"
+                      id="lastAuditReportFindingsUpload"
+                      onChange={(e) => handleFileChange(e, 'lastAuditReportFindingsUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="lastAuditReportCorrectiveActionsUpload" className="block text-sm font-medium text-gray-700">
+                      Last Audit Report Corrective Actions
+                    </label>
+                    <input
+                      type="file"
+                      id="lastAuditReportCorrectiveActionsUpload"
+                      onChange={(e) => handleFileChange(e, 'lastAuditReportCorrectiveActionsUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="currentContractForThisFacilityUpload" className="block text-sm font-medium text-gray-700">
+                      Current Contract For This Facility
+                    </label>
+                    <input
+                      type="file"
+                      id="currentContractForThisFacilityUpload"
+                      onChange={(e) => handleFileChange(e, 'currentContractForThisFacilityUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="facilityClosurePlanUpload" className="block text-sm font-medium text-gray-700">
+                      Facility Closure Plan
+                    </label>
+                    <input
+                      type="file"
+                      id="facilityClosurePlanUpload"
+                      onChange={(e) => handleFileChange(e, 'facilityClosurePlanUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="facilitiesMaintenancePlanUpload" className="block text-sm font-medium text-gray-700">
+                      Facilities Maintenance Plan
+                    </label>
+                    <input
+                      type="file"
+                      id="facilitiesMaintenancePlanUpload"
+                      onChange={(e) => handleFileChange(e, 'facilitiesMaintenancePlanUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="physicalSecurityPlanUpload" className="block text-sm font-medium text-gray-700">
+                      Physical Security Plan
+                    </label>
+                    <input
+                      type="file"
+                      id="physicalSecurityPlanUpload"
+                      onChange={(e) => handleFileChange(e, 'physicalSecurityPlanUpload')}
                       className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     />
                   </div>
