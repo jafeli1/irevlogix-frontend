@@ -1093,6 +1093,316 @@ export default function VendorFacilityDetailPage() {
                 </div>
               )}
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center">
+                  <input
+                    id="competentAuthorityPermission"
+                    name="competentAuthorityPermission"
+                    type="checkbox"
+                    checked={formData.competentAuthorityPermission}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="competentAuthorityPermission" className="ml-2 block text-sm text-gray-900">
+                    Competent Authority Permission
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    id="zeroLandfillPolicy"
+                    name="zeroLandfillPolicy"
+                    type="checkbox"
+                    checked={formData.zeroLandfillPolicy}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="zeroLandfillPolicy" className="ml-2 block text-sm text-gray-900">
+                    Zero Landfill Policy
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    id="dataDestructionVerified"
+                    name="dataDestructionVerified"
+                    type="checkbox"
+                    checked={formData.dataDestructionVerified}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="dataDestructionVerified" className="ml-2 block text-sm text-gray-900">
+                    Data Destruction Verified
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    id="doYouOperateALandfill"
+                    name="doYouOperateALandfill"
+                    type="checkbox"
+                    checked={formData.doYouOperateALandfill}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="doYouOperateALandfill" className="ml-2 block text-sm text-gray-900">
+                    Do You Operate A Landfill
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    id="doYouOwnAnIncinerator"
+                    name="doYouOwnAnIncinerator"
+                    type="checkbox"
+                    checked={formData.doYouOwnAnIncinerator}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="doYouOwnAnIncinerator" className="ml-2 block text-sm text-gray-900">
+                    Do You Own An Incinerator
+                  </label>
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    id="doYouPerformChemicalFixationAndStabilization"
+                    name="doYouPerformChemicalFixationAndStabilization"
+                    type="checkbox"
+                    checked={formData.doYouPerformChemicalFixationAndStabilization}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="doYouPerformChemicalFixationAndStabilization" className="ml-2 block text-sm text-gray-900">
+                    Do You Perform Chemical Fixation And Stabilization
+                  </label>
+                </div>
+              </div>
+
+              {formData.competentAuthorityPermission && (
+                <div>
+                  <label htmlFor="documentRequestCompetentAuthorityPermissionExpDate" className="block text-sm font-medium text-gray-700">
+                    Competent Authority Permission Expiration Date
+                  </label>
+                  <input
+                    type="date"
+                    id="documentRequestCompetentAuthorityPermissionExpDate"
+                    name="documentRequestCompetentAuthorityPermissionExpDate"
+                    value={formData.documentRequestCompetentAuthorityPermissionExpDate ? formData.documentRequestCompetentAuthorityPermissionExpDate.split('T')[0] : ''}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="describeTrackingInboundOutboundMaterials" className="block text-sm font-medium text-gray-700">
+                  Describe Tracking Inbound/Outbound Materials
+                </label>
+                <textarea
+                  id="describeTrackingInboundOutboundMaterials"
+                  name="describeTrackingInboundOutboundMaterials"
+                  rows={4}
+                  value={formData.describeTrackingInboundOutboundMaterials}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="describeDataWipingProcedures" className="block text-sm font-medium text-gray-700">
+                  Describe Data Wiping Procedures
+                </label>
+                <textarea
+                  id="describeDataWipingProcedures"
+                  name="describeDataWipingProcedures"
+                  rows={4}
+                  value={formData.describeDataWipingProcedures}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="functionalityTestingDescription" className="block text-sm font-medium text-gray-700">
+                  Functionality Testing Description
+                </label>
+                <textarea
+                  id="functionalityTestingDescription"
+                  name="functionalityTestingDescription"
+                  rows={4}
+                  value={formData.functionalityTestingDescription}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="assetGradingDescription" className="block text-sm font-medium text-gray-700">
+                  Asset Grading Description
+                </label>
+                <textarea
+                  id="assetGradingDescription"
+                  name="assetGradingDescription"
+                  rows={4}
+                  value={formData.assetGradingDescription}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="updatedNamesAndLocationsOfYourDownstreamVendors" className="block text-sm font-medium text-gray-700">
+                  Updated Names And Locations Of Your Downstream Vendors
+                </label>
+                <textarea
+                  id="updatedNamesAndLocationsOfYourDownstreamVendors"
+                  name="updatedNamesAndLocationsOfYourDownstreamVendors"
+                  rows={4}
+                  value={formData.updatedNamesAndLocationsOfYourDownstreamVendors}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-lg font-medium text-gray-900">Document Uploads</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="documentRequestCompetentAuthorityPermissionUpload" className="block text-sm font-medium text-gray-700">
+                      Competent Authority Permission Document
+                    </label>
+                    <input
+                      type="file"
+                      id="documentRequestCompetentAuthorityPermissionUpload"
+                      onChange={(e) => handleFileChange(e, 'documentRequestCompetentAuthorityPermissionUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="documentRequestZeroLandfillPolicyUpload" className="block text-sm font-medium text-gray-700">
+                      Zero Landfill Policy Document
+                    </label>
+                    <input
+                      type="file"
+                      id="documentRequestZeroLandfillPolicyUpload"
+                      onChange={(e) => handleFileChange(e, 'documentRequestZeroLandfillPolicyUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="documentRequestMassBalanceUpload" className="block text-sm font-medium text-gray-700">
+                      Mass Balance Document
+                    </label>
+                    <input
+                      type="file"
+                      id="documentRequestMassBalanceUpload"
+                      onChange={(e) => handleFileChange(e, 'documentRequestMassBalanceUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="dataDestructionValidationUpload" className="block text-sm font-medium text-gray-700">
+                      Data Destruction Validation Document
+                    </label>
+                    <input
+                      type="file"
+                      id="dataDestructionValidationUpload"
+                      onChange={(e) => handleFileChange(e, 'dataDestructionValidationUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="downsteamVendorSelectionProcessDocumentUpload" className="block text-sm font-medium text-gray-700">
+                      Downstream Vendor Selection Process Document
+                    </label>
+                    <input
+                      type="file"
+                      id="downsteamVendorSelectionProcessDocumentUpload"
+                      onChange={(e) => handleFileChange(e, 'downsteamVendorSelectionProcessDocumentUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="electronicsDispositionPolicyUpload" className="block text-sm font-medium text-gray-700">
+                      Electronics Disposition Policy
+                    </label>
+                    <input
+                      type="file"
+                      id="electronicsDispositionPolicyUpload"
+                      onChange={(e) => handleFileChange(e, 'electronicsDispositionPolicyUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="dataSecurityPolicyUpload" className="block text-sm font-medium text-gray-700">
+                      Data Security Policy
+                    </label>
+                    <input
+                      type="file"
+                      id="dataSecurityPolicyUpload"
+                      onChange={(e) => handleFileChange(e, 'dataSecurityPolicyUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="nonDiscriminationPolicyUpload" className="block text-sm font-medium text-gray-700">
+                      Non-Discrimination Policy
+                    </label>
+                    <input
+                      type="file"
+                      id="nonDiscriminationPolicyUpload"
+                      onChange={(e) => handleFileChange(e, 'nonDiscriminationPolicyUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="hazardousMaterialManagementPlanUpload" className="block text-sm font-medium text-gray-700">
+                      Hazardous Material Management Plan
+                    </label>
+                    <input
+                      type="file"
+                      id="hazardousMaterialManagementPlanUpload"
+                      onChange={(e) => handleFileChange(e, 'hazardousMaterialManagementPlanUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="dataSanitizationPlanAndProcedureUpload" className="block text-sm font-medium text-gray-700">
+                      Data Sanitization Plan And Procedure
+                    </label>
+                    <input
+                      type="file"
+                      id="dataSanitizationPlanAndProcedureUpload"
+                      onChange={(e) => handleFileChange(e, 'dataSanitizationPlanAndProcedureUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="dataStorageDeviceShipmentAndProcessingContractUpload" className="block text-sm font-medium text-gray-700">
+                      Data Storage Device Shipment And Processing Contract
+                    </label>
+                    <input
+                      type="file"
+                      id="dataStorageDeviceShipmentAndProcessingContractUpload"
+                      onChange={(e) => handleFileChange(e, 'dataStorageDeviceShipmentAndProcessingContractUpload')}
+                      className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-4">
                 <h4 className="text-lg font-medium text-gray-900">Policy Documents</h4>
                 
