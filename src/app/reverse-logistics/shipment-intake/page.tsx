@@ -30,13 +30,9 @@ interface Client {
   country?: string;
 }
 
-interface ClientContact {
+interface ReverseRequest {
   id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  jobTitle?: string;
+  locationName: string;
 }
 
 interface ShipmentItem {
@@ -56,13 +52,25 @@ interface ShipmentFormData {
   shipmentNumber?: string;
   status: string;
   originatorClientId?: number;
-  clientContactId?: number;
+  reverseRequestId?: number;
+  shipmentDate: string;
+  receivedDate?: string;
   scheduledPickupDate?: string;
   actualPickupDate?: string;
-  carrier?: string;
   trackingNumber?: string;
-  transportationCost?: number;
+  carrier?: string;
+  weight?: number;
+  weightUnit?: string;
+  numberOfBoxes?: number;
+  estimatedValue?: number;
+  actualValue?: number;
+  pickupAddress?: string;
+  deliveryAddress?: string;
   originAddress?: string;
+  transportationCost?: number;
+  logisticsCost?: number;
+  dispositionCost?: number;
+  dispositionNotes?: string;
   notes?: string;
   shipmentItems: ShipmentItem[];
 }
@@ -75,13 +83,14 @@ export default function ShipmentIntake() {
   const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
   const [assetCategories, setAssetCategories] = useState<AssetCategory[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [clientContacts, setClientContacts] = useState<ClientContact[]>([]);
+  const [reverseRequests, setReverseRequests] = useState<ReverseRequest[]>([]);
   const [activeTab, setActiveTab] = useState<'manual' | 'bulk'>('manual');
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [documents, setDocuments] = useState<File[]>([]);
 
   const [formData, setFormData] = useState<ShipmentFormData>({
     status: 'Requested',
+    shipmentDate: new Date().toISOString().split('T')[0],
     shipmentItems: []
   });
 
@@ -103,7 +112,7 @@ export default function ShipmentIntake() {
     fetchMaterialTypes();
     fetchAssetCategories();
     fetchClients();
-    fetchClientContacts();
+    fetchReverseRequests();
   }, [router]);
 
   const fetchMaterialTypes = async () => {
@@ -163,10 +172,10 @@ export default function ShipmentIntake() {
     }
   };
 
-  const fetchClientContacts = async () => {
+  const fetchReverseRequests = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/clientcontacts', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/reverserequests/dropdown', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -175,16 +184,16 @@ export default function ShipmentIntake() {
 
       if (response.ok) {
         const data = await response.json();
-        setClientContacts(data);
+        setReverseRequests(data);
       }
     } catch (error) {
-      console.error('Error fetching client contacts:', error);
+      console.error('Error fetching reverse requests:', error);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: ShipmentFormData) => ({
       ...prev,
       [name]: type === 'number' ? (value ? parseFloat(value) : undefined) : value
     }));
@@ -192,7 +201,7 @@ export default function ShipmentIntake() {
 
   const handleItemChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setCurrentItem(prev => ({
+    setCurrentItem((prev: ShipmentItem) => ({
       ...prev,
       [name]: type === 'number' ? (value ? parseFloat(value) : undefined) : 
               type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
@@ -205,7 +214,7 @@ export default function ShipmentIntake() {
       return;
     }
 
-    setFormData(prev => ({
+    setFormData((prev: ShipmentFormData) => ({
       ...prev,
       shipmentItems: [...prev.shipmentItems, { ...currentItem }]
     }));
@@ -221,9 +230,9 @@ export default function ShipmentIntake() {
   };
 
   const removeItem = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev: ShipmentFormData) => ({
       ...prev,
-      shipmentItems: prev.shipmentItems.filter((_, i) => i !== index)
+      shipmentItems: prev.shipmentItems.filter((_: ShipmentItem, i: number) => i !== index)
     }));
   };
 
@@ -289,7 +298,7 @@ export default function ShipmentIntake() {
               <button
                 onClick={() => {
                   setSuccess(false);
-                  setFormData({ status: 'Requested', shipmentItems: [] });
+                  setFormData({ status: 'Requested', shipmentDate: new Date().toISOString().split('T')[0], shipmentItems: [] });
                 }}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
               >
@@ -369,18 +378,18 @@ export default function ShipmentIntake() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Client Contact
+                  Reverse Request
                 </label>
                 <select
-                  name="clientContactId"
-                  value={formData.clientContactId || ''}
+                  name="reverseRequestId"
+                  value={formData.reverseRequestId || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select Contact</option>
-                  {clientContacts.map(contact => (
-                    <option key={contact.id} value={contact.id}>
-                      {contact.firstName} {contact.lastName} ({contact.email})
+                  <option value="">Select Reverse Request</option>
+                  {reverseRequests.map(request => (
+                    <option key={request.id} value={request.id}>
+                      {request.locationName}
                     </option>
                   ))}
                 </select>
@@ -441,6 +450,138 @@ export default function ShipmentIntake() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Shipment Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  name="shipmentDate"
+                  value={formData.shipmentDate}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Received Date
+                </label>
+                <input
+                  type="date"
+                  name="receivedDate"
+                  value={formData.receivedDate || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Weight
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="weight"
+                  value={formData.weight || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter weight"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Weight Unit
+                </label>
+                <select
+                  name="weightUnit"
+                  value={formData.weightUnit || 'lbs'}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="lbs">Pounds (lbs)</option>
+                  <option value="kg">Kilograms (kg)</option>
+                  <option value="oz">Ounces (oz)</option>
+                  <option value="g">Grams (g)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Number of Boxes
+                </label>
+                <input
+                  type="number"
+                  name="numberOfBoxes"
+                  value={formData.numberOfBoxes || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter number of boxes"
+                  min="1"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Estimated Value ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="estimatedValue"
+                  value={formData.estimatedValue || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter estimated value"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Actual Value ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="actualValue"
+                  value={formData.actualValue || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter actual value"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pickup Address
+                </label>
+                <textarea
+                  name="pickupAddress"
+                  value={formData.pickupAddress || ''}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter pickup address"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Delivery Address
+                </label>
+                <textarea
+                  name="deliveryAddress"
+                  value={formData.deliveryAddress || ''}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter delivery address"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Transportation Cost ($)
                 </label>
                 <input
@@ -450,6 +591,50 @@ export default function ShipmentIntake() {
                   value={formData.transportationCost || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Logistics Cost ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="logisticsCost"
+                  value={formData.logisticsCost || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter logistics cost"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Disposition Cost ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="dispositionCost"
+                  value={formData.dispositionCost || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter disposition cost"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Disposition Notes
+                </label>
+                <textarea
+                  name="dispositionNotes"
+                  value={formData.dispositionNotes || ''}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter disposition notes"
                 />
               </div>
             </div>
