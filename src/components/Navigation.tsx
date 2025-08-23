@@ -61,6 +61,7 @@ const navigationItems: NavigationItem[] = [
     subItems: [
       { name: 'Processed Material', href: '/downstream/processedmaterial', module: 'DownstreamMaterials', action: 'Read' },
       { name: 'Vendor Management', href: '/downstream/vendors', module: 'DownstreamMaterials', action: 'Read' },
+      { name: 'Vendor Facility', href: '/downstream/vendor-facility', module: 'DownstreamMaterials', action: 'Read' },
     ]
   },
   {
