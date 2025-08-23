@@ -231,7 +231,7 @@ export default function VendorFacilityDetailPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('/api/Vendors', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Vendors', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -252,7 +252,7 @@ export default function VendorFacilityDetailPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('/api/Clients', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Clients', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -276,7 +276,7 @@ export default function VendorFacilityDetailPage() {
         return;
       }
 
-      const response = await fetch(`/api/vendorfacilities/${id}`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/vendorfacilities/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -363,7 +363,7 @@ export default function VendorFacilityDetailPage() {
     formData.append('fieldName', fieldName);
 
     const token = localStorage.getItem('token');
-    const response = await fetch(`/api/vendorfacilities/${facilityId}/upload`, {
+    const response = await fetch(`https://irevlogix-backend.onrender.com/api/vendorfacilities/${facilityId}/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -403,7 +403,7 @@ export default function VendorFacilityDetailPage() {
           new Date(formData.documentRequestCompetentAuthorityPermissionExpDate).toISOString() : null
       };
 
-      const url = isNew ? '/api/vendorfacilities' : `/api/vendorfacilities/${id}`;
+      const url = isNew ? 'https://irevlogix-backend.onrender.com/api/vendorfacilities' : `https://irevlogix-backend.onrender.com/api/vendorfacilities/${id}`;
       const method = isNew ? 'POST' : 'PUT';
 
       const response = await fetch(url, {
@@ -455,7 +455,7 @@ export default function VendorFacilityDetailPage() {
         return;
       }
 
-      const response = await fetch(`/api/vendorfacilities/${id}`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/vendorfacilities/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
