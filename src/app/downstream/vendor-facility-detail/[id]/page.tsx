@@ -245,7 +245,7 @@ export default function VendorFacilityDetailPage() {
     };
 
     loadData();
-  }, [id, isNew, router]);
+  }, [id, isNew, router, fetchVendorFacility]);
 
   const fetchVendors = async () => {
     try {
@@ -1058,7 +1058,7 @@ export default function VendorFacilityDetailPage() {
                         type="text"
                         id={`materialGenerated${num}`}
                         name={`materialGenerated${num}`}
-                        value={(formData as any)[`materialGenerated${num}`] || ''}
+                        value={(formData as Record<string, any>)[`materialGenerated${num}`] || ''}
                         onChange={handleInputChange}
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -1072,7 +1072,7 @@ export default function VendorFacilityDetailPage() {
                         id={`howMaterialsProcessedDisposed${num}`}
                         name={`howMaterialsProcessedDisposed${num}`}
                         rows={3}
-                        value={(formData as any)[`howMaterialsProcessedDisposed${num}`] || ''}
+                        value={(formData as Record<string, any>)[`howMaterialsProcessedDisposed${num}`] || ''}
                         onChange={handleInputChange}
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -1086,7 +1086,7 @@ export default function VendorFacilityDetailPage() {
                         type="text"
                         id={`nextTierVendorNameAddress${num}`}
                         name={`nextTierVendorNameAddress${num}`}
-                        value={(formData as any)[`nextTierVendorNameAddress${num}`] || ''}
+                        value={(formData as Record<string, any>)[`nextTierVendorNameAddress${num}`] || ''}
                         onChange={handleInputChange}
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
