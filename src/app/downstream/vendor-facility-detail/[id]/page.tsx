@@ -226,27 +226,6 @@ export default function VendorFacilityDetailPage() {
 
   const [uploadFiles, setUploadFiles] = useState<Record<string, File>>({});
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-      
-      const userPermissions = await fetchUserPermissions(token);
-      setPermissions(userPermissions);
-
-      if (userPermissions && hasPermission(userPermissions, 'DownstreamMaterials', 'Read')) {
-        await Promise.all([fetchVendors(), fetchClients(), !isNew && fetchVendorFacility()]);
-      }
-      setLoading(false);
-    };
-
-    loadData();
-  }, [id, isNew, router, fetchVendorFacility]);
-
   const fetchVendors = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -321,6 +300,27 @@ export default function VendorFacilityDetailPage() {
       setError('Error loading vendor facility data');
     }
   }, [id, router]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+      
+      const userPermissions = await fetchUserPermissions(token);
+      setPermissions(userPermissions);
+
+      if (userPermissions && hasPermission(userPermissions, 'DownstreamMaterials', 'Read')) {
+        await Promise.all([fetchVendors(), fetchClients(), !isNew && fetchVendorFacility()]);
+      }
+      setLoading(false);
+    };
+
+    loadData();
+  }, [id, isNew, router, fetchVendorFacility]);
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -1058,7 +1058,7 @@ export default function VendorFacilityDetailPage() {
                         type="text"
                         id={`materialGenerated${num}`}
                         name={`materialGenerated${num}`}
-                        value={(formData as Record<string, string>)[`materialGenerated${num}`] || ''}
+                        value={(formData as unknown as Record<string, string>)[`materialGenerated${num}`] || ''}
                         onChange={handleInputChange}
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -1072,7 +1072,7 @@ export default function VendorFacilityDetailPage() {
                         id={`howMaterialsProcessedDisposed${num}`}
                         name={`howMaterialsProcessedDisposed${num}`}
                         rows={3}
-                        value={(formData as Record<string, string>)[`howMaterialsProcessedDisposed${num}`] || ''}
+                        value={(formData as unknown as Record<string, string>)[`howMaterialsProcessedDisposed${num}`] || ''}
                         onChange={handleInputChange}
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -1086,7 +1086,7 @@ export default function VendorFacilityDetailPage() {
                         type="text"
                         id={`nextTierVendorNameAddress${num}`}
                         name={`nextTierVendorNameAddress${num}`}
-                        value={(formData as Record<string, string>)[`nextTierVendorNameAddress${num}`] || ''}
+                        value={(formData as unknown as Record<string, string>)[`nextTierVendorNameAddress${num}`] || ''}
                         onChange={handleInputChange}
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
