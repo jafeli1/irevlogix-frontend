@@ -235,6 +235,7 @@ export default function ShipmentIntake() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Processing lots fetched:', data);
         setProcessingLots(data);
       }
     } catch (error) {
