@@ -155,7 +155,7 @@ export default function ReverseLogisticsDashboard() {
   const fetchMaterialTypes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/materialtypes?pageSize=1000', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/MaterialTypes?pageSize=1000', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
