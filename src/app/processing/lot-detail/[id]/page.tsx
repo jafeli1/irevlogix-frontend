@@ -885,7 +885,7 @@ export default function LotDetail() {
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="text-lg font-medium text-gray-900">Processing Steps</h4>
-                      <Link href={`/processing/processing-steps?lotId=${id}`} className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                      <Link href={`/processing/processing-steps?lotId=${lotId}`} className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
                         Add Processing Step
                       </Link>
                     </div>
