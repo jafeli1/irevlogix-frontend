@@ -108,7 +108,7 @@ export default function MaterialTypeDetailPage() {
 
   const fetchMaterialType = useCallback(async () => {
     try {
-      const response = await fetch(`/api/materialtypes/${materialTypeId}`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/MaterialTypes/${materialTypeId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -185,7 +185,7 @@ export default function MaterialTypeDetailPage() {
     setSuccessMessage('');
 
     try {
-      const url = isNewMaterialType ? '/api/materialtypes' : `/api/materialtypes/${materialTypeId}`;
+      const url = isNewMaterialType ? 'https://irevlogix-backend.onrender.com/api/MaterialTypes' : `https://irevlogix-backend.onrender.com/api/MaterialTypes/${materialTypeId}`;
       const method = isNewMaterialType ? 'POST' : 'PUT';
 
       const requestData = {
@@ -235,7 +235,7 @@ export default function MaterialTypeDetailPage() {
     setDeleting(true);
 
     try {
-      const response = await fetch(`/api/materialtypes/${materialTypeId}`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/MaterialTypes/${materialTypeId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

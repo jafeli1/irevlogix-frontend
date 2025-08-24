@@ -79,7 +79,7 @@ export default function MaterialTypesPage() {
         ...(filters.name && { name: filters.name })
       });
 
-      const response = await fetch(`/api/materialtypes?${queryParams}`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/MaterialTypes?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
