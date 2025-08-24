@@ -133,7 +133,7 @@ export default function ShipmentIntake() {
   const fetchMaterialTypes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/materialtypes', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/materialtypes?pageSize=1000', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
