@@ -33,6 +33,11 @@ interface User {
   email: string;
 }
 
+interface Shipment {
+  id: number;
+  shipmentNumber: string;
+}
+
 interface Filters {
   search: string;
   status: string;
@@ -46,6 +51,21 @@ interface CreateLotFormData {
   description: string;
   assignedOperatorId?: number;
   processingCost?: number;
+  startDate?: string;
+  completionDate?: string;
+  totalIncomingWeight?: number;
+  totalProcessedWeight?: number;
+  incomingMaterialCost?: number;
+  expectedRevenue?: number;
+  actualRevenue?: number;
+  incomingMaterialNotes?: string;
+  contaminationPercentage?: number;
+  qualityControlNotes?: string;
+  certificationStatus?: string;
+  certificationNumber?: string;
+  processingNotes?: string;
+  processingMethod?: string;
+  sourceShipmentId?: number;
 }
 
 export default function ProcessingLotsPage() {
@@ -62,6 +82,7 @@ export default function ProcessingLotsPage() {
   });
   const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [shipments, setShipments] = useState<Shipment[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 10,
@@ -73,9 +94,25 @@ export default function ProcessingLotsPage() {
     lotNumber: '',
     description: '',
     assignedOperatorId: undefined,
-    processingCost: undefined
+    processingCost: undefined,
+    startDate: '',
+    completionDate: '',
+    totalIncomingWeight: undefined,
+    totalProcessedWeight: undefined,
+    incomingMaterialCost: undefined,
+    expectedRevenue: undefined,
+    actualRevenue: undefined,
+    incomingMaterialNotes: '',
+    contaminationPercentage: undefined,
+    qualityControlNotes: '',
+    certificationStatus: '',
+    certificationNumber: '',
+    processingNotes: '',
+    processingMethod: '',
+    sourceShipmentId: undefined
   });
   const [createLoading, setCreateLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -90,6 +127,7 @@ export default function ProcessingLotsPage() {
   useEffect(() => {
     fetchMaterialTypes();
     fetchUsers();
+    fetchShipments();
   }, []);
 
   const fetchLots = async () => {
@@ -171,6 +209,25 @@ export default function ProcessingLotsPage() {
     }
   };
 
+  const fetchShipments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/shipments?pageSize=1000', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setShipments(data.data || data);
+      }
+    } catch {
+      console.error('Failed to fetch shipments');
+    }
+  };
+
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
@@ -214,8 +271,28 @@ export default function ProcessingLotsPage() {
     document.body.removeChild(link);
   };
 
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!createFormData.description.trim()) {
+      errors.description = 'Description is required';
+    }
+    
+    if (!createFormData.sourceShipmentId) {
+      errors.sourceShipmentId = 'Source Shipment is required';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleCreateLot = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setCreateLoading(true);
     
     try {
@@ -230,16 +307,49 @@ export default function ProcessingLotsPage() {
           LotId: createFormData.lotNumber,
           Description: createFormData.description,
           OperatorUserId: createFormData.assignedOperatorId,
-          ProcessingCost: createFormData.processingCost
+          ProcessingCost: createFormData.processingCost,
+          StartDate: createFormData.startDate,
+          CompletionDate: createFormData.completionDate,
+          TotalIncomingWeight: createFormData.totalIncomingWeight,
+          TotalProcessedWeight: createFormData.totalProcessedWeight,
+          IncomingMaterialCost: createFormData.incomingMaterialCost,
+          ExpectedRevenue: createFormData.expectedRevenue,
+          ActualRevenue: createFormData.actualRevenue,
+          IncomingMaterialNotes: createFormData.incomingMaterialNotes,
+          ContaminationPercentage: createFormData.contaminationPercentage,
+          QualityControlNotes: createFormData.qualityControlNotes,
+          CertificationStatus: createFormData.certificationStatus,
+          CertificationNumber: createFormData.certificationNumber,
+          ProcessingNotes: createFormData.processingNotes,
+          ProcessingMethod: createFormData.processingMethod,
+          SourceShipmentId: createFormData.sourceShipmentId
         }),
       });
 
       if (response.ok) {
         setShowCreateModal(false);
         setCreateFormData({
+          lotNumber: '',
           description: '',
-          processingCost: undefined
+          assignedOperatorId: undefined,
+          processingCost: undefined,
+          startDate: '',
+          completionDate: '',
+          totalIncomingWeight: undefined,
+          totalProcessedWeight: undefined,
+          incomingMaterialCost: undefined,
+          expectedRevenue: undefined,
+          actualRevenue: undefined,
+          incomingMaterialNotes: '',
+          contaminationPercentage: undefined,
+          qualityControlNotes: '',
+          certificationStatus: '',
+          certificationNumber: '',
+          processingNotes: '',
+          processingMethod: '',
+          sourceShipmentId: undefined
         });
+        setValidationErrors({});
         fetchLots();
       } else {
         setError('Failed to create processing lot');
@@ -478,10 +588,10 @@ export default function ProcessingLotsPage() {
 
         {showCreateModal && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="relative top-20 mx-auto p-5 border w-[1152px] shadow-lg rounded-md bg-white">
               <div className="mt-3">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Processing Lot</h3>
-                <form onSubmit={handleCreateLot} className="space-y-4">
+                <form onSubmit={handleCreateLot} className="grid grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Lot Number (Optional)
@@ -489,7 +599,12 @@ export default function ProcessingLotsPage() {
                     <input
                       type="text"
                       value={createFormData.lotNumber || ''}
-                      onChange={(e) => setCreateFormData(prev => ({ ...prev, lotNumber: e.target.value }))}
+                      onChange={(e) => {
+                        setCreateFormData(prev => ({ ...prev, lotNumber: e.target.value }));
+                        if (validationErrors.lotNumber) {
+                          setValidationErrors(prev => ({ ...prev, lotNumber: '' }));
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Auto-generated if left blank"
                     />
@@ -497,15 +612,54 @@ export default function ProcessingLotsPage() {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Lot Description *
+                      <span className="text-red-500">*</span> Lot Description
                     </label>
                     <textarea
                       value={createFormData.description}
-                      onChange={(e) => setCreateFormData(prev => ({ ...prev, description: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => {
+                        setCreateFormData(prev => ({ ...prev, description: e.target.value }));
+                        if (validationErrors.description) {
+                          setValidationErrors(prev => ({ ...prev, description: '' }));
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.description ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       rows={3}
                       required
                     />
+                    {validationErrors.description && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.description}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <span className="text-red-500">*</span> Source Shipment
+                    </label>
+                    <select
+                      value={createFormData.sourceShipmentId || ''}
+                      onChange={(e) => {
+                        setCreateFormData(prev => ({ ...prev, sourceShipmentId: e.target.value ? parseInt(e.target.value) : undefined }));
+                        if (validationErrors.sourceShipmentId) {
+                          setValidationErrors(prev => ({ ...prev, sourceShipmentId: '' }));
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.sourceShipmentId ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      required
+                    >
+                      <option value="">Select Shipment</option>
+                      {shipments.map(shipment => (
+                        <option key={shipment.id} value={shipment.id}>
+                          {shipment.shipmentNumber}
+                        </option>
+                      ))}
+                    </select>
+                    {validationErrors.sourceShipmentId && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.sourceShipmentId}</p>
+                    )}
                   </div>
                   
                   <div>
@@ -525,11 +679,34 @@ export default function ProcessingLotsPage() {
                       ))}
                     </select>
                   </div>
-                  
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Lot Processing Cost
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={createFormData.startDate || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Completion Date
+                    </label>
+                    <input
+                      type="date"
+                      value={createFormData.completionDate || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, completionDate: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Processing Cost ($)
                     </label>
                     <input
                       type="number"
@@ -540,8 +717,176 @@ export default function ProcessingLotsPage() {
                       placeholder="0.00"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Total Incoming Weight (lbs)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={createFormData.totalIncomingWeight || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, totalIncomingWeight: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Total Processed Weight (lbs)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={createFormData.totalProcessedWeight || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, totalProcessedWeight: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Incoming Material Cost ($)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={createFormData.incomingMaterialCost || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, incomingMaterialCost: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Expected Revenue ($)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={createFormData.expectedRevenue || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, expectedRevenue: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Actual Revenue ($)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={createFormData.actualRevenue || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, actualRevenue: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Contamination Percentage (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={createFormData.contaminationPercentage || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, contaminationPercentage: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Certification Status
+                    </label>
+                    <select
+                      value={createFormData.certificationStatus || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, certificationStatus: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Status</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Certified">Certified</option>
+                      <option value="Rejected">Rejected</option>
+                      <option value="Not Required">Not Required</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Certification Number
+                    </label>
+                    <input
+                      type="text"
+                      value={createFormData.certificationNumber || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, certificationNumber: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter certification number"
+                    />
+                  </div>
+
+                  <div className="col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Incoming Material Notes
+                    </label>
+                    <textarea
+                      value={createFormData.incomingMaterialNotes || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, incomingMaterialNotes: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
+                      rows={4}
+                      placeholder="Enter notes about incoming materials..."
+                    />
+                  </div>
+
+                  <div className="col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Quality Control Notes
+                    </label>
+                    <textarea
+                      value={createFormData.qualityControlNotes || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, qualityControlNotes: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
+                      rows={4}
+                      placeholder="Enter quality control notes..."
+                    />
+                  </div>
+
+                  <div className="col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Processing Notes
+                    </label>
+                    <textarea
+                      value={createFormData.processingNotes || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, processingNotes: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
+                      rows={4}
+                      placeholder="Enter processing notes..."
+                    />
+                  </div>
+
+                  <div className="col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Processing Method
+                    </label>
+                    <textarea
+                      value={createFormData.processingMethod || ''}
+                      onChange={(e) => setCreateFormData(prev => ({ ...prev, processingMethod: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
+                      rows={4}
+                      placeholder="Describe the processing method used..."
+                    />
+                  </div>
                   
-                  <div className="flex justify-end space-x-3 pt-4">
+                  <div className="col-span-3 flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-6">
                     <button
                       type="button"
                       onClick={() => {
@@ -550,8 +895,24 @@ export default function ProcessingLotsPage() {
                           lotNumber: '',
                           description: '',
                           assignedOperatorId: undefined,
-                          processingCost: undefined
+                          processingCost: undefined,
+                          startDate: '',
+                          completionDate: '',
+                          totalIncomingWeight: undefined,
+                          totalProcessedWeight: undefined,
+                          incomingMaterialCost: undefined,
+                          expectedRevenue: undefined,
+                          actualRevenue: undefined,
+                          incomingMaterialNotes: '',
+                          contaminationPercentage: undefined,
+                          qualityControlNotes: '',
+                          certificationStatus: '',
+                          certificationNumber: '',
+                          processingNotes: '',
+                          processingMethod: '',
+                          sourceShipmentId: undefined
                         });
+                        setValidationErrors({});
                       }}
                       className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                     >
@@ -559,7 +920,7 @@ export default function ProcessingLotsPage() {
                     </button>
                     <button
                       type="submit"
-                      disabled={createLoading || !createFormData.description}
+                      disabled={createLoading || !createFormData.description || !createFormData.sourceShipmentId}
                       className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {createLoading ? 'Creating...' : 'Create Lot'}

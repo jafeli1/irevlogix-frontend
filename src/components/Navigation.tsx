@@ -50,7 +50,7 @@ const navigationItems: NavigationItem[] = [
     action: 'Read',
     icon: '⚙️',
     subItems: [
-      { name: 'Lot', href: '/processing/lots', module: 'Processing', action: 'Read' },
+      { name: 'Processing Lot', href: '/processing/lots', module: 'Processing', action: 'Read' },
     ]
   },
   {
