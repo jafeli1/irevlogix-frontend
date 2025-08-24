@@ -39,12 +39,26 @@ interface ShipmentItem {
   materialTypeId?: number;
   assetCategoryId?: number;
   description: string;
+  category?: string;
+  brand?: string;
+  model?: string;
+  serialNumber?: string;
   quantity: number;
   unitOfMeasure?: string;
   condition?: string;
   isAssetRecoverable: boolean;
+  estimatedValue?: number;
+  actualValue?: number;
+  dispositionCost?: number;
   weight?: number;
   weightUnit?: string;
+  processingStatus?: string;
+  dispositionMethod?: string;
+  isDataBearingDevice: boolean;
+  dataDestructionStatus?: string;
+  dataDestructionDate?: string;
+  dataDestructionMethod?: string;
+  certificateNumber?: string;
   notes?: string;
 }
 
@@ -99,6 +113,7 @@ export default function ShipmentIntake() {
     quantity: 1,
     condition: 'Used',
     isAssetRecoverable: false,
+    isDataBearingDevice: false,
     weightUnit: 'lbs'
   });
 
@@ -224,6 +239,7 @@ export default function ShipmentIntake() {
       quantity: 1,
       condition: 'Used',
       isAssetRecoverable: false,
+      isDataBearingDevice: false,
       weightUnit: 'lbs'
     });
     setError('');
@@ -702,7 +718,8 @@ export default function ShipmentIntake() {
                     name="materialTypeId"
                     value={currentItem.materialTypeId || ''}
                     onChange={handleItemChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 max-h-40 overflow-y-auto"
+                    size={1}
                   >
                     <option value="">Select Material Type</option>
                     {materialTypes.map(mt => (
@@ -833,6 +850,228 @@ export default function ShipmentIntake() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category
+                  </label>
+                  <input
+                    type="text"
+                    name="category"
+                    value={currentItem.category || ''}
+                    onChange={handleItemChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Product category"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Brand
+                  </label>
+                  <input
+                    type="text"
+                    name="brand"
+                    value={currentItem.brand || ''}
+                    onChange={handleItemChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Brand name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Model
+                  </label>
+                  <input
+                    type="text"
+                    name="model"
+                    value={currentItem.model || ''}
+                    onChange={handleItemChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Model number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Serial Number
+                  </label>
+                  <input
+                    type="text"
+                    name="serialNumber"
+                    value={currentItem.serialNumber || ''}
+                    onChange={handleItemChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Serial number"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estimated Value ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="estimatedValue"
+                    value={currentItem.estimatedValue || ''}
+                    onChange={handleItemChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Actual Value ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="actualValue"
+                    value={currentItem.actualValue || ''}
+                    onChange={handleItemChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Disposition Cost ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="dispositionCost"
+                    value={currentItem.dispositionCost || ''}
+                    onChange={handleItemChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Processing Status
+                  </label>
+                  <select
+                    name="processingStatus"
+                    value={currentItem.processingStatus || ''}
+                    onChange={handleItemChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="On Hold">On Hold</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Disposition Method
+                  </label>
+                  <select
+                    name="dispositionMethod"
+                    value={currentItem.dispositionMethod || ''}
+                    onChange={handleItemChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Method</option>
+                    <option value="Recycle">Recycle</option>
+                    <option value="Refurbish">Refurbish</option>
+                    <option value="Resale">Resale</option>
+                    <option value="Destroy">Destroy</option>
+                    <option value="Donate">Donate</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <div className="flex items-center mb-3">
+                  <input
+                    type="checkbox"
+                    name="isDataBearingDevice"
+                    checked={currentItem.isDataBearingDevice}
+                    onChange={handleItemChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label className="ml-2 block text-sm text-gray-700">
+                    Data Bearing Device
+                  </label>
+                </div>
+
+                {currentItem.isDataBearingDevice && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-6 border-l-2 border-blue-200">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Data Destruction Status
+                      </label>
+                      <select
+                        name="dataDestructionStatus"
+                        value={currentItem.dataDestructionStatus || ''}
+                        onChange={handleItemChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Not Required">Not Required</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Data Destruction Date
+                      </label>
+                      <input
+                        type="date"
+                        name="dataDestructionDate"
+                        value={currentItem.dataDestructionDate || ''}
+                        onChange={handleItemChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Data Destruction Method
+                      </label>
+                      <input
+                        type="text"
+                        name="dataDestructionMethod"
+                        value={currentItem.dataDestructionMethod || ''}
+                        onChange={handleItemChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Destruction method"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Certificate Number
+                      </label>
+                      <input
+                        type="text"
+                        name="certificateNumber"
+                        value={currentItem.certificateNumber || ''}
+                        onChange={handleItemChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Certificate number"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Notes
@@ -864,13 +1103,16 @@ export default function ShipmentIntake() {
                           Description
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Brand/Model
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Quantity
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Condition
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Recoverable
+                          Est. Value
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
@@ -884,13 +1126,16 @@ export default function ShipmentIntake() {
                             {item.description}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.brand && item.model ? `${item.brand} ${item.model}` : item.brand || item.model || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.quantity} {item.unitOfMeasure}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.condition}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {item.isAssetRecoverable ? 'Yes' : 'No'}
+                            {item.estimatedValue ? `$${item.estimatedValue.toFixed(2)}` : '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button
