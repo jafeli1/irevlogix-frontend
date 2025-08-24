@@ -35,9 +35,15 @@ interface ReverseRequest {
   locationName: string;
 }
 
+interface ProcessingLot {
+  id: number;
+  lotNumber: string;
+}
+
 interface ShipmentItem {
   materialTypeId?: number;
   assetCategoryId?: number;
+  processingLotId?: number;
   description: string;
   category?: string;
   brand?: string;
@@ -104,6 +110,7 @@ export default function ShipmentIntake() {
   const [assetCategories, setAssetCategories] = useState<AssetCategory[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [reverseRequests, setReverseRequests] = useState<ReverseRequest[]>([]);
+  const [processingLots, setProcessingLots] = useState<ProcessingLot[]>([]);
   const [activeTab, setActiveTab] = useState<'manual' | 'bulk'>('manual');
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -137,6 +144,7 @@ export default function ShipmentIntake() {
     fetchAssetCategories();
     fetchClients();
     fetchReverseRequests();
+    fetchProcessingLots();
   }, [router]);
 
   const fetchMaterialTypes = async () => {
@@ -212,6 +220,26 @@ export default function ShipmentIntake() {
       }
     } catch (error) {
       console.error('Error fetching reverse requests:', error);
+    }
+  };
+
+  const fetchProcessingLots = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/processinglots?pageSize=1000', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Processing lots fetched:', data);
+        setProcessingLots(data);
+      }
+    } catch (error) {
+      console.error('Error fetching processing lots:', error);
     }
   };
 
@@ -878,7 +906,7 @@ export default function ShipmentIntake() {
                     </p>
                   </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Material Type
@@ -910,6 +938,23 @@ export default function ShipmentIntake() {
                     <option value="">Select Asset Category</option>
                     {assetCategories.map(ac => (
                       <option key={ac.id} value={ac.id}>{ac.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Processing Lot
+                  </label>
+                  <select
+                    name="processingLotId"
+                    value={currentItem.processingLotId || ''}
+                    onChange={handleItemChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Processing Lot</option>
+                    {processingLots.map(pl => (
+                      <option key={pl.id} value={pl.id}>{pl.lotNumber}</option>
                     ))}
                   </select>
                 </div>
