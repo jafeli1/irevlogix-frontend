@@ -61,6 +61,14 @@ interface ShipmentItem {
   certificateNumber?: string;
 }
 
+interface ValidationErrors {
+  [key: string]: string;
+}
+
+interface ItemValidationErrors {
+  [key: string]: string;
+}
+
 interface ShipmentFormData {
   shipmentNumber?: string;
   status: string;
@@ -98,6 +106,9 @@ export default function ShipmentIntake() {
   const [reverseRequests, setReverseRequests] = useState<ReverseRequest[]>([]);
   const [activeTab, setActiveTab] = useState<'manual' | 'bulk'>('manual');
   const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [itemValidationErrors, setItemValidationErrors] = useState<ItemValidationErrors>({});
+  const [bulkValidationError, setBulkValidationError] = useState<string>('');
   const [documents, setDocuments] = useState<File[]>([]);
 
   const [formData, setFormData] = useState<ShipmentFormData>({
@@ -210,6 +221,10 @@ export default function ShipmentIntake() {
       ...prev,
       [name]: type === 'number' ? (value ? parseFloat(value) : undefined) : value
     }));
+
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleItemChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -219,11 +234,45 @@ export default function ShipmentIntake() {
       [name]: type === 'number' ? (value ? parseFloat(value) : undefined) : 
               type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
+
+    if (itemValidationErrors[name]) {
+      setItemValidationErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const validateCurrentItem = (): boolean => {
+    const errors: ItemValidationErrors = {};
+
+    if (!currentItem.description.trim()) {
+      errors.description = 'Description is required';
+    }
+
+    if (currentItem.quantity <= 0) {
+      errors.quantity = 'Quantity must be greater than 0';
+    }
+
+    if (currentItem.weight && currentItem.weight <= 0) {
+      errors.weight = 'Weight must be greater than 0';
+    }
+
+    if (currentItem.estimatedValue && currentItem.estimatedValue < 0) {
+      errors.estimatedValue = 'Estimated value cannot be negative';
+    }
+
+    if (currentItem.actualValue && currentItem.actualValue < 0) {
+      errors.actualValue = 'Actual value cannot be negative';
+    }
+
+    if (currentItem.dispositionCost && currentItem.dispositionCost < 0) {
+      errors.dispositionCost = 'Disposition cost cannot be negative';
+    }
+
+    setItemValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const addItem = () => {
-    if (!currentItem.description.trim()) {
-      setError('Item description is required');
+    if (!validateCurrentItem()) {
       return;
     }
 
@@ -240,6 +289,7 @@ export default function ShipmentIntake() {
       isDataBearingDevice: false,
       weightUnit: 'lbs'
     });
+    setItemValidationErrors({});
     setError('');
   };
 
@@ -250,13 +300,99 @@ export default function ShipmentIntake() {
     }));
   };
 
+  const validateMainForm = (): boolean => {
+    const errors: ValidationErrors = {};
+
+    if (!formData.shipmentDate.trim()) {
+      errors.shipmentDate = 'Shipment date is required';
+    }
+
+    if (!formData.originatorClientId) {
+      errors.originatorClientId = 'Originator client is required';
+    }
+
+    if (formData.trackingNumber && formData.trackingNumber.length < 3) {
+      errors.trackingNumber = 'Tracking number must be at least 3 characters';
+    }
+
+    if (formData.weight && formData.weight <= 0) {
+      errors.weight = 'Weight must be greater than 0';
+    }
+
+    if (formData.numberOfBoxes && formData.numberOfBoxes <= 0) {
+      errors.numberOfBoxes = 'Number of boxes must be greater than 0';
+    }
+
+    if (formData.estimatedValue && formData.estimatedValue < 0) {
+      errors.estimatedValue = 'Estimated value cannot be negative';
+    }
+
+    if (formData.actualValue && formData.actualValue < 0) {
+      errors.actualValue = 'Actual value cannot be negative';
+    }
+
+    if (formData.dispositionCost && formData.dispositionCost < 0) {
+      errors.dispositionCost = 'Disposition cost cannot be negative';
+    }
+
+    if (formData.logisticsCost && formData.logisticsCost < 0) {
+      errors.logisticsCost = 'Logistics cost cannot be negative';
+    }
+
+    if (formData.transportationCost && formData.transportationCost < 0) {
+      errors.transportationCost = 'Transportation cost cannot be negative';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateBulkFile = (file: File): boolean => {
+    setBulkValidationError('');
+
+    if (!file) {
+      setBulkValidationError('Please select a file to upload');
+      return false;
+    }
+
+    const allowedTypes = [
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setBulkValidationError('Please upload a CSV or Excel file (.csv, .xls, .xlsx)');
+      return false;
+    }
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setBulkValidationError('File size must be less than 10MB');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
+    if (!validateMainForm()) {
+      setError('Please fix the validation errors before submitting');
+      setIsLoading(false);
+      return;
+    }
+
     if (formData.shipmentItems.length === 0) {
       setError('At least one shipment item is required');
+      setIsLoading(false);
+      return;
+    }
+
+    if (activeTab === 'bulk' && bulkFile && !validateBulkFile(bulkFile)) {
       setIsLoading(false);
       return;
     }
@@ -375,19 +511,24 @@ export default function ShipmentIntake() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Originator Client
+                  Originator Client <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="originatorClientId"
                   value={formData.originatorClientId || ''}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.originatorClientId ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 >
                   <option value="">Select Client</option>
                   {clients.map(client => (
                     <option key={client.id} value={client.id}>{client.companyName}</option>
                   ))}
                 </select>
+                {validationErrors.originatorClientId && (
+                  <p className="text-sm text-red-600 mt-1">{validationErrors.originatorClientId}</p>
+                )}
               </div>
 
               <div>
@@ -458,8 +599,13 @@ export default function ShipmentIntake() {
                   name="trackingNumber"
                   value={formData.trackingNumber || ''}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.trackingNumber ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {validationErrors.trackingNumber && (
+                  <p className="text-sm text-red-600 mt-1">{validationErrors.trackingNumber}</p>
+                )}
               </div>
 
               <div>
@@ -471,9 +617,14 @@ export default function ShipmentIntake() {
                   name="shipmentDate"
                   value={formData.shipmentDate}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.shipmentDate ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {validationErrors.shipmentDate && (
+                  <p className="text-sm text-red-600 mt-1">{validationErrors.shipmentDate}</p>
+                )}
               </div>
 
               <div>
@@ -499,9 +650,14 @@ export default function ShipmentIntake() {
                   name="weight"
                   value={formData.weight || ''}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.weight ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Enter weight"
                 />
+                {validationErrors.weight && (
+                  <p className="text-sm text-red-600 mt-1">{validationErrors.weight}</p>
+                )}
               </div>
 
               <div>
@@ -530,10 +686,15 @@ export default function ShipmentIntake() {
                   name="numberOfBoxes"
                   value={formData.numberOfBoxes || ''}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.numberOfBoxes ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Enter number of boxes"
                   min="1"
                 />
+                {validationErrors.numberOfBoxes && (
+                  <p className="text-sm text-red-600 mt-1">{validationErrors.numberOfBoxes}</p>
+                )}
               </div>
 
               <div>
@@ -546,9 +707,14 @@ export default function ShipmentIntake() {
                   name="estimatedValue"
                   value={formData.estimatedValue || ''}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.estimatedValue ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Enter estimated value"
                 />
+                {validationErrors.estimatedValue && (
+                  <p className="text-sm text-red-600 mt-1">{validationErrors.estimatedValue}</p>
+                )}
               </div>
 
               <div>
@@ -561,9 +727,14 @@ export default function ShipmentIntake() {
                   name="actualValue"
                   value={formData.actualValue || ''}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.actualValue ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="Enter actual value"
                 />
+                {validationErrors.actualValue && (
+                  <p className="text-sm text-red-600 mt-1">{validationErrors.actualValue}</p>
+                )}
               </div>
 
               <div>
@@ -745,17 +916,22 @@ export default function ShipmentIntake() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description *
+                    Description <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="description"
                     value={currentItem.description}
                     onChange={handleItemChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      itemValidationErrors.description ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="Item description"
                     required
                   />
+                  {itemValidationErrors.description && (
+                    <p className="text-sm text-red-600 mt-1">{itemValidationErrors.description}</p>
+                  )}
                 </div>
 
                 <div>
@@ -768,8 +944,13 @@ export default function ShipmentIntake() {
                     value={currentItem.quantity}
                     onChange={handleItemChange}
                     min="1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      itemValidationErrors.quantity ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {itemValidationErrors.quantity && (
+                    <p className="text-sm text-red-600 mt-1">{itemValidationErrors.quantity}</p>
+                  )}
                 </div>
 
                 <div>
@@ -819,9 +1000,14 @@ export default function ShipmentIntake() {
                       name="weight"
                       value={currentItem.weight || ''}
                       onChange={handleItemChange}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        itemValidationErrors.weight ? 'border-red-500' : 'border-gray-300'
+                      }`}
                       placeholder="0.00"
                     />
+                  {itemValidationErrors.weight && (
+                    <p className="text-sm text-red-600 mt-1">{itemValidationErrors.weight}</p>
+                  )}
                     <select
                       name="weightUnit"
                       value={currentItem.weightUnit || 'lbs'}
@@ -917,9 +1103,14 @@ export default function ShipmentIntake() {
                     name="estimatedValue"
                     value={currentItem.estimatedValue || ''}
                     onChange={handleItemChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      itemValidationErrors.estimatedValue ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="0.00"
                   />
+                  {itemValidationErrors.estimatedValue && (
+                    <p className="text-sm text-red-600 mt-1">{itemValidationErrors.estimatedValue}</p>
+                  )}
                 </div>
 
                 <div>
@@ -932,9 +1123,14 @@ export default function ShipmentIntake() {
                     name="actualValue"
                     value={currentItem.actualValue || ''}
                     onChange={handleItemChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      itemValidationErrors.actualValue ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="0.00"
                   />
+                  {itemValidationErrors.actualValue && (
+                    <p className="text-sm text-red-600 mt-1">{itemValidationErrors.actualValue}</p>
+                  )}
                 </div>
 
                 <div>
@@ -947,9 +1143,14 @@ export default function ShipmentIntake() {
                     name="dispositionCost"
                     value={currentItem.dispositionCost || ''}
                     onChange={handleItemChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      itemValidationErrors.dispositionCost ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="0.00"
                   />
+                  {itemValidationErrors.dispositionCost && (
+                    <p className="text-sm text-red-600 mt-1">{itemValidationErrors.dispositionCost}</p>
+                  )}
                 </div>
               </div>
 
@@ -1145,7 +1346,9 @@ export default function ShipmentIntake() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Upload CSV/Excel File
                     </label>
-                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                    <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
+                      bulkValidationError ? 'border-red-300' : 'border-gray-300'
+                    }`}>
                       <div className="space-y-1 text-center">
                         <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                           <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -1159,7 +1362,13 @@ export default function ShipmentIntake() {
                               type="file"
                               accept=".csv,.xlsx,.xls"
                               className="sr-only"
-                              onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
+                                setBulkFile(file);
+                                if (file) {
+                                  validateBulkFile(file);
+                                }
+                              }}
                             />
                           </label>
                           <p className="pl-1">or drag and drop</p>
@@ -1167,6 +1376,9 @@ export default function ShipmentIntake() {
                         <p className="text-xs text-gray-500">CSV, XLSX up to 10MB</p>
                       </div>
                     </div>
+                    {bulkValidationError && (
+                      <p className="text-sm text-red-600 mt-1">{bulkValidationError}</p>
+                    )}
                     {bulkFile && (
                       <p className="mt-2 text-sm text-gray-600">Selected: {bulkFile.name}</p>
                     )}
