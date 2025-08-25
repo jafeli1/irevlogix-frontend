@@ -91,7 +91,7 @@ function ProcessingStepsContent() {
       });
       if (!res.ok) throw new Error(`Failed to load: ${res.status}`);
       const json = await res.json();
-      setProcessingLots(json.items || []);
+      setProcessingLots(json || []);
     } catch (e: unknown) {
       console.error("Failed to load processing lots:", e);
     }
