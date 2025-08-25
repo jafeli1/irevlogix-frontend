@@ -16,6 +16,11 @@ type ProcessedMaterial = {
   materialType?: MaterialType | null;
 };
 
+interface Vendor {
+  id: number;
+  vendorName: string;
+}
+
 type ProcessedMaterialSalesListItem = {
   id: number;
   processedMaterialId: number;
@@ -49,6 +54,7 @@ function ProcessedMaterialSalesContent() {
   const [totalCount, setTotalCount] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [processedMaterials, setProcessedMaterials] = useState<ProcessedMaterial[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [createForm, setCreateForm] = useState({
     processedMaterialId: "",
     vendorId: "",
@@ -84,6 +90,19 @@ function ProcessedMaterialSalesContent() {
     }
   };
 
+  const fetchVendors = async () => {
+    try {
+      const res = await fetch(`https://irevlogix-backend.onrender.com/api/vendors?pageSize=1000`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`Failed to load: ${res.status}`);
+      const json = await res.json();
+      setVendors(json || []);
+    } catch (e: unknown) {
+      console.error("Failed to load vendors:", e);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -111,6 +130,7 @@ function ProcessedMaterialSalesContent() {
     if (!token) return;
     fetchData();
     fetchProcessedMaterials();
+    fetchVendors();
   }, [token, page, pageSize]);
 
   const onExportCsv = async () => {
@@ -149,9 +169,23 @@ function ProcessedMaterialSalesContent() {
     }
   };
 
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const validateForm = () => {
+    if (!createForm.processedMaterialId || !createForm.vendorId) {
+      setValidationError("Processed Material and Vendor selection are required");
+      return false;
+    }
+    setValidationError(null);
+    return true;
+  };
+
   const onOpenCreate = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const materialId = urlParams.get('materialId');
+    
     setCreateForm({
-      processedMaterialId: "",
+      processedMaterialId: materialId || "",
       vendorId: "",
       salesQuantity: "",
       agreedPricePerUnit: "",
@@ -166,10 +200,14 @@ function ProcessedMaterialSalesContent() {
       invoiceTotal: "",
       invoiceStatus: "",
     });
+    setValidationError(null);
     setShowCreate(true);
   };
 
   const onSubmitCreate = async () => {
+    if (!validateForm()) {
+      return;
+    }
     try {
       const body = {
         processedMaterialId: createForm.processedMaterialId ? Number(createForm.processedMaterialId) : null,
@@ -313,6 +351,11 @@ function ProcessedMaterialSalesContent() {
               <h2 className="text-xl font-semibold">Create New Sales Record</h2>
               <button onClick={() => setShowCreate(false)} className="text-gray-500 hover:text-gray-700">×</button>
             </div>
+            {validationError && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {validationError}
+              </div>
+            )}
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -326,6 +369,21 @@ function ProcessedMaterialSalesContent() {
                     {processedMaterials.map((material) => (
                       <option key={material.id} value={material.id}>
                         {material.description} ({material.materialType?.name || "Unknown Type"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">Vendor *</label>
+                  <select
+                    className="w-full border rounded px-2 py-2"
+                    value={createForm.vendorId}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, vendorId: e.target.value }))}
+                  >
+                    <option value="">Select Vendor</option>
+                    {vendors.map((vendor) => (
+                      <option key={vendor.id} value={vendor.id}>
+                        {vendor.vendorName}
                       </option>
                     ))}
                   </select>
