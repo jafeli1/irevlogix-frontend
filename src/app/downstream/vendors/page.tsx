@@ -279,7 +279,7 @@ export default function VendorsPage() {
           >
             <option value="">All Material Types</option>
             {materialTypes.map((mt) => (
-              <option key={mt.id} value={mt.id}>{mt.description}</option>
+              <option key={mt.id} value={mt.id}>{mt.name}</option>
             ))}
           </select>
         </div>
