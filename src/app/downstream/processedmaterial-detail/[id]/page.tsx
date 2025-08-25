@@ -10,9 +10,15 @@ type MaterialType = {
   name: string;
 };
 
+type ProcessingLot = {
+  id: number;
+  lotNumber: string;
+};
+
 type ProcessedMaterial = {
   id: number;
   materialType?: MaterialType | null;
+  materialTypeId?: number | null;
   description?: string | null;
   quantity?: number | null;
   unitOfMeasure?: string | null;
@@ -20,10 +26,18 @@ type ProcessedMaterial = {
   location?: string | null;
   status?: string | null;
   processingLotId?: number | null;
+  processedWeight?: number | null;
+  weightUnit?: string | null;
+  destinationVendor?: string | null;
+  expectedSalesPrice?: number | null;
+  actualSalesPrice?: number | null;
+  saleDate?: string | null;
+  notes?: string | null;
+  certificationNumber?: string | null;
+  isHazardous?: boolean;
+  hazardousClassification?: string | null;
   purchaseCostPerUnit?: number | null;
   processingCostPerUnit?: number | null;
-  actualSalesPrice?: number | null;
-  expectedSalesPrice?: number | null;
 };
 
 type ProcessedMaterialTest = {
@@ -84,6 +98,11 @@ export default function ProcessedMaterialDetailPage() {
 
   const [documents, setDocuments] = useState<ProcessedMaterialDocument[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState<Partial<ProcessedMaterial>>({});
+  const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
+  const [processingLots, setProcessingLots] = useState<ProcessingLot[]>([]);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [editingDocument, setEditingDocument] = useState<ProcessedMaterialDocument | null>(null);
   const [documentFormData, setDocumentFormData] = useState({
@@ -119,9 +138,47 @@ export default function ProcessedMaterialDetailPage() {
     }
   };
 
+  const fetchMaterialTypes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/MaterialTypes?pageSize=1000', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMaterialTypes(data);
+      }
+    } catch {
+      console.error('Failed to fetch material types');
+    }
+  };
+
+  const fetchProcessingLots = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessingLots?pageSize=1000', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProcessingLots(data);
+      }
+    } catch {
+      console.error('Failed to fetch processing lots');
+    }
+  };
+
   useEffect(() => {
     if (!token || !id) return;
     fetchDetail();
+    fetchMaterialTypes();
+    fetchProcessingLots();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, id]);
 
@@ -133,6 +190,79 @@ export default function ProcessedMaterialDetailPage() {
       fetchDocuments();
     }
   }, [activeTab, data]);
+
+  const validateEditForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!editedData.description?.trim()) {
+      errors.description = 'Description is required';
+    }
+    
+    if (!editedData.materialTypeId) {
+      errors.materialTypeId = 'Material Type is required';
+    }
+    
+    if (!editedData.processingLotId) {
+      errors.processingLotId = 'Processing Lot is required';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validateEditForm()) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterials/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          Description: editedData.description,
+          MaterialTypeId: editedData.materialTypeId,
+          Quantity: editedData.quantity,
+          UnitOfMeasure: editedData.unitOfMeasure,
+          QualityGrade: editedData.qualityGrade,
+          Location: editedData.location,
+          Status: editedData.status,
+          ProcessingLotId: editedData.processingLotId,
+          ProcessedWeight: editedData.processedWeight,
+          WeightUnit: editedData.weightUnit,
+          DestinationVendor: editedData.destinationVendor,
+          ExpectedSalesPrice: editedData.expectedSalesPrice,
+          ActualSalesPrice: editedData.actualSalesPrice,
+          SaleDate: editedData.saleDate,
+          Notes: editedData.notes,
+          CertificationNumber: editedData.certificationNumber,
+          IsHazardous: editedData.isHazardous,
+          HazardousClassification: editedData.hazardousClassification,
+          PurchaseCostPerUnit: editedData.purchaseCostPerUnit,
+          ProcessingCostPerUnit: editedData.processingCostPerUnit
+        }),
+      });
+
+      if (response.ok) {
+        setData(editedData as ProcessedMaterial);
+        setIsEditing(false);
+        setValidationErrors({});
+        await fetchDetail();
+      } else {
+        setError('Failed to update processed material');
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const onSaveStatus = async () => {
     if (!id) return;
@@ -558,16 +688,49 @@ export default function ProcessedMaterialDetailPage() {
           >
             Back to Processed Materials
           </button>
-          <select className="border rounded px-2 py-2" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">Select Status</option>
-            <option value="Available">Available</option>
-            <option value="On Hold">On Hold</option>
-            <option value="Reserved">Reserved</option>
-            <option value="Sold">Sold</option>
-          </select>
-          <button onClick={onSaveStatus} className="px-3 py-2 bg-blue-600 text-white rounded" disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
+          {!isEditing ? (
+            <>
+              <select className="border rounded px-2 py-2" value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="">Select Status</option>
+                <option value="Available">Available</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Reserved">Reserved</option>
+                <option value="Sold">Sold</option>
+              </select>
+              <button onClick={onSaveStatus} className="px-3 py-2 bg-blue-600 text-white rounded" disabled={saving}>
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditing(true);
+                  setEditedData(data || {});
+                }}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Edit
+              </button>
+            </>
+          ) : (
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditedData({});
+                  setValidationErrors({});
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -579,34 +742,369 @@ export default function ProcessedMaterialDetailPage() {
         <div>No data</div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white border rounded p-4">
-            <div>
-              <div className="text-sm text-gray-500">Material Type</div>
-              <div className="font-medium">{data.materialType?.name || ""}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Quantity</div>
-              <div className="font-medium">{data.quantity ?? ""} {data.unitOfMeasure || ""}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Quality Grade</div>
-              <div className="font-medium">{data.qualityGrade || ""}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Current Location</div>
-              <div className="font-medium">{data.location || ""}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Status</div>
-              <div className="font-medium">{data.status || ""}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Source Lot</div>
-              {data.processingLotId ? (
-                <Link className="text-blue-600 underline" href={`/processing/lot-detail/${data.processingLotId}`}>Lot #{data.processingLotId}</Link>
-              ) : (
-                <div className="font-medium">N/A</div>
-              )}
+          <div className="bg-white border rounded p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Material Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  {isEditing && <span className="text-red-500">*</span>} Material Type
+                </label>
+                {isEditing ? (
+                  <div>
+                    <select
+                      value={editedData.materialTypeId || ''}
+                      onChange={(e) => {
+                        setEditedData(prev => ({ ...prev, materialTypeId: e.target.value ? parseInt(e.target.value) : undefined }));
+                        if (validationErrors.materialTypeId) {
+                          setValidationErrors(prev => ({ ...prev, materialTypeId: '' }));
+                        }
+                      }}
+                      className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.materialTypeId ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Select Material Type</option>
+                      {materialTypes.map(type => (
+                        <option key={type.id} value={type.id}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </select>
+                    {validationErrors.materialTypeId && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.materialTypeId}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.materialType?.name || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  {isEditing && <span className="text-red-500">*</span>} Description
+                </label>
+                {isEditing ? (
+                  <div>
+                    <textarea
+                      value={editedData.description || ''}
+                      onChange={(e) => {
+                        setEditedData(prev => ({ ...prev, description: e.target.value }));
+                        if (validationErrors.description) {
+                          setValidationErrors(prev => ({ ...prev, description: '' }));
+                        }
+                      }}
+                      className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.description ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      rows={2}
+                    />
+                    {validationErrors.description && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.description}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.description || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editedData.quantity || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, quantity: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.quantity ?? 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Unit of Measure</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.unitOfMeasure || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, unitOfMeasure: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.unitOfMeasure || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Quality Grade</label>
+                {isEditing ? (
+                  <select
+                    value={editedData.qualityGrade || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, qualityGrade: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Quality Grade</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                  </select>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.qualityGrade || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Current Location</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.location || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, location: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.location || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Status</label>
+                {isEditing ? (
+                  <select
+                    value={editedData.status || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, status: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Available">Available</option>
+                    <option value="On Hold">On Hold</option>
+                    <option value="Reserved">Reserved</option>
+                    <option value="Sold">Sold</option>
+                  </select>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.status || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  {isEditing && <span className="text-red-500">*</span>} Processing Lot
+                </label>
+                {isEditing ? (
+                  <div>
+                    <select
+                      value={editedData.processingLotId || ''}
+                      onChange={(e) => {
+                        setEditedData(prev => ({ ...prev, processingLotId: e.target.value ? parseInt(e.target.value) : undefined }));
+                        if (validationErrors.processingLotId) {
+                          setValidationErrors(prev => ({ ...prev, processingLotId: '' }));
+                        }
+                      }}
+                      className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.processingLotId ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Select Processing Lot</option>
+                      {processingLots.map(lot => (
+                        <option key={lot.id} value={lot.id}>
+                          {lot.lotNumber}
+                        </option>
+                      ))}
+                    </select>
+                    {validationErrors.processingLotId && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.processingLotId}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    {data?.processingLotId ? (
+                      <Link className="text-blue-600 underline" href={`/processing/lot-detail/${data.processingLotId}`}>
+                        Lot #{data.processingLotId}
+                      </Link>
+                    ) : (
+                      <p className="mt-1 text-sm text-gray-900">N/A</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Processed Weight</label>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editedData.processedWeight || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, processedWeight: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.processedWeight ?? 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Weight Unit</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.weightUnit || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, weightUnit: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.weightUnit || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Destination Vendor</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.destinationVendor || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, destinationVendor: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.destinationVendor || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Expected Sales Price ($)</label>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editedData.expectedSalesPrice || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, expectedSalesPrice: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.expectedSalesPrice ? `$${data.expectedSalesPrice.toFixed(2)}` : 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Actual Sales Price ($)</label>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editedData.actualSalesPrice || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, actualSalesPrice: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.actualSalesPrice ? `$${data.actualSalesPrice.toFixed(2)}` : 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Sale Date</label>
+                {isEditing ? (
+                  <input
+                    type="date"
+                    value={editedData.saleDate || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, saleDate: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.saleDate ? new Date(data.saleDate).toLocaleDateString() : 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Certification Number</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.certificationNumber || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, certificationNumber: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.certificationNumber || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Is Hazardous</label>
+                {isEditing ? (
+                  <select
+                    value={editedData.isHazardous ? 'true' : 'false'}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, isHazardous: e.target.value === 'true' }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.isHazardous ? 'Yes' : 'No'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Hazardous Classification</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.hazardousClassification || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, hazardousClassification: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.hazardousClassification || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Purchase Cost Per Unit ($)</label>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editedData.purchaseCostPerUnit || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, purchaseCostPerUnit: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.purchaseCostPerUnit ? `$${data.purchaseCostPerUnit.toFixed(2)}` : 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Processing Cost Per Unit ($)</label>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editedData.processingCostPerUnit || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, processingCostPerUnit: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.processingCostPerUnit ? `$${data.processingCostPerUnit.toFixed(2)}` : 'N/A'}</p>
+                )}
+              </div>
+
+              <div className="md:col-span-2 lg:col-span-3">
+                <label className="block text-sm font-medium text-gray-700">Notes</label>
+                {isEditing ? (
+                  <textarea
+                    value={editedData.notes || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, notes: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.notes || 'N/A'}</p>
+                )}
+              </div>
             </div>
           </div>
 
