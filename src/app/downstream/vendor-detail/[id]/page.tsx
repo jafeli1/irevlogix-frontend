@@ -245,7 +245,7 @@ export default function VendorDetailPage() {
 
   const fetchMaterialTypes = async () => {
     try {
-      const res = await fetch(`https://irevlogix-backend.onrender.com/api/MaterialTypes`, {
+      const res = await fetch(`https://irevlogix-backend.onrender.com/api/MaterialTypes?pageSize=1000`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
