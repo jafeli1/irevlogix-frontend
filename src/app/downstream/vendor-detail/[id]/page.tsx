@@ -204,6 +204,11 @@ export default function VendorDetailPage() {
   } | null>(null);
   const [financialLoading, setFinancialLoading] = useState(false);
   const [financialError, setFinancialError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState<Partial<Vendor>>({});
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
   
   const pageSizeOptions = [10, 25, 50];
 
@@ -267,6 +272,91 @@ export default function VendorDetailPage() {
     }
   };
 
+  const fetchVendors = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Vendors?pageSize=1000', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setVendors(data);
+      }
+    } catch {
+      console.error('Failed to fetch vendors');
+    }
+  };
+
+  const validateEditForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!editedData.vendorName?.trim()) {
+      errors.vendorName = 'Vendor Name is required';
+    }
+    
+    if (!editedData.vendorTier?.trim()) {
+      errors.vendorTier = 'Vendor Tier is required';
+    }
+    
+    if (editedData.email && !/\S+@\S+\.\S+/.test(editedData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validateEditForm()) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/Vendors/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          VendorName: editedData.vendorName,
+          ContactPerson: editedData.contactPerson,
+          Email: editedData.email,
+          Phone: editedData.phone,
+          Address: editedData.address,
+          City: editedData.city,
+          State: editedData.state,
+          PostalCode: editedData.postalCode,
+          Country: editedData.country,
+          MaterialsOfInterest: editedData.materialsOfInterest,
+          PaymentTerms: editedData.paymentTerms,
+          VendorRating: editedData.vendorRating,
+          VendorTier: editedData.vendorTier,
+          UpstreamTierVendor: editedData.upstreamTierVendor
+        }),
+      });
+
+      if (response.ok) {
+        setData(editedData as Vendor);
+        setIsEditing(false);
+        setValidationErrors({});
+        await fetchDetail();
+      } else {
+        setError('Failed to update vendor');
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (!salesData.length || !id) return;
     
@@ -302,6 +392,7 @@ export default function VendorDetailPage() {
     fetchSalesData();
     fetchMaterialTypes();
     fetchUsers();
+    fetchVendors();
     fetchPricing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, id]);
@@ -1069,12 +1160,45 @@ export default function VendorDetailPage() {
       <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Vendor Detail</h1>
-        <button
-          onClick={() => router.push('/downstream/vendors')}
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-        >
-          Back to Vendors
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push('/downstream/vendors')}
+            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            Back to Vendors
+          </button>
+          {!isEditing ? (
+            <button
+              onClick={() => {
+                setIsEditing(true);
+                setEditedData(data || {});
+              }}
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Edit
+            </button>
+          ) : (
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditedData({});
+                  setValidationErrors({});
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -1085,32 +1209,257 @@ export default function VendorDetailPage() {
         <div>No data</div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white border rounded p-4">
-            <div>
-              <div className="text-sm text-gray-500">Vendor Name</div>
-              <div className="font-medium">{data.vendorName}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Contact</div>
-              <div className="font-medium">{data.contactPerson || ""}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Email</div>
-              <div className="font-medium">{data.email || ""}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Phone</div>
-              <div className="font-medium">{data.phone || ""}</div>
-            </div>
-            <div>
-              <div className="text-sm text-gray-500">Address</div>
-              <div className="font-medium">
-                {[data.address, data.city, data.state, data.postalCode, data.country].filter(Boolean).join(", ")}
+          <div className="bg-white border rounded p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Vendor Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  {isEditing && <span className="text-red-500">*</span>} Vendor Name
+                </label>
+                {isEditing ? (
+                  <div>
+                    <input
+                      type="text"
+                      value={editedData.vendorName || ''}
+                      onChange={(e) => {
+                        setEditedData(prev => ({ ...prev, vendorName: e.target.value }));
+                        if (validationErrors.vendorName) {
+                          setValidationErrors(prev => ({ ...prev, vendorName: '' }));
+                        }
+                      }}
+                      className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.vendorName ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {validationErrors.vendorName && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.vendorName}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.vendorName || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Contact Person</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.contactPerson || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, contactPerson: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.contactPerson || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                {isEditing ? (
+                  <div>
+                    <input
+                      type="email"
+                      value={editedData.email || ''}
+                      onChange={(e) => {
+                        setEditedData(prev => ({ ...prev, email: e.target.value }));
+                        if (validationErrors.email) {
+                          setValidationErrors(prev => ({ ...prev, email: '' }));
+                        }
+                      }}
+                      className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.email ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {validationErrors.email && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.email || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Phone</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.phone || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.phone || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Address</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.address || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, address: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.address || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">City</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.city || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, city: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.city || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">State</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.state || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, state: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.state || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Postal Code</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.postalCode || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, postalCode: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.postalCode || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Country</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.country || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, country: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.country || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Vendor Rating</label>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="any"
+                    value={editedData.vendorRating || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, vendorRating: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.vendorRating ?? 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  {isEditing && <span className="text-red-500">*</span>} Vendor Tier
+                </label>
+                {isEditing ? (
+                  <div>
+                    <select
+                      value={editedData.vendorTier || ''}
+                      onChange={(e) => {
+                        setEditedData(prev => ({ ...prev, vendorTier: e.target.value }));
+                        if (validationErrors.vendorTier) {
+                          setValidationErrors(prev => ({ ...prev, vendorTier: '' }));
+                        }
+                      }}
+                      className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        validationErrors.vendorTier ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Select Tier</option>
+                      <option value="Tier 1">Tier 1</option>
+                      <option value="Tier 2">Tier 2</option>
+                      <option value="Tier 3">Tier 3</option>
+                      <option value="Tier 4">Tier 4</option>
+                      <option value="Tier 5">Tier 5</option>
+                    </select>
+                    {validationErrors.vendorTier && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.vendorTier}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">{data?.vendorTier || 'N/A'}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Upstream Tier Vendor</label>
+                {isEditing ? (
+                  <select
+                    value={editedData.upstreamTierVendor || ''}
+                    onChange={(e) => setEditedData(prev => ({ ...prev, upstreamTierVendor: e.target.value ? parseInt(e.target.value) : undefined }))}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Upstream Vendor</option>
+                    {vendors.map((vendor) => (
+                      <option key={vendor.id} value={vendor.id}>{vendor.vendorName}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="mt-1 text-sm text-gray-900">
+                    {data?.upstreamTierVendor ? 
+                      vendors.find(v => v.id === data.upstreamTierVendor)?.vendorName || `Vendor ID: ${data.upstreamTierVendor}` 
+                      : 'N/A'}
+                  </p>
+                )}
               </div>
             </div>
-            <div>
-              <div className="text-sm text-gray-500">Vendor Rating</div>
-              <div className="font-medium">{data.vendorRating ?? ""}</div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700">Materials of Interest</label>
+              {isEditing ? (
+                <textarea
+                  value={editedData.materialsOfInterest || ''}
+                  onChange={(e) => setEditedData(prev => ({ ...prev, materialsOfInterest: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-20 resize-none"
+                />
+              ) : (
+                <p className="mt-1 text-sm text-gray-900">{data?.materialsOfInterest || 'N/A'}</p>
+              )}
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700">Payment Terms</label>
+              {isEditing ? (
+                <textarea
+                  value={editedData.paymentTerms || ''}
+                  onChange={(e) => setEditedData(prev => ({ ...prev, paymentTerms: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-20 resize-none"
+                />
+              ) : (
+                <p className="mt-1 text-sm text-gray-900">{data?.paymentTerms || 'N/A'}</p>
+              )}
             </div>
           </div>
 
