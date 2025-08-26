@@ -15,7 +15,7 @@ type Vendor = {
   state?: string | null;
   postalCode?: string | null;
   country?: string | null;
-  materialsOfInterest?: string | null;
+  materialsOfInterest?: number[] | null;
   paymentTerms?: string | null;
   vendorRating?: number | null;
   vendorTier?: string | null;
@@ -65,7 +65,7 @@ export default function VendorsPage() {
     state: "",
     postalCode: "",
     country: "",
-    materialsOfInterest: "",
+    materialsOfInterest: [] as number[],
     paymentTerms: "",
     vendorRating: "",
     vendorTier: "",
@@ -166,7 +166,7 @@ export default function VendorsPage() {
       state: "",
       postalCode: "",
       country: "",
-      materialsOfInterest: "",
+      materialsOfInterest: [],
       paymentTerms: "",
       vendorRating: "",
       vendorTier: "",
@@ -433,11 +433,31 @@ export default function VendorsPage() {
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Materials of Interest</label>
-                  <textarea 
-                    className="w-full border rounded px-2 py-2 h-20 overflow-y-auto resize-none" 
-                    value={createForm.materialsOfInterest} 
-                    onChange={(e) => setCreateForm((f) => ({ ...f, materialsOfInterest: e.target.value }))} 
-                  />
+                  <div className="border rounded px-2 py-2 max-h-32 overflow-y-auto">
+                    {materialTypes.map((materialType) => (
+                      <label key={materialType.id} className="flex items-center space-x-2 py-1">
+                        <input
+                          type="checkbox"
+                          checked={createForm.materialsOfInterest.includes(materialType.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setCreateForm(f => ({ 
+                                ...f, 
+                                materialsOfInterest: [...f.materialsOfInterest, materialType.id] 
+                              }));
+                            } else {
+                              setCreateForm(f => ({ 
+                                ...f, 
+                                materialsOfInterest: f.materialsOfInterest.filter(id => id !== materialType.id) 
+                              }));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{materialType.name}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm mb-1">Payment Terms</label>
