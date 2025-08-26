@@ -15,7 +15,7 @@ type Vendor = {
   state?: string | null;
   postalCode?: string | null;
   country?: string | null;
-  materialsOfInterest?: string | null;
+  materialsOfInterest?: number[] | null;
   paymentTerms?: string | null;
   vendorRating?: number | null;
   vendorTier?: string | null;
@@ -334,7 +334,7 @@ export default function VendorDetailPage() {
           State: editedData.state,
           PostalCode: editedData.postalCode,
           Country: editedData.country,
-          MaterialsOfInterest: editedData.materialsOfInterest,
+          MaterialsOfInterest: editedData.materialsOfInterest || [],
           PaymentTerms: editedData.paymentTerms,
           VendorRating: editedData.vendorRating,
           VendorTier: editedData.vendorTier,
@@ -1439,13 +1439,41 @@ export default function VendorDetailPage() {
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700">Materials of Interest</label>
               {isEditing ? (
-                <textarea
-                  value={editedData.materialsOfInterest || ''}
-                  onChange={(e) => setEditedData(prev => ({ ...prev, materialsOfInterest: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-20 resize-none"
-                />
+                <div className="mt-1 border rounded px-3 py-2 max-h-32 overflow-y-auto">
+                  {materialTypes.map((materialType) => (
+                    <label key={materialType.id} className="flex items-center space-x-2 py-1">
+                      <input
+                        type="checkbox"
+                        checked={(editedData.materialsOfInterest || []).includes(materialType.id)}
+                        onChange={(e) => {
+                          const currentIds = editedData.materialsOfInterest || [];
+                          if (e.target.checked) {
+                            setEditedData(prev => ({ 
+                              ...prev, 
+                              materialsOfInterest: [...currentIds, materialType.id] 
+                            }));
+                          } else {
+                            setEditedData(prev => ({ 
+                              ...prev, 
+                              materialsOfInterest: currentIds.filter(id => id !== materialType.id) 
+                            }));
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{materialType.name}</span>
+                    </label>
+                  ))}
+                </div>
               ) : (
-                <p className="mt-1 text-sm text-gray-900">{data?.materialsOfInterest || 'N/A'}</p>
+                <p className="mt-1 text-sm text-gray-900">
+                  {data?.materialsOfInterest && data.materialsOfInterest.length > 0
+                    ? data.materialsOfInterest
+                        .map(id => materialTypes.find(mt => mt.id === id)?.name)
+                        .filter(Boolean)
+                        .join(', ')
+                    : 'N/A'}
+                </p>
               )}
             </div>
 
