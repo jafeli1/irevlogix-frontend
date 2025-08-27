@@ -605,7 +605,7 @@ export default function AssetIntakePage() {
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select Category</option>
-                  {categories.map((category) => (
+                  {(categories || []).map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
                     </option>
@@ -720,7 +720,7 @@ export default function AssetIntakePage() {
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select Status</option>
-                  {statuses.map((status) => (
+                  {(statuses || []).map((status) => (
                     <option key={status.id} value={status.id}>
                       {status.statusName}
                     </option>
@@ -740,7 +740,7 @@ export default function AssetIntakePage() {
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select Shipment</option>
-                  {shipments.map((shipment) => (
+                  {(shipments || []).map((shipment) => (
                     <option key={shipment.id} value={shipment.id}>
                       {shipment.shipmentNumber || `Shipment ${shipment.id}`}
                     </option>
@@ -844,7 +844,7 @@ export default function AssetIntakePage() {
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select User</option>
-                  {users.map((user) => (
+                  {(users || []).map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.firstName} {user.lastName}
                     </option>
@@ -1091,7 +1091,7 @@ export default function AssetIntakePage() {
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select Processing Lot</option>
-                  {processingLots.map((lot) => (
+                  {(processingLots || []).map((lot) => (
                     <option key={lot.id} value={lot.id}>
                       {lot.lotNumber || `Lot ${lot.id}`}
                     </option>
@@ -1278,7 +1278,7 @@ export default function AssetIntakePage() {
                   <div className="mt-3">
                     <p className="text-sm font-medium text-gray-700 mb-2">Selected files:</p>
                     <ul className="text-sm text-gray-600 space-y-1">
-                      {auditFiles.map((file, index) => (
+                      {(auditFiles || []).map((file, index) => (
                         <li key={index} className="flex items-center justify-between">
                           <span>{file.name}</span>
                           <button
@@ -1338,7 +1338,7 @@ export default function AssetIntakePage() {
                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
                   >
                     <option value="">Select User</option>
-                    {users.map((u: UserSummary) => (
+                    {(users || []).map((u: UserSummary) => (
                       <option key={u.id || u.Id} value={(u.id || u.Id) as string | number}>
                         {u.name || u.fullName || u.email}
                       </option>
