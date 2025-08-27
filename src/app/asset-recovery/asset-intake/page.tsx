@@ -35,7 +35,23 @@ interface UserSummary {
   Id?: number;
   name?: string;
   fullName?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
+}
+
+interface Shipment {
+  id?: number;
+  Id?: number;
+  name?: string;
+  shipmentNumber?: string;
+}
+
+interface ProcessingLot {
+  id?: number;
+  Id?: number;
+  name?: string;
+  lotNumber?: string;
 }
 
 
@@ -53,8 +69,8 @@ export default function AssetIntakePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'basic' | 'data' | 'audit' | 'coc'>('basic');
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
-  const [shipments, setShipments] = useState<any[]>([]);
-  const [processingLots, setProcessingLots] = useState<any[]>([]);
+  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [processingLots, setProcessingLots] = useState<ProcessingLot[]>([]);
   const generateAssetId = () => {
     const now = new Date();
     const yyyy = now.getUTCFullYear().toString();
