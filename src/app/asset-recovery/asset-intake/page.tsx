@@ -45,14 +45,16 @@ export default function AssetIntakePage() {
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
   const [auditFiles, setAuditFiles] = useState<File[]>([]);
-  const [bulkFile, setBulkFile] = useState<File | null>(null);
 
   const [statuses, setStatuses] = useState<AssetTrackingStatus[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'basic' | 'data' | 'audit' | 'coc' | 'bulk'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'data' | 'audit' | 'coc'>('basic');
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [shipments, setShipments] = useState<any[]>([]);
+  const [processingLots, setProcessingLots] = useState<any[]>([]);
   const generateAssetId = () => {
     const now = new Date();
     const yyyy = now.getUTCFullYear().toString();
@@ -66,22 +68,47 @@ export default function AssetIntakePage() {
   const [formData, setFormData] = useState({
     assetID: '',
     assetCategoryId: '',
+    sourceShipmentId: '',
     manufacturer: '',
     model: '',
     serialNumber: '',
+    description: '',
+    originalPurchaseDate: '',
+    originalCost: '',
     condition: 'Good',
     estimatedValue: '',
+    actualSalePrice: '',
+    costOfRecovery: '',
     isDataBearing: false,
     storageDeviceType: '',
-    dataSanitizationStatus: 'Not Required',
-    currentLocation: '',
-    currentStatusId: '',
-    notes: '',
-    description: '',
-    dataSanitizationMethod: '',
     storageCapacity: '',
+    dataSanitizationMethod: '',
+    dataSanitizationStatus: 'Not Required',
+    dataSanitizationDate: '',
+    dataSanitizationCertificate: '',
+    dataDestructionCost: '',
     internalAuditNotes: '',
+    notes: '',
     internalAuditScore: '',
+    currentLocation: '',
+    currentResponsibleUserId: '',
+    currentStatusId: '',
+    reuseDisposition: false,
+    resaleDisposition: false,
+    reuseRecipient: '',
+    reusePurpose: '',
+    reuseDate: '',
+    fairMarketValue: '',
+    buyer: '',
+    saleDate: '',
+    resalePlatform: '',
+    costOfSale: '',
+    salesInvoice: '',
+    recyclingVendor: '',
+    recyclingDate: '',
+    recyclingCost: '',
+    certificateOfRecycling: '',
+    processingLotId: '',
     receivedBy: '',
     receivedLocation: '',
     receivingTimestamp: '',
@@ -97,6 +124,8 @@ export default function AssetIntakePage() {
     fetchCategories();
     fetchStatuses();
     fetchUsers();
+    fetchShipments();
+    fetchProcessingLots();
   }, []);
   const fetchUsers = async () => {
     try {
@@ -114,6 +143,44 @@ export default function AssetIntakePage() {
       }
     } catch (error) {
       console.error('Failed to fetch users');
+    }
+  };
+
+  const fetchShipments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Shipments', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setShipments(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch shipments');
+    }
+  };
+
+  const fetchProcessingLots = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessingLots', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProcessingLots(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch processing lots');
     }
   };
 
@@ -168,37 +235,82 @@ export default function AssetIntakePage() {
     }
   };
 
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!formData.assetID.trim()) {
+      errors.assetID = 'Asset ID is required';
+    }
+    if (!formData.description.trim()) {
+      errors.description = 'Description is required';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearFieldError = (fieldName: string) => {
+    if (validationErrors[fieldName]) {
+      setValidationErrors(prev => {
+        const newErrors = {...prev};
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
+    clearFieldError(name);
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveAsset = async (redirectAfterSave: boolean = true) => {
+    if (!validateForm()) {
+      setError('Please fix the validation errors before submitting.');
+      return false;
+    }
+    
     setLoading(true);
     setError('');
-    setSuccess('');
+    
     if (formData.dataSanitizationMethod === 'Physical Destruction' && evidenceFiles.length === 0) {
       setLoading(false);
       setError('Physical Destruction requires photo/video evidence.');
-      return;
+      return false;
     }
 
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         router.push('/login');
-        return;
+        return false;
       }
 
       const submitData = {
         ...formData,
         assetCategoryId: formData.assetCategoryId ? parseInt(formData.assetCategoryId) : null,
+        sourceShipmentId: formData.sourceShipmentId ? parseInt(formData.sourceShipmentId) : null,
         currentStatusId: formData.currentStatusId ? parseInt(formData.currentStatusId) : null,
-        estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : null
+        currentResponsibleUserId: formData.currentResponsibleUserId ? parseInt(formData.currentResponsibleUserId) : null,
+        processingLotId: formData.processingLotId ? parseInt(formData.processingLotId) : null,
+        originalCost: formData.originalCost ? parseFloat(formData.originalCost) : null,
+        estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : null,
+        actualSalePrice: formData.actualSalePrice ? parseFloat(formData.actualSalePrice) : null,
+        costOfRecovery: formData.costOfRecovery ? parseFloat(formData.costOfRecovery) : null,
+        dataDestructionCost: formData.dataDestructionCost ? parseFloat(formData.dataDestructionCost) : null,
+        fairMarketValue: formData.fairMarketValue ? parseFloat(formData.fairMarketValue) : null,
+        costOfSale: formData.costOfSale ? parseFloat(formData.costOfSale) : null,
+        recyclingCost: formData.recyclingCost ? parseFloat(formData.recyclingCost) : null,
+        internalAuditScore: formData.internalAuditScore ? parseInt(formData.internalAuditScore) : null,
+        originalPurchaseDate: formData.originalPurchaseDate || null,
+        dataSanitizationDate: formData.dataSanitizationDate || null,
+        reuseDate: formData.reuseDate || null,
+        saleDate: formData.saleDate || null,
+        recyclingDate: formData.recyclingDate || null
       };
 
       const response = await fetch('https://irevlogix-backend.onrender.com/api/Assets', {
@@ -251,49 +363,87 @@ export default function AssetIntakePage() {
             }
           }
         } catch {}
-        setSuccess('Asset created successfully!');
-        setFormData({
-          assetID: '',
-          assetCategoryId: '',
-          manufacturer: '',
-          model: '',
-          serialNumber: '',
-          condition: 'Good',
-          estimatedValue: '',
-          isDataBearing: false,
-          storageDeviceType: '',
-          dataSanitizationStatus: 'Not Required',
-          currentLocation: '',
-          currentStatusId: '',
-          notes: '',
-          description: '',
-          dataSanitizationMethod: '',
-          storageCapacity: '',
-          internalAuditNotes: '',
-          internalAuditScore: '',
-          receivedBy: '',
-          receivedLocation: '',
-          receivingTimestamp: new Date().toISOString().slice(0, 16),
-          initialDisposition: ''
-        });
-        setCertificateFile(null);
-        setEvidenceFiles([]);
-        setAuditFiles([]);
-        setTimeout(() => {
-          router.push('/asset-recovery/asset-tracking');
-        }, 2000);
+        setSuccess('Asset saved successfully!');
+        
+        if (redirectAfterSave) {
+          setFormData({
+            assetID: '',
+            assetCategoryId: '',
+            sourceShipmentId: '',
+            manufacturer: '',
+            model: '',
+            serialNumber: '',
+            description: '',
+            originalPurchaseDate: '',
+            originalCost: '',
+            condition: 'Good',
+            estimatedValue: '',
+            actualSalePrice: '',
+            costOfRecovery: '',
+            isDataBearing: false,
+            storageDeviceType: '',
+            storageCapacity: '',
+            dataSanitizationMethod: '',
+            dataSanitizationStatus: 'Not Required',
+            dataSanitizationDate: '',
+            dataSanitizationCertificate: '',
+            dataDestructionCost: '',
+            internalAuditNotes: '',
+            notes: '',
+            internalAuditScore: '',
+            currentLocation: '',
+            currentResponsibleUserId: '',
+            currentStatusId: '',
+            reuseDisposition: false,
+            resaleDisposition: false,
+            reuseRecipient: '',
+            reusePurpose: '',
+            reuseDate: '',
+            fairMarketValue: '',
+            buyer: '',
+            saleDate: '',
+            resalePlatform: '',
+            costOfSale: '',
+            salesInvoice: '',
+            recyclingVendor: '',
+            recyclingDate: '',
+            recyclingCost: '',
+            certificateOfRecycling: '',
+            processingLotId: '',
+            receivedBy: '',
+            receivedLocation: '',
+            receivingTimestamp: new Date().toISOString().slice(0, 16),
+            initialDisposition: ''
+          });
+          setCertificateFile(null);
+          setEvidenceFiles([]);
+          setAuditFiles([]);
+          setTimeout(() => {
+            router.push('/asset-recovery/asset-tracking');
+          }, 2000);
+        }
+        
+        return true;
       } else if (response.status === 401) {
         localStorage.removeItem('token');
         router.push('/login');
+        return false;
       } else {
         const errorData = await response.text();
-        setError(errorData || 'Failed to create asset');
+        setError(errorData || 'Failed to save asset');
+        return false;
       }
     } catch (error) {
       setError('Network error. Please try again.');
+      return false;
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveAsset(true);
   };
 
   return (
@@ -324,7 +474,7 @@ export default function AssetIntakePage() {
                   onClick={() => setActiveTab('basic')}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                 >
-                  Basic Info
+                  Asset Data
                 </button>
                 <button
                   type="button"
@@ -347,13 +497,6 @@ export default function AssetIntakePage() {
                 >
                   Chain of Custody
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('bulk')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'bulk' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-                >
-                  Bulk Upload
-                </button>
               </nav>
             </div>
 
@@ -368,7 +511,7 @@ export default function AssetIntakePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="assetID" className="block text-sm font-medium text-gray-700">
-                    Asset ID *
+                    Asset ID <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -380,6 +523,9 @@ export default function AssetIntakePage() {
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter unique asset identifier"
                 />
+                {validationErrors.assetID && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.assetID}</p>
+                )}
               </div>
 
               <div>
@@ -515,6 +661,392 @@ export default function AssetIntakePage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label htmlFor="sourceShipmentId" className="block text-sm font-medium text-gray-700">
+                  Source Shipment
+                </label>
+                <select
+                  id="sourceShipmentId"
+                  name="sourceShipmentId"
+                  value={formData.sourceShipmentId}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select Shipment</option>
+                  {shipments.map((shipment) => (
+                    <option key={shipment.id} value={shipment.id}>
+                      {shipment.shipmentNumber || `Shipment ${shipment.id}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  required
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter asset description"
+                />
+                {validationErrors.description && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="originalPurchaseDate" className="block text-sm font-medium text-gray-700">
+                  Original Purchase Date
+                </label>
+                <input
+                  type="date"
+                  id="originalPurchaseDate"
+                  name="originalPurchaseDate"
+                  value={formData.originalPurchaseDate}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="originalCost" className="block text-sm font-medium text-gray-700">
+                  Original Cost ($)
+                </label>
+                <input
+                  type="number"
+                  id="originalCost"
+                  name="originalCost"
+                  step="0.01"
+                  min="0"
+                  value={formData.originalCost}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="actualSalePrice" className="block text-sm font-medium text-gray-700">
+                  Actual Sale Price ($)
+                </label>
+                <input
+                  type="number"
+                  id="actualSalePrice"
+                  name="actualSalePrice"
+                  step="0.01"
+                  min="0"
+                  value={formData.actualSalePrice}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="costOfRecovery" className="block text-sm font-medium text-gray-700">
+                  Cost of Recovery ($)
+                </label>
+                <input
+                  type="number"
+                  id="costOfRecovery"
+                  name="costOfRecovery"
+                  step="0.01"
+                  min="0"
+                  value={formData.costOfRecovery}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="currentResponsibleUserId" className="block text-sm font-medium text-gray-700">
+                  Current Responsible User
+                </label>
+                <select
+                  id="currentResponsibleUserId"
+                  name="currentResponsibleUserId"
+                  value={formData.currentResponsibleUserId}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select User</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.firstName} {user.lastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="reuseDisposition"
+                    name="reuseDisposition"
+                    checked={formData.reuseDisposition}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="reuseDisposition" className="ml-2 block text-sm text-gray-900">
+                    Reuse Disposition
+                  </label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="resaleDisposition"
+                    name="resaleDisposition"
+                    checked={formData.resaleDisposition}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="resaleDisposition" className="ml-2 block text-sm text-gray-900">
+                    Resale Disposition
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="reuseRecipient" className="block text-sm font-medium text-gray-700">
+                  Reuse Recipient
+                </label>
+                <input
+                  type="text"
+                  id="reuseRecipient"
+                  name="reuseRecipient"
+                  value={formData.reuseRecipient}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter reuse recipient"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="reusePurpose" className="block text-sm font-medium text-gray-700">
+                  Reuse Purpose
+                </label>
+                <input
+                  type="text"
+                  id="reusePurpose"
+                  name="reusePurpose"
+                  value={formData.reusePurpose}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter reuse purpose"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="reuseDate" className="block text-sm font-medium text-gray-700">
+                  Reuse Date
+                </label>
+                <input
+                  type="date"
+                  id="reuseDate"
+                  name="reuseDate"
+                  value={formData.reuseDate}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="fairMarketValue" className="block text-sm font-medium text-gray-700">
+                  Fair Market Value ($)
+                </label>
+                <input
+                  type="number"
+                  id="fairMarketValue"
+                  name="fairMarketValue"
+                  step="0.01"
+                  min="0"
+                  value={formData.fairMarketValue}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="buyer" className="block text-sm font-medium text-gray-700">
+                  Buyer
+                </label>
+                <input
+                  type="text"
+                  id="buyer"
+                  name="buyer"
+                  value={formData.buyer}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter buyer name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="saleDate" className="block text-sm font-medium text-gray-700">
+                  Sale Date
+                </label>
+                <input
+                  type="date"
+                  id="saleDate"
+                  name="saleDate"
+                  value={formData.saleDate}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="resalePlatform" className="block text-sm font-medium text-gray-700">
+                  Resale Platform
+                </label>
+                <input
+                  type="text"
+                  id="resalePlatform"
+                  name="resalePlatform"
+                  value={formData.resalePlatform}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., eBay, Amazon, Direct Sale"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="costOfSale" className="block text-sm font-medium text-gray-700">
+                  Cost of Sale ($)
+                </label>
+                <input
+                  type="number"
+                  id="costOfSale"
+                  name="costOfSale"
+                  step="0.01"
+                  min="0"
+                  value={formData.costOfSale}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="salesInvoice" className="block text-sm font-medium text-gray-700">
+                  Sales Invoice
+                </label>
+                <input
+                  type="text"
+                  id="salesInvoice"
+                  name="salesInvoice"
+                  value={formData.salesInvoice}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter sales invoice number"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="recyclingVendor" className="block text-sm font-medium text-gray-700">
+                  Recycling Vendor
+                </label>
+                <input
+                  type="text"
+                  id="recyclingVendor"
+                  name="recyclingVendor"
+                  value={formData.recyclingVendor}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter recycling vendor name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="recyclingDate" className="block text-sm font-medium text-gray-700">
+                  Recycling Date
+                </label>
+                <input
+                  type="date"
+                  id="recyclingDate"
+                  name="recyclingDate"
+                  value={formData.recyclingDate}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="recyclingCost" className="block text-sm font-medium text-gray-700">
+                  Recycling Cost ($)
+                </label>
+                <input
+                  type="number"
+                  id="recyclingCost"
+                  name="recyclingCost"
+                  step="0.01"
+                  min="0"
+                  value={formData.recyclingCost}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="certificateOfRecycling" className="block text-sm font-medium text-gray-700">
+                  Certificate of Recycling
+                </label>
+                <input
+                  type="text"
+                  id="certificateOfRecycling"
+                  name="certificateOfRecycling"
+                  value={formData.certificateOfRecycling}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter certificate reference"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="processingLotId" className="block text-sm font-medium text-gray-700">
+                  Processing Lot
+                </label>
+                <select
+                  id="processingLotId"
+                  name="processingLotId"
+                  value={formData.processingLotId}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select Processing Lot</option>
+                  {processingLots.map((lot) => (
+                    <option key={lot.id} value={lot.id}>
+                      {lot.lotNumber || `Lot ${lot.id}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+                  Notes
+                </label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter additional notes"
+                />
               </div>
             </div>
             </>
@@ -792,105 +1324,33 @@ export default function AssetIntakePage() {
             </div>
           )}
 
-          {activeTab === 'bulk' && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Upload CSV/Excel File</label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                  <div className="space-y-1 text-center">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <div className="flex text-sm text-gray-600">
-                      <label htmlFor="bulk-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                        <span>Upload a file</span>
-                        <input
-                          id="bulk-upload"
-                          name="bulk-upload"
-                          type="file"
-                          accept=".csv,.xlsx,.xls"
-                          className="sr-only"
-                          onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-500">CSV, XLSX up to 10MB</p>
-                  </div>
-                </div>
-                {bulkFile && <p className="mt-2 text-sm text-gray-600">Selected: {bulkFile.name}</p>}
-              </div>
-              <div>
-                <a
-                  href="#"
-                  className="text-blue-600 hover:text-blue-500 text-sm font-medium"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert('Template download feature coming soon');
-                  }}
-                >
-                  Download Template
-                </a>
-              </div>
-              <div className="text-sm text-gray-600">
-                <p className="font-medium mb-2">Expected columns:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>AssetID</li>
-                  <li>AssetCategory</li>
-                  <li>Manufacturer</li>
-                  <li>Model</li>
-                  <li>SerialNumber</li>
-                  <li>Description</li>
-                  <li>OriginalPurchaseDate</li>
-                  <li>OriginalCost</li>
-                  <li>Condition</li>
-                  <li>EstimatedValue</li>
-                  <li>IsDataBearing</li>
-                  <li>StorageDeviceType</li>
-                  <li>StorageCapacity</li>
-                  <li>DataSanitizationMethod</li>
-                  <li>DataSanitizationStatus</li>
-                  <li>ReceivedBy</li>
-                  <li>ReceivedLocation</li>
-                  <li>ReceivingTimestamp</li>
-                  <li>InitialDisposition</li>
-                </ul>
-              </div>
-            </div>
-          )}
 
 
 
-          <div className="flex items-center justify-between mt-6">
-            <div className="flex items-center gap-3">
-              <input id="bulkUploadInput" type="file" accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" />
-              <button
-                type="button"
-                onClick={() => document.getElementById('bulkUploadInput')?.click()}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Bulk Upload (CSV/Excel)
-              </button>
-            </div>
+          <div className="flex items-center justify-end mt-6">
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    assetID: generateAssetId(),
-                    manufacturer: '',
-                    model: '',
-                    serialNumber: '',
-                    estimatedValue: '',
-                    notes: ''
-                  }));
-                  setSuccess('Saved. Ready for next asset.');
-                  setTimeout(() => setSuccess(''), 2000);
+                onClick={async () => {
+                  const saved = await saveAsset(false);
+                  if (saved) {
+                    setFormData(prev => ({
+                      ...prev,
+                      assetID: generateAssetId(),
+                      manufacturer: '',
+                      model: '',
+                      serialNumber: '',
+                      estimatedValue: '',
+                      notes: ''
+                    }));
+                    setSuccess('Saved. Ready for next asset.');
+                    setTimeout(() => setSuccess(''), 2000);
+                  }
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                Save &amp; Add Next
+                {loading ? 'Saving...' : 'Save & Add Next'}
               </button>
               <button
                 type="button"
@@ -906,7 +1366,6 @@ export default function AssetIntakePage() {
               >
                 {loading ? 'Creating...' : 'Create Asset'}
               </button>
-
             </div>
           </div>
 
