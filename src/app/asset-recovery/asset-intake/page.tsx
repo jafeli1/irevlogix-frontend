@@ -54,6 +54,12 @@ interface ProcessingLot {
   lotNumber?: string;
 }
 
+interface Vendor {
+  id: number;
+  vendorName: string;
+  contactPerson?: string;
+  email?: string;
+}
 
 export default function AssetIntakePage() {
   const [categories, setCategories] = useState<AssetCategory[]>([]);
@@ -74,6 +80,7 @@ export default function AssetIntakePage() {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [processingLots, setProcessingLots] = useState<ProcessingLot[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const generateAssetId = () => {
     const now = new Date();
     const yyyy = now.getUTCFullYear().toString();
@@ -131,7 +138,8 @@ export default function AssetIntakePage() {
     receivedBy: '',
     receivedLocation: '',
     receivingTimestamp: '',
-    initialDisposition: ''
+    initialDisposition: '',
+    vendorId: ''
   });
 
   useEffect(() => {
@@ -152,7 +160,8 @@ export default function AssetIntakePage() {
           fetchStatuses(),
           fetchUsers(),
           fetchShipments(),
-          fetchProcessingLots()
+          fetchProcessingLots(),
+          fetchVendors()
         ]);
 
         console.log('Asset Intake: Component initialization complete');
@@ -303,6 +312,30 @@ export default function AssetIntakePage() {
     }
   };
 
+  const fetchVendors = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Vendors', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setVendors(Array.isArray(data) ? data : []);
+        console.log('Asset Intake: Vendors fetched successfully');
+      } else {
+        console.warn('Asset Intake: Failed to fetch vendors:', response.status);
+      }
+    } catch (error) {
+      console.error('Asset Intake: Error fetching vendors:', error);
+    }
+  };
+
   const validateForm = () => {
     const errors: {[key: string]: string} = {};
     
@@ -311,6 +344,9 @@ export default function AssetIntakePage() {
     }
     if (!formData.description.trim()) {
       errors.description = 'Description is required';
+    }
+    if (!formData.vendorId.trim()) {
+      errors.vendorId = 'Vendor selection is required';
     }
     
     setValidationErrors(errors);
@@ -378,7 +414,8 @@ export default function AssetIntakePage() {
         dataSanitizationDate: formData.dataSanitizationDate || null,
         reuseDate: formData.reuseDate || null,
         saleDate: formData.saleDate || null,
-        recyclingDate: formData.recyclingDate || null
+        recyclingDate: formData.recyclingDate || null,
+        vendorId: formData.vendorId ? parseInt(formData.vendorId) : null
       };
 
       const response = await fetch('https://irevlogix-backend.onrender.com/api/Assets', {
@@ -481,7 +518,8 @@ export default function AssetIntakePage() {
             receivedBy: '',
             receivedLocation: '',
             receivingTimestamp: new Date().toISOString().slice(0, 16),
-            initialDisposition: ''
+            initialDisposition: '',
+            vendorId: ''
           });
           setCertificateFile(null);
           setEvidenceFiles([]);
@@ -1567,6 +1605,30 @@ export default function AssetIntakePage() {
                     <option value="To Resale Inventory">To Resale Inventory</option>
                     <option value="To Certified Recycling">To Certified Recycling</option>
                   </select>
+                </div>
+                <div>
+                  <label htmlFor="vendorId" className="block text-sm font-medium text-gray-700">
+                    Vendor *
+                  </label>
+                  <select
+                    id="vendorId"
+                    name="vendorId"
+                    value={formData.vendorId}
+                    onChange={handleInputChange}
+                    className={`mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 ${
+                      validationErrors.vendorId ? 'border-red-300' : ''
+                    }`}
+                  >
+                    <option value="">Select a vendor</option>
+                    {(Array.isArray(vendors) ? vendors : []).map((vendor) => (
+                      <option key={vendor.id} value={vendor.id}>
+                        {vendor.vendorName}
+                      </option>
+                    ))}
+                  </select>
+                  {validationErrors.vendorId && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.vendorId}</p>
+                  )}
                 </div>
               </div>
             </div>
