@@ -61,13 +61,16 @@ export default function AssetIntakePage() {
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
   const [auditFiles, setAuditFiles] = useState<File[]>([]);
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkValidationError, setBulkValidationError] = useState('');
+  const [bulkUploadResults, setBulkUploadResults] = useState<{success: number, errors: string[]}>({success: 0, errors: []});
 
   const [statuses, setStatuses] = useState<AssetTrackingStatus[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'basic' | 'data' | 'audit' | 'coc'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'data' | 'audit' | 'coc' | 'bulk'>('basic');
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [processingLots, setProcessingLots] = useState<ProcessingLot[]>([]);
@@ -506,6 +509,179 @@ export default function AssetIntakePage() {
     }
   };
 
+  const validateBulkFile = (file: File): boolean => {
+    setBulkValidationError('');
+
+    if (!file) {
+      setBulkValidationError('Please select a file to upload');
+      return false;
+    }
+
+    const allowedTypes = [
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setBulkValidationError('Please upload a CSV or Excel file (.csv, .xls, .xlsx)');
+      return false;
+    }
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setBulkValidationError('File size must be less than 10MB');
+      return false;
+    }
+
+    return true;
+  };
+
+  const processBulkUpload = async () => {
+    if (!bulkFile || !validateBulkFile(bulkFile)) {
+      return;
+    }
+
+    setLoading(true);
+    setBulkUploadResults({success: 0, errors: []});
+
+    try {
+      const fileContent = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsText(bulkFile);
+      });
+
+      const lines = fileContent.split('\n').filter(line => line.trim());
+      if (lines.length < 2) {
+        setBulkValidationError('CSV file must contain at least a header row and one data row');
+        setLoading(false);
+        return;
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      const dataRows = lines.slice(1);
+
+      const results: {success: number, errors: string[]} = {success: 0, errors: []};
+      const token = localStorage.getItem('token');
+
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i].split(',').map(cell => cell.trim().replace(/"/g, ''));
+        
+        if (row.length !== headers.length) {
+          results.errors.push(`Row ${i + 2}: Column count mismatch`);
+          continue;
+        }
+
+        const assetData: {
+          AssetID?: string;
+          Description?: string;
+          Manufacturer?: string;
+          Model?: string;
+          SerialNumber?: string;
+          Condition?: string;
+          EstimatedValue?: number | null;
+          IsDataBearing?: boolean;
+          CurrentLocation?: string;
+          Notes?: string;
+        } = {};
+        headers.forEach((header, index) => {
+          const value = row[index];
+          switch (header.toLowerCase()) {
+            case 'assetid':
+              assetData.AssetID = value;
+              break;
+            case 'description':
+              assetData.Description = value;
+              break;
+            case 'manufacturer':
+              assetData.Manufacturer = value;
+              break;
+            case 'model':
+              assetData.Model = value;
+              break;
+            case 'serialnumber':
+              assetData.SerialNumber = value;
+              break;
+            case 'condition':
+              assetData.Condition = value;
+              break;
+            case 'estimatedvalue':
+              assetData.EstimatedValue = value ? parseFloat(value) : null;
+              break;
+            case 'isdatabearing':
+              assetData.IsDataBearing = value.toLowerCase() === 'true';
+              break;
+            case 'currentlocation':
+              assetData.CurrentLocation = value;
+              break;
+            case 'notes':
+              assetData.Notes = value;
+              break;
+          }
+        });
+
+        if (!assetData.AssetID || !assetData.Description) {
+          results.errors.push(`Row ${i + 2}: AssetID and Description are required`);
+          continue;
+        }
+
+        try {
+          const response = await fetch('https://irevlogix-backend.onrender.com/api/Assets/bulk', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(assetData),
+          });
+
+          if (response.ok) {
+            results.success++;
+          } else {
+            const errorData = await response.text();
+            results.errors.push(`Row ${i + 2}: ${errorData}`);
+          }
+        } catch (error) {
+          results.errors.push(`Row ${i + 2}: Network error`);
+        }
+      }
+
+      setBulkUploadResults(results);
+    } catch (error) {
+      setBulkValidationError('Error reading file. Please ensure it is a valid CSV file.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const headers = [
+      'AssetID',
+      'Description', 
+      'Manufacturer',
+      'Model',
+      'SerialNumber',
+      'Condition',
+      'EstimatedValue',
+      'IsDataBearing',
+      'CurrentLocation',
+      'Notes'
+    ];
+    
+    const csvContent = headers.join(',') + '\n' + 
+      'AST-20241227-00001,"Sample Laptop","Dell","Latitude 5520","ABC123","Good","500","true","Warehouse A","Sample asset for testing"';
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'asset-bulk-upload-template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await saveAsset(true);
@@ -561,6 +737,13 @@ export default function AssetIntakePage() {
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'coc' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                 >
                   Chain of Custody
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('bulk')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'bulk' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+                >
+                  Bulk Upload
                 </button>
               </nav>
             </div>
@@ -1434,8 +1617,121 @@ export default function AssetIntakePage() {
             </div>
           </div>
 
+          {activeTab === 'bulk' && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                <h3 className="text-lg font-medium text-blue-900 mb-2">Bulk Asset Upload</h3>
+                <p className="text-sm text-blue-700">
+                  Upload a CSV file to create multiple assets at once. Each asset will automatically get a Chain of Custody record.
+                </p>
+              </div>
 
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload CSV File
+                  </label>
+                  <div className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md ${
+                    bulkValidationError ? 'border-red-300' : 'border-gray-300'
+                  }`}>
+                    <div className="space-y-1 text-center">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <div className="flex text-sm text-gray-600">
+                        <label htmlFor="bulk-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
+                          <span>Upload a file</span>
+                          <input
+                            id="bulk-upload"
+                            name="bulk-upload"
+                            type="file"
+                            accept=".csv,.xlsx,.xls"
+                            className="sr-only"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] || null;
+                              setBulkFile(file);
+                              if (file) {
+                                validateBulkFile(file);
+                              }
+                            }}
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-gray-500">CSV, XLSX up to 10MB</p>
+                    </div>
+                  </div>
+                  {bulkValidationError && (
+                    <p className="text-sm text-red-600 mt-1">{bulkValidationError}</p>
+                  )}
+                  {bulkFile && (
+                    <p className="mt-2 text-sm text-gray-600">Selected: {bulkFile.name}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <button
+                    type="button"
+                    onClick={downloadTemplate}
+                    className="text-blue-600 hover:text-blue-500 text-sm font-medium"
+                  >
+                    Download Template
+                  </button>
+                </div>
+                
+                <div className="text-sm text-gray-600">
+                  <p className="font-medium mb-2">Expected columns:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>AssetID (required)</li>
+                    <li>Description (required)</li>
+                    <li>Manufacturer</li>
+                    <li>Model</li>
+                    <li>SerialNumber</li>
+                    <li>Condition</li>
+                    <li>EstimatedValue</li>
+                    <li>IsDataBearing (true/false)</li>
+                    <li>CurrentLocation</li>
+                    <li>Notes</li>
+                  </ul>
+                </div>
 
+                {bulkUploadResults.success > 0 || bulkUploadResults.errors.length > 0 ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                    <h4 className="font-medium text-gray-900 mb-2">Upload Results</h4>
+                    <p className="text-sm text-green-600 mb-2">Successfully created: {bulkUploadResults.success} assets</p>
+                    {bulkUploadResults.errors.length > 0 && (
+                      <div>
+                        <p className="text-sm text-red-600 mb-2">Errors: {bulkUploadResults.errors.length}</p>
+                        <ul className="text-xs text-red-600 space-y-1 max-h-32 overflow-y-auto">
+                          {bulkUploadResults.errors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+
+                <div className="flex justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('basic')}
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    Back to Asset Data
+                  </button>
+                  <button
+                    type="button"
+                    onClick={processBulkUpload}
+                    disabled={!bulkFile || loading}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Processing...' : 'Upload Assets'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           </form>
         </div>
