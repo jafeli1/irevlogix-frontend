@@ -79,6 +79,7 @@ export default function AssetDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedAsset, setEditedAsset] = useState<Partial<Asset>>({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const [asset, setAsset] = useState<Asset | null>(null);
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
@@ -240,7 +241,48 @@ export default function AssetDetailPage() {
     };
   }, [assetId, router]);
 
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!editedAsset.assetID && !editedAsset.assetId) {
+      errors.assetID = 'Asset ID is required';
+    }
+    
+    if (!editedAsset.description) {
+      errors.description = 'Description is required';
+    }
+    
+    if (!editedAsset.manufacturer) {
+      errors.manufacturer = 'Manufacturer is required';
+    }
+    
+    if (!editedAsset.model) {
+      errors.model = 'Model is required';
+    }
+    
+    if (!editedAsset.condition) {
+      errors.condition = 'Condition is required';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearFieldError = (fieldName: string) => {
+    if (validationErrors[fieldName]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    }
+  };
+
   const handleSave = async () => {
+    if (!validateForm()) {
+      setError('Please fix the validation errors before saving.');
+      return;
+    }
     try {
       const token = localStorage.getItem("token");
       
@@ -414,11 +456,21 @@ export default function AssetDetailPage() {
                 <label className="block text-sm font-medium text-gray-700">Asset ID</label>
                 <input 
                   type="text" 
-                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  className={`mt-1 w-full rounded-md border px-3 py-2 ${
+                    validationErrors.assetID ? 'border-red-300' : ''
+                  }`}
                   value={isEditing ? (editedAsset?.assetID || editedAsset?.assetId || "") : (asset?.assetID || asset?.assetId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, assetID: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('assetID');
+                      setEditedAsset(prev => ({ ...prev, assetID: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
+                {validationErrors.assetID && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.assetID}</p>
+                )}
               </div>
               
               <div>
@@ -426,7 +478,12 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.assetCategoryId || "") : (asset?.assetCategoryId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, assetCategoryId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('assetCategoryId');
+                      setEditedAsset(prev => ({ ...prev, assetCategoryId: parseInt(e.target.value) || undefined }));
+                    }
+                  }}
                   disabled={!isEditing}
                 >
                   <option value="">Select Category</option>
@@ -442,22 +499,42 @@ export default function AssetDetailPage() {
                 <label className="block text-sm font-medium text-gray-700">Manufacturer</label>
                 <input 
                   type="text" 
-                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  className={`mt-1 w-full rounded-md border px-3 py-2 ${
+                    validationErrors.manufacturer ? 'border-red-300' : ''
+                  }`}
                   value={isEditing ? (editedAsset?.manufacturer || "") : (asset?.manufacturer || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, manufacturer: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('manufacturer');
+                      setEditedAsset(prev => ({ ...prev, manufacturer: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
+                {validationErrors.manufacturer && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.manufacturer}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">Model</label>
                 <input 
                   type="text" 
-                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  className={`mt-1 w-full rounded-md border px-3 py-2 ${
+                    validationErrors.model ? 'border-red-300' : ''
+                  }`}
                   value={isEditing ? (editedAsset?.model || "") : (asset?.model || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, model: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('model');
+                      setEditedAsset(prev => ({ ...prev, model: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
+                {validationErrors.model && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.model}</p>
+                )}
               </div>
 
               <div>
@@ -466,7 +543,12 @@ export default function AssetDetailPage() {
                   type="text" 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.serialNumber || "") : (asset?.serialNumber || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, serialNumber: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('serialNumber');
+                      setEditedAsset(prev => ({ ...prev, serialNumber: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -474,16 +556,27 @@ export default function AssetDetailPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700">Condition</label>
                 <select 
-                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  className={`mt-1 w-full rounded-md border px-3 py-2 ${
+                    validationErrors.condition ? 'border-red-300' : ''
+                  }`}
                   value={isEditing ? (editedAsset?.condition || "") : (asset?.condition || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, condition: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('condition');
+                      setEditedAsset(prev => ({ ...prev, condition: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 >
+                  <option value="">Select Condition</option>
                   <option value="Excellent">Excellent</option>
                   <option value="Good">Good</option>
                   <option value="Fair">Fair</option>
                   <option value="Poor">Poor</option>
                 </select>
+                {validationErrors.condition && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.condition}</p>
+                )}
               </div>
 
               <div>
@@ -493,7 +586,12 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.estimatedValue || "") : (asset?.estimatedValue || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, estimatedValue: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('estimatedValue');
+                      setEditedAsset(prev => ({ ...prev, estimatedValue: parseFloat(e.target.value) || undefined }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -504,7 +602,12 @@ export default function AssetDetailPage() {
                   type="text" 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.currentLocation || "") : (asset?.currentLocation || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, currentLocation: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('currentLocation');
+                      setEditedAsset(prev => ({ ...prev, currentLocation: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -514,7 +617,12 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.currentStatusId || "") : (asset?.currentStatusId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, currentStatusId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('currentStatusId');
+                      setEditedAsset(prev => ({ ...prev, currentStatusId: parseInt(e.target.value) || undefined }));
+                    }
+                  }}
                   disabled={!isEditing}
                 >
                   <option value="">Select Status</option>
@@ -531,7 +639,12 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.sourceShipmentId || "") : (asset?.sourceShipmentId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, sourceShipmentId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('sourceShipmentId');
+                      setEditedAsset(prev => ({ ...prev, sourceShipmentId: parseInt(e.target.value) || undefined }));
+                    }
+                  }}
                   disabled={!isEditing}
                 >
                   <option value="">Select Shipment</option>
@@ -549,7 +662,12 @@ export default function AssetDetailPage() {
                   type="date" 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.originalPurchaseDate || "") : (asset?.originalPurchaseDate || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, originalPurchaseDate: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('originalPurchaseDate');
+                      setEditedAsset(prev => ({ ...prev, originalPurchaseDate: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -561,7 +679,12 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.originalCost || "") : (asset?.originalCost || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, originalCost: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('originalCost');
+                      setEditedAsset(prev => ({ ...prev, originalCost: parseFloat(e.target.value) || undefined }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -573,7 +696,12 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.actualSalePrice || "") : (asset?.actualSalePrice || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, actualSalePrice: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('actualSalePrice');
+                      setEditedAsset(prev => ({ ...prev, actualSalePrice: parseFloat(e.target.value) || undefined }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -585,7 +713,12 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.costOfRecovery || "") : (asset?.costOfRecovery || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfRecovery: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('costOfRecovery');
+                      setEditedAsset(prev => ({ ...prev, costOfRecovery: parseFloat(e.target.value) || undefined }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -595,7 +728,12 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.currentResponsibleUserId || "") : (asset?.currentResponsibleUserId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, currentResponsibleUserId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('currentResponsibleUserId');
+                      setEditedAsset(prev => ({ ...prev, currentResponsibleUserId: parseInt(e.target.value) || undefined }));
+                    }
+                  }}
                   disabled={!isEditing}
                 >
                   <option value="">Select User</option>
@@ -613,7 +751,12 @@ export default function AssetDetailPage() {
                   type="text" 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.reuseRecipient || "") : (asset?.reuseRecipient || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, reuseRecipient: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('reuseRecipient');
+                      setEditedAsset(prev => ({ ...prev, reuseRecipient: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -624,7 +767,12 @@ export default function AssetDetailPage() {
                   type="text" 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.reusePurpose || "") : (asset?.reusePurpose || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, reusePurpose: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('reusePurpose');
+                      setEditedAsset(prev => ({ ...prev, reusePurpose: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -635,7 +783,12 @@ export default function AssetDetailPage() {
                   type="date" 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.reuseDate || "") : (asset?.reuseDate || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, reuseDate: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('reuseDate');
+                      setEditedAsset(prev => ({ ...prev, reuseDate: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -647,7 +800,12 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.fairMarketValue || "") : (asset?.fairMarketValue || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, fairMarketValue: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('fairMarketValue');
+                      setEditedAsset(prev => ({ ...prev, fairMarketValue: parseFloat(e.target.value) || undefined }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -658,7 +816,12 @@ export default function AssetDetailPage() {
                   type="text" 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.buyer || "") : (asset?.buyer || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, buyer: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('buyer');
+                      setEditedAsset(prev => ({ ...prev, buyer: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -669,7 +832,12 @@ export default function AssetDetailPage() {
                   type="date" 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.saleDate || "") : (asset?.saleDate || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, saleDate: e.target.value }))}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('saleDate');
+                      setEditedAsset(prev => ({ ...prev, saleDate: e.target.value }));
+                    }
+                  }}
                   disabled={!isEditing}
                 />
               </div>
@@ -692,7 +860,7 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.costOfSale || "") : (asset?.costOfSale || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfSale: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfSale: parseFloat(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 />
               </div>
@@ -713,7 +881,7 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.recyclingVendorId || "") : (asset?.recyclingVendorId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingVendorId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingVendorId: parseInt(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 >
                   <option value="">Select Recycling Vendor</option>
@@ -743,7 +911,7 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.recyclingCost || "") : (asset?.recyclingCost || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingCost: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingCost: parseFloat(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 />
               </div>
@@ -764,7 +932,7 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.processingLotId || "") : (asset?.processingLotId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, processingLotId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, processingLotId: parseInt(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 >
                   <option value="">Select Processing Lot</option>
@@ -781,11 +949,21 @@ export default function AssetDetailPage() {
               <label className="block text-sm font-medium text-gray-700">Description</label>
               <textarea 
                 rows={3}
-                className="mt-1 w-full rounded-md border px-3 py-2" 
+                className={`mt-1 w-full rounded-md border px-3 py-2 ${
+                  validationErrors.description ? 'border-red-300' : ''
+                }`}
                 value={isEditing ? (editedAsset?.description || "") : (asset?.description || "")}
-                onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) => {
+                  if (isEditing) {
+                    clearFieldError('description');
+                    setEditedAsset(prev => ({ ...prev, description: e.target.value }));
+                  }
+                }}
                 disabled={!isEditing}
               />
+              {validationErrors.description && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+              )}
             </div>
 
             <div>
