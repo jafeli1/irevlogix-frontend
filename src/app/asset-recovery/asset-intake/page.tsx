@@ -130,7 +130,7 @@ export default function AssetIntakePage() {
     resalePlatform: '',
     costOfSale: '',
     salesInvoice: '',
-    recyclingVendor: '',
+    recyclingVendorId: '',
     recyclingDate: '',
     recyclingCost: '',
     certificateOfRecycling: '',
@@ -415,6 +415,7 @@ export default function AssetIntakePage() {
         reuseDate: formData.reuseDate || null,
         saleDate: formData.saleDate || null,
         recyclingDate: formData.recyclingDate || null,
+        recyclingVendorId: formData.recyclingVendorId ? parseInt(formData.recyclingVendorId) : null,
         vendorId: formData.vendorId ? parseInt(formData.vendorId) : null
       };
 
@@ -510,7 +511,7 @@ export default function AssetIntakePage() {
             resalePlatform: '',
             costOfSale: '',
             salesInvoice: '',
-            recyclingVendor: '',
+            recyclingVendorId: '',
             recyclingDate: '',
             recyclingCost: '',
             certificateOfRecycling: '',
@@ -1240,18 +1241,23 @@ export default function AssetIntakePage() {
               </div>
 
               <div>
-                <label htmlFor="recyclingVendor" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="recyclingVendorId" className="block text-sm font-medium text-gray-700">
                   Recycling Vendor
                 </label>
-                <input
-                  type="text"
-                  id="recyclingVendor"
-                  name="recyclingVendor"
-                  value={formData.recyclingVendor}
+                <select
+                  id="recyclingVendorId"
+                  name="recyclingVendorId"
+                  value={formData.recyclingVendorId}
                   onChange={handleInputChange}
                   className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter recycling vendor name"
-                />
+                >
+                  <option value="">Select Recycling Vendor</option>
+                  {(Array.isArray(vendors) ? vendors : []).map((vendor) => (
+                    <option key={vendor.id} value={vendor.id}>
+                      {vendor.vendorName}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
