@@ -1377,16 +1377,85 @@ export default function AssetDetailPage() {
         {activeTab === "recycling" && (
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-3">
-              <input className="rounded-md border px-3 py-2" placeholder="Recycling Vendor" />
-              <input className="rounded-md border px-3 py-2" placeholder="Recycling Date" />
-              <input type="number" className="rounded-md border px-3 py-2" placeholder="Recycling Cost ($)" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Recycling Vendor</label>
+                <select 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.recyclingVendorId || "") : (asset?.recyclingVendorId || "")}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('recyclingVendorId');
+                      setEditedAsset(prev => ({ ...prev, recyclingVendorId: parseInt(e.target.value) || undefined }));
+                    }
+                  }}
+                  disabled={!isEditing}
+                >
+                  <option value="">Select Recycling Vendor</option>
+                  {vendors.map((vendor) => (
+                    <option key={vendor.id} value={vendor.id}>
+                      {vendor.vendorName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Recycling Date</label>
+                <input 
+                  type="date" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.recyclingDate || "") : (asset?.recyclingDate || "")}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('recyclingDate');
+                      setEditedAsset(prev => ({ ...prev, recyclingDate: e.target.value }));
+                    }
+                  }}
+                  disabled={!isEditing}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Recycling Cost ($)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.recyclingCost || "") : (asset?.recyclingCost || "")}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('recyclingCost');
+                      setEditedAsset(prev => ({ ...prev, recyclingCost: parseFloat(e.target.value) || undefined }));
+                    }
+                  }}
+                  disabled={!isEditing}
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Certificate of Recycling</label>
               <input type="file" className="mt-1 w-full rounded-md border px-3 py-2" />
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <input className="rounded-md border px-3 py-2" placeholder="Processing Lot ID (optional)" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Processing Lot</label>
+                <select 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.processingLotId || "") : (asset?.processingLotId || "")}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('processingLotId');
+                      setEditedAsset(prev => ({ ...prev, processingLotId: parseInt(e.target.value) || undefined }));
+                    }
+                  }}
+                  disabled={!isEditing}
+                >
+                  <option value="">Select Processing Lot</option>
+                  {processingLots.map((lot) => (
+                    <option key={lot.id} value={lot.id}>
+                      {lot.lotNumber}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         )}
