@@ -7,7 +7,7 @@ import AppLayout from '../../../components/AppLayout';
 interface Asset {
   id: number;
   assetID: string;
-  assetCategory?: { name?: string };
+  assetCategory?: { id?: number; name?: string };
   manufacturer: string;
   model: string;
   condition: string;
@@ -18,6 +18,8 @@ interface Asset {
   dateCreated: string;
   client?: { name?: string } | null;
   clientName?: string | null;
+  recyclingVendorId?: number;
+  recyclingVendor?: { vendorName?: string };
 }
 
 interface TrackingDashboard {
@@ -45,16 +47,20 @@ export default function AssetTrackingPage() {
   const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
 
-  const [clientFilter, setClientFilter] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
+  const [recyclingVendorFilter, setRecyclingVendorFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [assetCategories, setAssetCategories] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     fetchAssets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, conditionFilter, dataBearingFilter, locationFilter, page]);
+  }, [searchTerm, conditionFilter, dataBearingFilter, recyclingVendorFilter, categoryFilter, page]);
   useEffect(() => {
     fetchDashboard();
+    fetchVendors();
+    fetchAssetCategories();
   }, []);
 
   const fetchAssets = async () => {
@@ -68,7 +74,8 @@ export default function AssetTrackingPage() {
       if (searchTerm) qs.set('search', searchTerm);
       if (conditionFilter) qs.set('condition', conditionFilter);
       if (dataBearingFilter) qs.set('isDataBearing', dataBearingFilter);
-      if (locationFilter) qs.set('location', locationFilter);
+      if (recyclingVendorFilter) qs.set('recyclingVendorId', recyclingVendorFilter);
+      if (categoryFilter) qs.set('assetCategoryId', categoryFilter);
       qs.set('page', String(page));
       qs.set('pageSize', String(pageSize));
 
@@ -118,6 +125,48 @@ export default function AssetTrackingPage() {
     }
   };
 
+  const fetchVendors = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Vendors', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setVendors(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+    }
+  };
+
+  const fetchAssetCategories = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('/api/assetcategories?pageSize=1000', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAssetCategories(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error('Error fetching asset categories:', error);
+    }
+  };
+
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.assetID.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          asset.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -126,10 +175,9 @@ export default function AssetTrackingPage() {
     const matchesDataBearing = !dataBearingFilter || 
                               (dataBearingFilter === 'true' && asset.isDataBearing) ||
                               (dataBearingFilter === 'false' && !asset.isDataBearing);
-    const clientName = asset.client?.name ?? asset.clientName ?? '';
-    const matchesClient = !clientFilter || clientName.toLowerCase().includes(clientFilter.toLowerCase());
-    const matchesLocation = !locationFilter || (asset.currentLocation || '').toLowerCase().includes(locationFilter.toLowerCase());
-    return matchesSearch && matchesCondition && matchesDataBearing && matchesClient && matchesLocation;
+    const matchesRecyclingVendor = !recyclingVendorFilter || asset.recyclingVendorId?.toString() === recyclingVendorFilter;
+    const matchesCategory = !categoryFilter || asset.assetCategory?.id?.toString() === categoryFilter;
+    return matchesSearch && matchesCondition && matchesDataBearing && matchesRecyclingVendor && matchesCategory;
   });
 
   const getConditionColor = (condition: string) => {
@@ -255,8 +303,17 @@ export default function AssetTrackingPage() {
 
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <h2 className="text-lg font-medium text-gray-900">Asset Tracking</h2>
+                <button
+                  onClick={() => router.push('/asset-recovery/asset-intake')}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
+                >
+                  Add Asset
+                </button>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
                 <div className="relative">
                   <input
                     type="text"
@@ -291,27 +348,31 @@ export default function AssetTrackingPage() {
                   <option value="true">Data Bearing</option>
                   <option value="false">Non-Data Bearing</option>
                 </select>
-                <input
-                  type="text"
-                  placeholder="Filter by Client"
-                  value={clientFilter}
-                  onChange={(e) => setClientFilter(e.target.value)}
+                <select
+                  value={recyclingVendorFilter}
+                  onChange={(e) => setRecyclingVendorFilter(e.target.value)}
                   className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
-                <input
-                  type="text"
-                  placeholder="Filter by Location"
-                  value={locationFilter}
-                  onChange={(e) => setLocationFilter(e.target.value)}
+                >
+                  <option value="">All Recycling Vendors</option>
+                  {vendors.map((vendor) => (
+                    <option key={vendor.id} value={vendor.id}>
+                      {vendor.vendorName}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
                   className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                />
+                >
+                  <option value="">All Categories</option>
+                  {assetCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <button
-                onClick={() => router.push('/asset-recovery/asset-intake')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Add Asset
-              </button>
             </div>
           </div>
 
@@ -427,7 +488,8 @@ export default function AssetTrackingPage() {
                 if (searchTerm) qs.set('search', searchTerm);
                 if (conditionFilter) qs.set('condition', conditionFilter);
                 if (dataBearingFilter) qs.set('isDataBearing', dataBearingFilter);
-                if (locationFilter) qs.set('location', locationFilter);
+                if (recyclingVendorFilter) qs.set('recyclingVendorId', recyclingVendorFilter);
+                if (categoryFilter) qs.set('assetCategoryId', categoryFilter);
                 qs.set('export', 'csv');
                 const resp = await fetch('https://irevlogix-backend.onrender.com/api/Assets?' + qs.toString(), {
                   headers: { Authorization: token ? ('Bearer ' + token) : '' }
