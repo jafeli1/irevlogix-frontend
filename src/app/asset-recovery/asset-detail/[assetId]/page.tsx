@@ -426,7 +426,7 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.assetCategoryId || "") : (asset?.assetCategoryId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, assetCategoryId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, assetCategoryId: parseInt(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 >
                   <option value="">Select Category</option>
@@ -493,7 +493,7 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.estimatedValue || "") : (asset?.estimatedValue || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, estimatedValue: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, estimatedValue: parseFloat(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 />
               </div>
@@ -514,7 +514,7 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.currentStatusId || "") : (asset?.currentStatusId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, currentStatusId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, currentStatusId: parseInt(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 >
                   <option value="">Select Status</option>
@@ -531,7 +531,7 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.sourceShipmentId || "") : (asset?.sourceShipmentId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, sourceShipmentId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, sourceShipmentId: parseInt(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 >
                   <option value="">Select Shipment</option>
@@ -561,7 +561,7 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.originalCost || "") : (asset?.originalCost || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, originalCost: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, originalCost: parseFloat(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 />
               </div>
@@ -573,7 +573,7 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.actualSalePrice || "") : (asset?.actualSalePrice || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, actualSalePrice: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, actualSalePrice: parseFloat(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 />
               </div>
@@ -585,7 +585,7 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.costOfRecovery || "") : (asset?.costOfRecovery || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfRecovery: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfRecovery: parseFloat(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 />
               </div>
@@ -595,7 +595,7 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.currentResponsibleUserId || "") : (asset?.currentResponsibleUserId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, currentResponsibleUserId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, currentResponsibleUserId: parseInt(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 >
                   <option value="">Select User</option>
@@ -647,7 +647,7 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.fairMarketValue || "") : (asset?.fairMarketValue || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, fairMarketValue: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, fairMarketValue: parseFloat(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 />
               </div>
@@ -692,7 +692,7 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.costOfSale || "") : (asset?.costOfSale || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfSale: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfSale: parseFloat(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 />
               </div>
@@ -713,7 +713,7 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.recyclingVendorId || "") : (asset?.recyclingVendorId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingVendorId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingVendorId: parseInt(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 >
                   <option value="">Select Recycling Vendor</option>
@@ -743,7 +743,7 @@ export default function AssetDetailPage() {
                   step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.recyclingCost || "") : (asset?.recyclingCost || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingCost: parseFloat(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingCost: parseFloat(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 />
               </div>
@@ -764,7 +764,7 @@ export default function AssetDetailPage() {
                 <select 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.processingLotId || "") : (asset?.processingLotId || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, processingLotId: parseInt(e.target.value) || null }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, processingLotId: parseInt(e.target.value) || undefined }))}
                   disabled={!isEditing}
                 >
                   <option value="">Select Processing Lot</option>
