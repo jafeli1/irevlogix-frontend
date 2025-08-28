@@ -49,8 +49,8 @@ export default function AssetTrackingPage() {
 
   const [recyclingVendorFilter, setRecyclingVendorFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [vendors, setVendors] = useState<any[]>([]);
-  const [assetCategories, setAssetCategories] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<{ id: number; vendorName: string }[]>([]);
+  const [assetCategories, setAssetCategories] = useState<{ id: number; name: string }[]>([]);
   const router = useRouter();
 
   useEffect(() => {
