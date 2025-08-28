@@ -20,19 +20,49 @@ type Asset = {
   id: number;
   assetID?: string;
   assetId?: string;
-  serialNumber?: string;
-  assetCategory?: { name?: string };
+  assetCategoryId?: number;
+  assetCategory?: { id?: number; name?: string };
+  sourceShipmentId?: number;
+  sourceShipment?: { shipmentNumber?: string };
   manufacturer?: string;
   model?: string;
-  currentStatus?: { statusName?: string };
-  estimatedResaleValue?: number;
+  serialNumber?: string;
+  description?: string;
+  originalPurchaseDate?: string;
+  originalCost?: number;
+  condition?: string;
+  estimatedValue?: number;
   actualSalePrice?: number;
   costOfRecovery?: number;
+  isDataBearing?: boolean;
+  storageDeviceType?: string;
+  dataSanitizationStatus?: string;
+  currentLocation?: string;
+  currentResponsibleUserId?: number;
+  currentResponsibleUser?: { firstName?: string; lastName?: string };
+  currentStatusId?: number;
+  currentStatus?: { statusName?: string };
   reuseDisposition?: boolean;
   resaleDisposition?: boolean;
+  reuseRecipient?: string;
+  reusePurpose?: string;
+  reuseDate?: string;
+  fairMarketValue?: number;
   buyer?: string;
-  recipient?: string;
+  saleDate?: string;
   resalePlatform?: string;
+  costOfSale?: number;
+  salesInvoice?: string;
+  recyclingVendorId?: number;
+  recyclingVendor?: { vendorName?: string };
+  recyclingDate?: string;
+  recyclingCost?: number;
+  certificateOfRecycling?: string;
+  processingLotId?: number;
+  processingLot?: { lotNumber?: string };
+  notes?: string;
+  estimatedResaleValue?: number;
+  recipient?: string;
   purpose?: string;
 };
 
@@ -51,6 +81,12 @@ export default function AssetDetailPage() {
   const [editedAsset, setEditedAsset] = useState<Partial<Asset>>({});
 
   const [asset, setAsset] = useState<Asset | null>(null);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [statuses, setStatuses] = useState<{ id: number; statusName: string }[]>([]);
+  const [vendors, setVendors] = useState<{ id: number; vendorName: string }[]>([]);
+  const [users, setUsers] = useState<{ id: number; firstName: string; lastName: string }[]>([]);
+  const [shipments, setShipments] = useState<{ id: number; shipmentNumber?: string }[]>([]);
+  const [processingLots, setProcessingLots] = useState<{ id: number; lotNumber?: string }[]>([]);
 
   useEffect(() => {
     let ignore = false;
@@ -94,9 +130,111 @@ export default function AssetDetailPage() {
         }
       } catch {}
     }
-    fetchDocuments();
 
+    const fetchCategories = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const response = await fetch('/api/assetcategories', {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    const fetchStatuses = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const response = await fetch('https://irevlogix-backend.onrender.com/api/assettracking/statuses', {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setStatuses(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Error fetching statuses:', error);
+      }
+    };
+
+    const fetchVendors = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const response = await fetch('https://irevlogix-backend.onrender.com/api/Vendors', {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setVendors(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Error fetching vendors:', error);
+      }
+    };
+
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const response = await fetch('https://irevlogix-backend.onrender.com/api/Users', {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    const fetchShipments = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const response = await fetch('https://irevlogix-backend.onrender.com/api/Shipments', {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setShipments(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Error fetching shipments:', error);
+      }
+    };
+
+    const fetchProcessingLots = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessingLots', {
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setProcessingLots(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Error fetching processing lots:', error);
+      }
+    };
+
+    fetchDocuments();
     fetchAsset();
+    fetchCategories();
+    fetchStatuses();
+    fetchVendors();
+    fetchUsers();
+    fetchShipments();
+    fetchProcessingLots();
     return () => {
       ignore = true;
     };
@@ -219,7 +357,7 @@ export default function AssetDetailPage() {
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
-            Asset Profile
+            Asset Data
           </button>
           <button
             type="button"
@@ -270,72 +408,419 @@ export default function AssetDetailPage() {
 
           <div className="rounded-md border bg-white p-4">
         {activeTab === "profile" && (
-          <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Estimated Resale Value ($)</label>
+                <label className="block text-sm font-medium text-gray-700">Asset ID</label>
                 <input 
-                  type="number" 
+                  type="text" 
                   className="mt-1 w-full rounded-md border px-3 py-2" 
-                  value={isEditing ? (editedAsset?.estimatedResaleValue || "") : (asset?.estimatedResaleValue || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, estimatedResaleValue: parseFloat(e.target.value) || 0 }))}
+                  value={isEditing ? (editedAsset?.assetID || editedAsset?.assetId || "") : (asset?.assetID || asset?.assetId || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, assetID: e.target.value }))}
                   disabled={!isEditing}
                 />
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Asset Category</label>
+                <select 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.assetCategoryId || "") : (asset?.assetCategoryId || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, assetCategoryId: parseInt(e.target.value) || null }))}
+                  disabled={!isEditing}
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Manufacturer</label>
+                <input 
+                  type="text" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.manufacturer || "") : (asset?.manufacturer || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, manufacturer: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Model</label>
+                <input 
+                  type="text" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.model || "") : (asset?.model || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, model: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Serial Number</label>
+                <input 
+                  type="text" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.serialNumber || "") : (asset?.serialNumber || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, serialNumber: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Condition</label>
+                <select 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.condition || "") : (asset?.condition || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, condition: e.target.value }))}
+                  disabled={!isEditing}
+                >
+                  <option value="Excellent">Excellent</option>
+                  <option value="Good">Good</option>
+                  <option value="Fair">Fair</option>
+                  <option value="Poor">Poor</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Estimated Value ($)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.estimatedValue || "") : (asset?.estimatedValue || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, estimatedValue: parseFloat(e.target.value) || null }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Current Location</label>
+                <input 
+                  type="text" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.currentLocation || "") : (asset?.currentLocation || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, currentLocation: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Current Status</label>
+                <select 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.currentStatusId || "") : (asset?.currentStatusId || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, currentStatusId: parseInt(e.target.value) || null }))}
+                  disabled={!isEditing}
+                >
+                  <option value="">Select Status</option>
+                  {statuses.map((status) => (
+                    <option key={status.id} value={status.id}>
+                      {status.statusName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Source Shipment</label>
+                <select 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.sourceShipmentId || "") : (asset?.sourceShipmentId || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, sourceShipmentId: parseInt(e.target.value) || null }))}
+                  disabled={!isEditing}
+                >
+                  <option value="">Select Shipment</option>
+                  {shipments.map((shipment) => (
+                    <option key={shipment.id} value={shipment.id}>
+                      {shipment.shipmentNumber || `Shipment ${shipment.id}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Original Purchase Date</label>
+                <input 
+                  type="date" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.originalPurchaseDate || "") : (asset?.originalPurchaseDate || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, originalPurchaseDate: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Original Cost ($)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.originalCost || "") : (asset?.originalCost || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, originalCost: parseFloat(e.target.value) || null }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">Actual Sale Price ($)</label>
                 <input 
                   type="number" 
+                  step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.actualSalePrice || "") : (asset?.actualSalePrice || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, actualSalePrice: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, actualSalePrice: parseFloat(e.target.value) || null }))}
                   disabled={!isEditing}
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700">Cost Of Recovery ($)</label>
+                <label className="block text-sm font-medium text-gray-700">Cost of Recovery ($)</label>
                 <input 
                   type="number" 
+                  step="0.01"
                   className="mt-1 w-full rounded-md border px-3 py-2" 
                   value={isEditing ? (editedAsset?.costOfRecovery || "") : (asset?.costOfRecovery || "")}
-                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfRecovery: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfRecovery: parseFloat(e.target.value) || null }))}
                   disabled={!isEditing}
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700">Profit / Loss ($)</label>
-                <input type="number" className="mt-1 w-full rounded-md border px-3 py-2" readOnly value={((asset?.actualSalePrice || 0) - (asset?.costOfRecovery || 0)) || 0} />
+                <label className="block text-sm font-medium text-gray-700">Current Responsible User</label>
+                <select 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.currentResponsibleUserId || "") : (asset?.currentResponsibleUserId || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, currentResponsibleUserId: parseInt(e.target.value) || null }))}
+                  disabled={!isEditing}
+                >
+                  <option value="">Select User</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.firstName} {user.lastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Reuse Recipient</label>
+                <input 
+                  type="text" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.reuseRecipient || "") : (asset?.reuseRecipient || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, reuseRecipient: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Reuse Purpose</label>
+                <input 
+                  type="text" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.reusePurpose || "") : (asset?.reusePurpose || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, reusePurpose: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Reuse Date</label>
+                <input 
+                  type="date" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.reuseDate || "") : (asset?.reuseDate || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, reuseDate: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Fair Market Value ($)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.fairMarketValue || "") : (asset?.fairMarketValue || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, fairMarketValue: parseFloat(e.target.value) || null }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Buyer</label>
+                <input 
+                  type="text" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.buyer || "") : (asset?.buyer || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, buyer: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Sale Date</label>
+                <input 
+                  type="date" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.saleDate || "") : (asset?.saleDate || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, saleDate: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Resale Platform</label>
+                <input 
+                  type="text" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.resalePlatform || "") : (asset?.resalePlatform || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, resalePlatform: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Cost of Sale ($)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.costOfSale || "") : (asset?.costOfSale || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, costOfSale: parseFloat(e.target.value) || null }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Sales Invoice</label>
+                <input 
+                  type="text" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.salesInvoice || "") : (asset?.salesInvoice || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, salesInvoice: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Recycling Vendor</label>
+                <select 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.recyclingVendorId || "") : (asset?.recyclingVendorId || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingVendorId: parseInt(e.target.value) || null }))}
+                  disabled={!isEditing}
+                >
+                  <option value="">Select Recycling Vendor</option>
+                  {vendors.map((vendor) => (
+                    <option key={vendor.id} value={vendor.id}>
+                      {vendor.vendorName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Recycling Date</label>
+                <input 
+                  type="date" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.recyclingDate || "") : (asset?.recyclingDate || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingDate: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Recycling Cost ($)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.recyclingCost || "") : (asset?.recyclingCost || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, recyclingCost: parseFloat(e.target.value) || null }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Certificate of Recycling</label>
+                <input 
+                  type="text" 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.certificateOfRecycling || "") : (asset?.certificateOfRecycling || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, certificateOfRecycling: e.target.value }))}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Processing Lot</label>
+                <select 
+                  className="mt-1 w-full rounded-md border px-3 py-2" 
+                  value={isEditing ? (editedAsset?.processingLotId || "") : (asset?.processingLotId || "")}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, processingLotId: parseInt(e.target.value) || null }))}
+                  disabled={!isEditing}
+                >
+                  <option value="">Select Processing Lot</option>
+                  {processingLots.map((lot) => (
+                    <option key={lot.id} value={lot.id}>
+                      {lot.lotNumber || `Lot ${lot.id}`}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            <div className="rounded-md border bg-gray-50 p-3">
-              <div className="text-sm font-medium text-gray-800">Reuse / Resale</div>
-              <div className="mt-2 grid gap-4 md:grid-cols-3">
-                <label className="inline-flex items-center gap-2 text-gray-700"><input type="checkbox" className="h-4 w-4" defaultChecked={!!asset?.reuseDisposition} />Reuse Disposition</label>
-                <label className="inline-flex items-center gap-2 text-gray-700"><input type="checkbox" className="h-4 w-4" defaultChecked={!!asset?.resaleDisposition} />Resale Disposition</label>
-              </div>
-              <div className="mt-3 grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Buyer / Recipient</label>
-                  <input 
-                    className="mt-1 w-full rounded-md border px-3 py-2" 
-                    value={isEditing ? (editedAsset?.buyer || editedAsset?.recipient || "") : (asset?.buyer || asset?.recipient || "")}
-                    onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, buyer: e.target.value }))}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Platform / Purpose</label>
-                  <input 
-                    className="mt-1 w-full rounded-md border px-3 py-2" 
-                    value={isEditing ? (editedAsset?.resalePlatform || editedAsset?.purpose || "") : (asset?.resalePlatform || asset?.purpose || "")}
-                    onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, resalePlatform: e.target.value }))}
-                    disabled={!isEditing}
-                  />
-                </div>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Description</label>
+              <textarea 
+                rows={3}
+                className="mt-1 w-full rounded-md border px-3 py-2" 
+                value={isEditing ? (editedAsset?.description || "") : (asset?.description || "")}
+                onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, description: e.target.value }))}
+                disabled={!isEditing}
+              />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Notes</label>
+              <textarea 
+                rows={3}
+                className="mt-1 w-full rounded-md border px-3 py-2" 
+                value={isEditing ? (editedAsset?.notes || "") : (asset?.notes || "")}
+                onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, notes: e.target.value }))}
+                disabled={!isEditing}
+              />
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                  checked={isEditing ? (editedAsset?.reuseDisposition || false) : (asset?.reuseDisposition || false)}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, reuseDisposition: e.target.checked }))}
+                  disabled={!isEditing}
+                />
+                <label className="ml-2 block text-sm text-gray-900">Reuse Disposition</label>
+              </div>
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                  checked={isEditing ? (editedAsset?.resaleDisposition || false) : (asset?.resaleDisposition || false)}
+                  onChange={(e) => isEditing && setEditedAsset(prev => ({ ...prev, resaleDisposition: e.target.checked }))}
+                  disabled={!isEditing}
+                />
+                <label className="ml-2 block text-sm text-gray-900">Resale Disposition</label>
+              </div>
+            </div>
           </div>
         )}
 
