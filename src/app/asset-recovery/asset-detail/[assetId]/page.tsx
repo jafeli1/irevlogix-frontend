@@ -64,6 +64,10 @@ type Asset = {
   estimatedResaleValue?: number;
   recipient?: string;
   purpose?: string;
+  dataSanitizationMethod?: string;
+  dataSanitizationDate?: string;
+  dataDestructionCost?: number;
+  dataSanitizationCertificate?: string;
 };
 
 
@@ -1004,41 +1008,124 @@ export default function AssetDetailPage() {
 
         {activeTab === "data" && (
           <div className="space-y-4">
-            <div className="rounded-md border bg-yellow-50 p-3 text-sm text-yellow-800">
-              Compliance placeholder: If asset is data bearing and sanitization status is not completed, show alert.
-            </div>
+            {asset?.isDataBearing && asset?.dataSanitizationStatus !== "Completed" && (
+              <div className="rounded-md border bg-yellow-50 p-3 text-sm text-yellow-800">
+                <strong>Compliance Alert:</strong> This asset contains data-bearing components and requires data sanitization before disposal. Current status: {asset?.dataSanitizationStatus || "Not Set"}
+              </div>
+            )}
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Method</label>
-                <select className="mt-1 w-full rounded-md border px-3 py-2">
-                  <option>DoD 5220.22-M</option>
-                  <option>NIST 800-88</option>
-                  <option>Physical Destruction</option>
+                <select 
+                  className={`mt-1 w-full rounded-md border px-3 py-2 ${
+                    validationErrors.dataSanitizationMethod ? 'border-red-300' : ''
+                  }`}
+                  value={isEditing ? (editedAsset?.dataSanitizationMethod || "") : (asset?.dataSanitizationMethod || "")}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('dataSanitizationMethod');
+                      setEditedAsset(prev => ({ ...prev, dataSanitizationMethod: e.target.value }));
+                    }
+                  }}
+                  disabled={!isEditing}
+                >
+                  <option value="">Select Method</option>
+                  <option value="DoD 5220.22-M">DoD 5220.22-M</option>
+                  <option value="NIST 800-88">NIST 800-88</option>
+                  <option value="Physical Destruction">Physical Destruction</option>
                 </select>
+                {validationErrors.dataSanitizationMethod && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.dataSanitizationMethod}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Status</label>
-                <select className="mt-1 w-full rounded-md border px-3 py-2">
-                  <option>Pending</option>
-                  <option>In Progress</option>
-                  <option>Completed</option>
-                  <option>Failed</option>
+                <select 
+                  className={`mt-1 w-full rounded-md border px-3 py-2 ${
+                    validationErrors.dataSanitizationStatus ? 'border-red-300' : ''
+                  }`}
+                  value={isEditing ? (editedAsset?.dataSanitizationStatus || "") : (asset?.dataSanitizationStatus || "")}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('dataSanitizationStatus');
+                      setEditedAsset(prev => ({ ...prev, dataSanitizationStatus: e.target.value }));
+                    }
+                  }}
+                  disabled={!isEditing}
+                >
+                  <option value="">Select Status</option>
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Failed">Failed</option>
                 </select>
+                {validationErrors.dataSanitizationStatus && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.dataSanitizationStatus}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Data Destruction Cost ($)</label>
-                <input type="number" className="mt-1 w-full rounded-md border px-3 py-2" />
+                <input 
+                  type="number" 
+                  className={`mt-1 w-full rounded-md border px-3 py-2 ${
+                    validationErrors.dataDestructionCost ? 'border-red-300' : ''
+                  }`}
+                  value={isEditing ? (editedAsset?.dataDestructionCost || "") : (asset?.dataDestructionCost || "")}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('dataDestructionCost');
+                      setEditedAsset(prev => ({ ...prev, dataDestructionCost: parseFloat(e.target.value) || undefined }));
+                    }
+                  }}
+                  disabled={!isEditing}
+                />
+                {validationErrors.dataDestructionCost && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.dataDestructionCost}</p>
+                )}
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Certificate of Destruction</label>
-                <input type="file" className="mt-1 w-full rounded-md border px-3 py-2" />
+                <label className="block text-sm font-medium text-gray-700">Sanitization Date</label>
+                <input 
+                  type="date" 
+                  className={`mt-1 w-full rounded-md border px-3 py-2 ${
+                    validationErrors.dataSanitizationDate ? 'border-red-300' : ''
+                  }`}
+                  value={isEditing ? (editedAsset?.dataSanitizationDate || "") : (asset?.dataSanitizationDate || "")}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('dataSanitizationDate');
+                      setEditedAsset(prev => ({ ...prev, dataSanitizationDate: e.target.value }));
+                    }
+                  }}
+                  disabled={!isEditing}
+                />
+                {validationErrors.dataSanitizationDate && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.dataSanitizationDate}</p>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Evidence Photo/Video</label>
-                <input type="file" className="mt-1 w-full rounded-md border px-3 py-2" />
+                <label className="block text-sm font-medium text-gray-700">Certificate of Destruction</label>
+                <input 
+                  type="text" 
+                  className={`mt-1 w-full rounded-md border px-3 py-2 ${
+                    validationErrors.dataSanitizationCertificate ? 'border-red-300' : ''
+                  }`}
+                  value={isEditing ? (editedAsset?.dataSanitizationCertificate || "") : (asset?.dataSanitizationCertificate || "")}
+                  onChange={(e) => {
+                    if (isEditing) {
+                      clearFieldError('dataSanitizationCertificate');
+                      setEditedAsset(prev => ({ ...prev, dataSanitizationCertificate: e.target.value }));
+                    }
+                  }}
+                  disabled={!isEditing}
+                  placeholder="Certificate reference or file path"
+                />
+                {validationErrors.dataSanitizationCertificate && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.dataSanitizationCertificate}</p>
+                )}
               </div>
             </div>
 
