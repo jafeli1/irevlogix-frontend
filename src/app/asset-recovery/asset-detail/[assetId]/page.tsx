@@ -16,6 +16,19 @@ type AssetDocument = {
   dateCreated?: string;
 };
 
+interface ChainOfCustodyEntry {
+  id: number;
+  assetId: number;
+  timestamp: string;
+  location?: string;
+  userId?: number;
+  user?: { firstName: string; lastName: string };
+  vendorId: number;
+  vendor: { vendorName: string };
+  statusChange: string;
+  notes?: string;
+}
+
 type Asset = {
   id: number;
   assetID?: string;
@@ -92,6 +105,14 @@ export default function AssetDetailPage() {
   const [users, setUsers] = useState<{ id: number; firstName: string; lastName: string }[]>([]);
   const [shipments, setShipments] = useState<{ id: number; shipmentNumber?: string }[]>([]);
   const [processingLots, setProcessingLots] = useState<{ id: number; lotNumber?: string }[]>([]);
+  const [chainOfCustody, setChainOfCustody] = useState<ChainOfCustodyEntry[]>([]);
+  const [cocForm, setCocForm] = useState({
+    location: '',
+    userId: '',
+    vendorId: '',
+    statusChange: '',
+    notes: ''
+  });
 
   useEffect(() => {
     let ignore = false;
@@ -232,6 +253,7 @@ export default function AssetDetailPage() {
       }
     };
 
+
     fetchDocuments();
     fetchAsset();
     fetchCategories();
@@ -240,10 +262,27 @@ export default function AssetDetailPage() {
     fetchUsers();
     fetchShipments();
     fetchProcessingLots();
+    fetchChainOfCustody();
     return () => {
       ignore = true;
     };
   }, [assetId, router]);
+
+  const fetchChainOfCustody = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/Assets/${assetId}/chain-of-custody`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setChainOfCustody(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error('Error fetching chain of custody:', error);
+    }
+  };
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -282,6 +321,21 @@ export default function AssetDetailPage() {
     }
   };
 
+  const validateCocForm = () => {
+    const errors: Record<string, string> = {};
+    
+    if (!cocForm.vendorId) {
+      errors.vendorId = 'Vendor is required';
+    }
+    
+    if (!cocForm.statusChange.trim()) {
+      errors.statusChange = 'Status Change is required';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async () => {
     if (!validateForm()) {
       setError('Please fix the validation errors before saving.');
@@ -310,6 +364,51 @@ export default function AssetDetailPage() {
       }
     } catch {
       setError('Network error. Please try again.');
+    }
+  };
+
+  const handleCocSubmit = async () => {
+    if (!validateCocForm()) {
+      setError('Please fix the validation errors before saving.');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/Assets/${assetId}/chain-of-custody`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          location: cocForm.location || null,
+          userId: cocForm.userId ? parseInt(cocForm.userId) : null,
+          vendorId: parseInt(cocForm.vendorId),
+          statusChange: cocForm.statusChange,
+          notes: cocForm.notes || null
+        }),
+      });
+
+      if (response.ok) {
+        setCocForm({
+          location: '',
+          userId: '',
+          vendorId: '',
+          statusChange: '',
+          notes: ''
+        });
+        fetchChainOfCustody();
+        setError('');
+      } else if (response.status === 401) {
+        localStorage.removeItem("token");
+        router.push("/login");
+      } else {
+        setError('Failed to add chain of custody entry');
+      }
+    } catch (error) {
+      setError('Failed to add chain of custody entry');
     }
   };
 
@@ -1137,21 +1236,139 @@ export default function AssetDetailPage() {
             <div className="rounded-md border bg-gray-50 p-3">
               <div className="text-sm font-medium text-gray-800 mb-2">Add Chain of Custody Record</div>
               <div className="grid gap-4 md:grid-cols-4">
-                <input className="rounded-md border px-3 py-2" placeholder="Location" />
-                <input className="rounded-md border px-3 py-2" placeholder="User" />
-                <input className="rounded-md border px-3 py-2" placeholder="Status Change" />
-                <input className="rounded-md border px-3 py-2" placeholder="Timestamp" />
+                <div>
+                  <input 
+                    className={`rounded-md border px-3 py-2 w-full ${
+                      validationErrors.location ? 'border-red-300' : ''
+                    }`}
+                    placeholder="Location" 
+                    value={cocForm.location}
+                    onChange={(e) => {
+                      clearFieldError('location');
+                      setCocForm(prev => ({ ...prev, location: e.target.value }));
+                    }}
+                  />
+                  {validationErrors.location && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.location}</p>
+                  )}
+                </div>
+                <div>
+                  <select 
+                    className={`rounded-md border px-3 py-2 w-full ${
+                      validationErrors.userId ? 'border-red-300' : ''
+                    }`}
+                    value={cocForm.userId}
+                    onChange={(e) => {
+                      clearFieldError('userId');
+                      setCocForm(prev => ({ ...prev, userId: e.target.value }));
+                    }}
+                  >
+                    <option value="">Select User (Optional)</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.firstName} {user.lastName}
+                      </option>
+                    ))}
+                  </select>
+                  {validationErrors.userId && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.userId}</p>
+                  )}
+                </div>
+                <div>
+                  <select 
+                    className={`rounded-md border px-3 py-2 w-full ${
+                      validationErrors.vendorId ? 'border-red-300' : ''
+                    }`}
+                    value={cocForm.vendorId}
+                    onChange={(e) => {
+                      clearFieldError('vendorId');
+                      setCocForm(prev => ({ ...prev, vendorId: e.target.value }));
+                    }}
+                  >
+                    <option value="">Select Vendor</option>
+                    {vendors.map((vendor) => (
+                      <option key={vendor.id} value={vendor.id}>
+                        {vendor.vendorName}
+                      </option>
+                    ))}
+                  </select>
+                  {validationErrors.vendorId && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.vendorId}</p>
+                  )}
+                </div>
+                <div>
+                  <input 
+                    className={`rounded-md border px-3 py-2 w-full ${
+                      validationErrors.statusChange ? 'border-red-300' : ''
+                    }`}
+                    placeholder="Status Change" 
+                    value={cocForm.statusChange}
+                    onChange={(e) => {
+                      clearFieldError('statusChange');
+                      setCocForm(prev => ({ ...prev, statusChange: e.target.value }));
+                    }}
+                  />
+                  {validationErrors.statusChange && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.statusChange}</p>
+                  )}
+                </div>
               </div>
-              <textarea className="mt-3 w-full rounded-md border px-3 py-2" rows={3} placeholder="Notes"></textarea>
+              <textarea 
+                className="mt-3 w-full rounded-md border px-3 py-2" 
+                rows={3} 
+                placeholder="Notes"
+                value={cocForm.notes}
+                onChange={(e) => setCocForm(prev => ({ ...prev, notes: e.target.value }))}
+              ></textarea>
               <div className="mt-3 flex justify-end">
-                <button className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Add Entry</button>
+                <button 
+                  className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                  onClick={handleCocSubmit}
+                >
+                  Add Entry
+                </button>
               </div>
             </div>
 
             <div className="rounded-md border bg-white">
               <div className="border-b px-4 py-2 text-sm font-medium text-gray-700">Chain of Custody Log</div>
-              <div className="p-4 text-sm text-gray-600">
-                Placeholder for chronological CoC entries.
+              <div className="p-4">
+                {chainOfCustody.length === 0 ? (
+                  <div className="text-sm text-gray-600">No chain of custody entries found.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {chainOfCustody.map((entry) => (
+                      <div key={entry.id} className="border-b border-gray-200 pb-3 last:border-b-0">
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
+                          <div>
+                            <span className="font-medium text-gray-700">Location:</span>
+                            <div>{entry.location || 'N/A'}</div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">User:</span>
+                            <div>{entry.user ? `${entry.user.firstName} ${entry.user.lastName}` : 'N/A'}</div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Vendor:</span>
+                            <div>{entry.vendor.vendorName}</div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Status Change:</span>
+                            <div>{entry.statusChange}</div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Timestamp:</span>
+                            <div>{new Date(entry.timestamp).toLocaleString()}</div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Notes:</span>
+                            <div>{entry.notes || 'N/A'}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
