@@ -1468,7 +1468,69 @@ export default function AssetDetailPage() {
             </div>
             <div className="rounded-md border bg-white">
               <div className="border-b px-4 py-2 text-sm font-medium text-gray-700">Documents</div>
-              <div className="p-4 text-sm text-gray-600">Placeholder for documents list.</div>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : documents.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No documents found for this asset.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {documents.map((document) => (
+                    <div key={document.id} className="px-4 py-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">File Name</p>
+                            {document.filePath ? (
+                              <a 
+                                href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://irevlogix-backend.onrender.com"}${document.filePath}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:text-blue-800"
+                              >
+                                {document.fileName}
+                              </a>
+                            ) : (
+                              <p className="text-sm text-gray-500">{document.fileName}</p>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">Content Type</p>
+                            <p className="text-sm text-gray-500">{document.contentType || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">Upload Date</p>
+                            <p className="text-sm text-gray-500">
+                              {document.dateCreated ? new Date(document.dateCreated).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        {document.filePath && (
+                          <div className="flex space-x-2 ml-4">
+                            <a
+                              href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://irevlogix-backend.onrender.com"}${document.filePath}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              Download
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                      {document.description && (
+                        <div className="mt-2">
+                          <p className="text-sm font-medium text-gray-900">Description</p>
+                          <p className="text-sm text-gray-500">{document.description}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
