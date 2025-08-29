@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Authorization header required' }, { status: 401 });
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/clients?${queryString}`, {
+    const response = await fetch(`${BACKEND_URL}/api/admin/clients?${queryString}`, {
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
