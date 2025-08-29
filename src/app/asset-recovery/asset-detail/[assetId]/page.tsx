@@ -122,7 +122,7 @@ export default function AssetDetailPage() {
         setLoading(true);
         setError("");
         const token = localStorage.getItem("token");
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/api/assets/${assetId}`, {
+        const res = await fetch(`https://irevlogix-backend.onrender.com/api/assets/${assetId}`, {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
         });
         if (res.status === 401) {
