@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://irevlogix-backend.onrender.com';
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { searchParams } = new URL(request.url);
-    const queryString = searchParams.toString();
-    
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
       return NextResponse.json({ error: 'Authorization header required' }, { status: 401 });
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/admin/clients?${queryString}`, {
+    const response = await fetch(`${BACKEND_URL}/api/admin/roles/${params.id}`, {
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
@@ -25,16 +25,9 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    const totalCount = response.headers.get('X-Total-Count');
-    
-    const nextResponse = NextResponse.json(data);
-    if (totalCount) {
-      nextResponse.headers.set('X-Total-Count', totalCount);
-    }
-    
-    return nextResponse;
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error proxying admin clients request:', error);
+    console.error('Error proxying admin role request:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
