@@ -168,26 +168,30 @@ export default function ClientsPage() {
 
   return (
     <AppLayout>
-      <div className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
-            <p className="mt-2 text-gray-600">Manage client accounts and information</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
+          <div className="flex space-x-4">
+            <button
+              onClick={exportToCSV}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+            >
+              Export CSV
+            </button>
+            <Link
+              href="/admin/client-detail/new"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+            >
+              Add New Client
+            </Link>
           </div>
-          <Link
-            href="/admin/client-detail/new"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Add New Client
-          </Link>
         </div>
-      </div>
 
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
 
       <div className="bg-white shadow rounded-lg">
         <div className="p-6 border-b border-gray-200">
@@ -357,6 +361,7 @@ export default function ClientsPage() {
           </div>
         </div>
       </div>
+    </div>
     </AppLayout>
   );
 }
