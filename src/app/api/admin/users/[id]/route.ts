@@ -60,8 +60,17 @@ export async function PUT(
       return NextResponse.json({ error: errorText }, { status: response.status });
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const responseText = await response.text();
+    if (!responseText.trim()) {
+      return NextResponse.json({ success: true, message: 'User updated successfully' });
+    }
+
+    try {
+      const data = JSON.parse(responseText);
+      return NextResponse.json(data);
+    } catch (parseError) {
+      return NextResponse.json({ success: true, message: responseText });
+    }
   } catch (error) {
     console.error('Error proxying admin user update request:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
