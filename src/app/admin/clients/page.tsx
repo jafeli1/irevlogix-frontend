@@ -80,7 +80,7 @@ export default function ClientsPage() {
       });
 
       if (filters.companyName) {
-        params.append('search', filters.companyName);
+        params.append('companyName', filters.companyName);
       }
 
       if (filters.isActive) {
@@ -136,7 +136,7 @@ export default function ClientsPage() {
         client.contactFirstName || 'N/A',
         client.contactLastName || 'N/A',
         client.isActive ? 'Yes' : 'No',
-        new Date(client.dateCreated).toLocaleDateString()
+        formatDate(client.dateCreated)
       ].join(','))
     ].join('\n');
 
@@ -151,8 +151,9 @@ export default function ClientsPage() {
     document.body.removeChild(link);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString();
   };
 
   if (loading) {
