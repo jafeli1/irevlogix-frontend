@@ -266,22 +266,23 @@ export default function AdminSettingsPage() {
 
   return (
     <AppLayout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-2 text-gray-600">Manage application configuration settings</p>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+          <p className="mt-2 text-gray-600">Manage application configuration settings</p>
         </div>
-      )}
 
-      {success && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-          {success}
-        </div>
-      )}
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            {success}
+          </div>
+        )}
 
       <div className="bg-white shadow rounded-lg">
         <div className="border-b border-gray-200 mt-2">
@@ -602,6 +603,7 @@ export default function AdminSettingsPage() {
           </button>
         </div>
       </div>
+    </div>
     </AppLayout>
   );
 }
