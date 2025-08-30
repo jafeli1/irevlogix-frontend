@@ -13,7 +13,7 @@ interface Client {
   contactFirstName?: string;
   contactLastName?: string;
   isActive: boolean;
-  lastLoginDate: string;
+  dateCreated: string;
 }
 
 interface Filters {
@@ -129,14 +129,14 @@ export default function ClientsPage() {
 
   const exportToCSV = () => {
     const csvContent = [
-      ['Client ID', 'Company Name', 'Contact First Name', 'Contact Last Name', 'Is Active', 'Last Login Date'].join(','),
+      ['Client ID', 'Company Name', 'Contact First Name', 'Contact Last Name', 'Is Active', 'Date Created'].join(','),
       ...clients.map(client => [
         client.clientId,
         client.companyName,
         client.contactFirstName || 'N/A',
         client.contactLastName || 'N/A',
         client.isActive ? 'Yes' : 'No',
-        new Date(client.lastLoginDate).toLocaleDateString()
+        new Date(client.dateCreated).toLocaleDateString()
       ].join(','))
     ].join('\n');
 
@@ -263,7 +263,7 @@ export default function ClientsPage() {
                   Is Active
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Login Date
+                  Date Created
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -301,7 +301,7 @@ export default function ClientsPage() {
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(client.lastLoginDate)}
+                      {formatDate(client.dateCreated)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <Link
@@ -321,7 +321,7 @@ export default function ClientsPage() {
         <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
           <div className="flex items-center">
             <span className="text-sm text-gray-700">
-              Showing {((pagination.page - 1) * pagination.pageSize) + 1} to{' '}
+              Showing {pagination.totalCount > 0 ? ((pagination.page - 1) * pagination.pageSize) + 1 : 0} to{' '}
               {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)} of{' '}
               {pagination.totalCount} results
             </span>
@@ -344,7 +344,7 @@ export default function ClientsPage() {
               Previous
             </button>
             <span className="px-3 py-2 text-sm text-gray-700">
-              Page {pagination.page} of {pagination.totalPages}
+              Page {pagination.totalCount > 0 ? pagination.page : 0} of {pagination.totalPages}
             </span>
             <button
               onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
