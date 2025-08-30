@@ -285,8 +285,7 @@ export default function UserDetailPage() {
         postalCode: formData.postalCode || null,
         country: formData.country || null,
         twoFactorAuthEnabled: formData.twoFactorAuthEnabled,
-        isActive: formData.isActive,
-        clientId: formData.clientId
+        isActive: formData.isActive
       };
 
       const response = await fetch(url, {
