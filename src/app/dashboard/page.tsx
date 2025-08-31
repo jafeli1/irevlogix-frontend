@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AppLayout from '../../components/AppLayout';
-import { UserPermissions, fetchUserPermissions } from '../../utils/rbac';
+import { UserPermissions, fetchUserPermissions, hasPermission } from '../../utils/rbac';
 
 interface DashboardMetrics {
   activeShipments: number;
@@ -16,6 +16,8 @@ interface QuickAction {
   description: string;
   href: string;
   color: string;
+  module: string;
+  action: string;
 }
 
 const quickActions: QuickAction[] = [
@@ -23,19 +25,25 @@ const quickActions: QuickAction[] = [
     title: 'Create New Shipment',
     description: 'Start a new reverse logistics shipment',
     href: '/reverse-logistics/shipment-intake',
-    color: 'bg-blue-600 hover:bg-blue-700'
+    color: 'bg-blue-600 hover:bg-blue-700',
+    module: 'ReverseLogistics',
+    action: 'Create'
   },
   {
     title: 'Start Processing Lot',
     description: 'Begin processing materials',
     href: '/processing/lots',
-    color: 'bg-green-600 hover:bg-green-700'
+    color: 'bg-green-600 hover:bg-green-700',
+    module: 'Processing',
+    action: 'Read'
   },
   {
     title: 'Generate Report',
     description: 'Create compliance or analytics report',
     href: '/reports',
-    color: 'bg-purple-600 hover:bg-purple-700'
+    color: 'bg-purple-600 hover:bg-purple-700',
+    module: 'Reporting',
+    action: 'Read'
   }
 ];
 
@@ -193,16 +201,18 @@ export default function Dashboard() {
               Quick Actions
             </h3>
             <div className="space-y-3">
-              {quickActions.map((action, index) => (
-                <Link
-                  key={index}
-                  href={action.href}
-                  className={`block w-full text-left px-4 py-3 rounded-md text-white font-medium transition-colors ${action.color}`}
-                >
-                  <div className="font-semibold">{action.title}</div>
-                  <div className="text-sm opacity-90">{action.description}</div>
-                </Link>
-              ))}
+              {quickActions
+                .filter(action => hasPermission(userPermissions, action.module, action.action))
+                .map((action, index) => (
+                  <Link
+                    key={index}
+                    href={action.href}
+                    className={`block w-full text-left px-4 py-3 rounded-md text-white font-medium transition-colors ${action.color}`}
+                  >
+                    <div className="font-semibold">{action.title}</div>
+                    <div className="text-sm opacity-90">{action.description}</div>
+                  </Link>
+                ))}
             </div>
           </div>
         </div>

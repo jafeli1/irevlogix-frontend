@@ -150,7 +150,6 @@ export default function Navigation({ currentPath, isCollapsed, onToggleCollapse 
 
   const canShow = (module?: string, action?: string) => {
     if (!module || !action) return true;
-    if (module === 'AssetRecovery') return true;
     return hasPermission(userPermissions, module, action);
   };
   if (isLoading) {
