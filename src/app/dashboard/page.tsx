@@ -54,15 +54,23 @@ export default function Dashboard() {
     processingLots: 8,
     monthlyRevenue: 24500
   });
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
         const token = localStorage.getItem('token');
+        const userData = localStorage.getItem('user');
+        
         if (token) {
           const permissions = await fetchUserPermissions(token);
           setUserPermissions(permissions);
+        }
+        
+        if (userData) {
+          const user = JSON.parse(userData);
+          setUserProfile(user);
         }
       } catch (error) {
         console.error('Error loading user data:', error);
@@ -226,16 +234,20 @@ export default function Dashboard() {
               <div>
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Name:</span>
                 <span className="ml-2 text-sm text-gray-900 dark:text-white">
-                  System Administrator
+                  {userProfile ? `${userProfile.firstName || ''} ${userProfile.lastName || ''}`.trim() : 'Loading...'}
                 </span>
               </div>
               <div>
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Email:</span>
-                <span className="ml-2 text-sm text-gray-900 dark:text-white">admin@irevlogix.ai</span>
+                <span className="ml-2 text-sm text-gray-900 dark:text-white">
+                  {userProfile?.email || 'Loading...'}
+                </span>
               </div>
               <div>
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Client ID:</span>
-                <span className="ml-2 text-sm text-gray-900 dark:text-white">ADMIN_CLIENT_001</span>
+                <span className="ml-2 text-sm text-gray-900 dark:text-white">
+                  {userProfile?.clientId || 'Loading...'}
+                </span>
               </div>
               <div>
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Legacy Roles:</span>
