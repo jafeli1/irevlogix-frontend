@@ -11,6 +11,14 @@ interface DashboardMetrics {
   monthlyRevenue: number;
 }
 
+interface UserProfile {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  clientId: string;
+}
+
 interface QuickAction {
   title: string;
   description: string;
@@ -49,12 +57,12 @@ const quickActions: QuickAction[] = [
 
 export default function Dashboard() {
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({ roles: [], permissions: [] });
-  const [metrics, setMetrics] = useState<DashboardMetrics>({
+  const metrics: DashboardMetrics = {
     activeShipments: 12,
     processingLots: 8,
     monthlyRevenue: 24500
-  });
-  const [userProfile, setUserProfile] = useState<any>(null);
+  };
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
