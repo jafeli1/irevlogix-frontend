@@ -108,7 +108,7 @@ export default function LotDetail() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
-  const [uploadedCertificates, setUploadedCertificates] = useState<any[]>([]);
+  const [uploadedCertificates, setUploadedCertificates] = useState<Certificate[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
