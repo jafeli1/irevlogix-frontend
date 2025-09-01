@@ -48,6 +48,15 @@ interface IncomingMaterial {
   incomingMaterialCost?: number;
 }
 
+interface Certificate {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
 interface ProcessedMaterial {
   id: number;
   materialType?: MaterialType;
@@ -108,7 +117,7 @@ export default function LotDetail() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
-  const [uploadedCertificates, setUploadedCertificates] = useState<any[]>([]);
+  const [uploadedCertificates, setUploadedCertificates] = useState<Certificate[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
