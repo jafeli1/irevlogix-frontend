@@ -107,6 +107,7 @@ export default function LotDetail() {
   const [users, setUsers] = useState<User[]>([]);
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -267,6 +268,42 @@ export default function LotDetail() {
       }
     } catch {
       setError('Network error. Please try again.');
+    }
+  };
+
+  const handleCertificateUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('documentType', 'certificate');
+      formData.append('description', 'Processing lot certificate');
+
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessingLots/${lotId}/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      alert(`Certificate uploaded successfully: ${result.fileName}`);
+      
+      fetchLot();
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Failed to upload certificate. Please try again.');
+    } finally {
+      setUploading(false);
+      event.target.value = '';
     }
   };
 
@@ -1035,12 +1072,18 @@ export default function LotDetail() {
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="text-lg font-medium text-gray-900">Certifications & Compliance</h4>
-                      <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer">
-                        Upload Certificate
+                      <label className={`px-4 py-2 rounded-md cursor-pointer ${
+                        uploading 
+                          ? 'bg-gray-400 text-gray-700 cursor-not-allowed' 
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}>
+                        {uploading ? 'Uploading...' : 'Upload Certificate'}
                         <input
                           type="file"
                           className="hidden"
-                          accept=".pdf,.doc,.docx,.jpg,.png"
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                          onChange={handleCertificateUpload}
+                          disabled={uploading}
                         />
                       </label>
                     </div>
