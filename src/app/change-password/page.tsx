@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function ChangePassword() {
+function ChangePasswordContent() {
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -44,7 +44,7 @@ export default function ChangePassword() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = typeof window !== "undefined" ? localStorage.getItem('token') : null;
       const response = await fetch('https://irevlogix-backend.onrender.com/api/auth/change-password', {
         method: 'POST',
         headers: {
@@ -59,7 +59,9 @@ export default function ChangePassword() {
 
       if (response.ok) {
         setSuccess('Password changed successfully!');
-        localStorage.removeItem('passwordExpiryWarning');
+        if (typeof window !== "undefined") {
+          localStorage.removeItem('passwordExpiryWarning');
+        }
         
         setTimeout(() => {
           if (isExpired) {
@@ -184,5 +186,13 @@ export default function ChangePassword() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ChangePassword() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ChangePasswordContent />
+    </Suspense>
   );
 }
