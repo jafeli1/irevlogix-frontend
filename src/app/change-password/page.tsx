@@ -44,7 +44,7 @@ function ChangePasswordContent() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = typeof window !== "undefined" ? localStorage.getItem('token') : null;
       const response = await fetch('https://irevlogix-backend.onrender.com/api/auth/change-password', {
         method: 'POST',
         headers: {
@@ -59,7 +59,9 @@ function ChangePasswordContent() {
 
       if (response.ok) {
         setSuccess('Password changed successfully!');
-        localStorage.removeItem('passwordExpiryWarning');
+        if (typeof window !== "undefined") {
+          localStorage.removeItem('passwordExpiryWarning');
+        }
         
         setTimeout(() => {
           if (isExpired) {
