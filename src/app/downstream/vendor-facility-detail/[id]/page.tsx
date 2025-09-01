@@ -121,24 +121,6 @@ interface Client {
   companyName: string;
 }
 
-interface VendorFacilityFile {
-  fileName: string;
-  fullFileName: string;
-  filePath: string;
-  fileSize: number;
-  uploadDate: string;
-  documentType: string;
-}
-
-interface VendorFacilityFile {
-  fileName: string;
-  fullFileName: string;
-  filePath: string;
-  fileSize: number;
-  uploadDate: string;
-  documentType: string;
-}
-
 export default function VendorFacilityDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -274,25 +256,6 @@ export default function VendorFacilityDetailPage() {
     } catch (error) {
       console.error('Error fetching uploaded files:', error);
       setUploadedFiles([]);
-    }
-  };
-
-  const fetchUploadedFiles = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/VendorFacilities/${facilityId}/files`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUploadedFiles(data);
-      }
-    } catch (error) {
-      console.error('Error fetching uploaded files:', error);
     }
   };
 
