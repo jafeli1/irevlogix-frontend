@@ -306,12 +306,20 @@ export default function AssetTrackingPage() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <h2 className="text-lg font-medium text-gray-900">Asset Tracking</h2>
-                <button
-                  onClick={() => router.push('/asset-recovery/asset-intake')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
-                >
-                  Add Asset
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => router.push('/asset-recovery/asset-intake')}
+                    className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    Return to Asset Intake
+                  </button>
+                  <button
+                    onClick={() => router.push('/asset-recovery/asset-intake')}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap"
+                  >
+                    Add Asset
+                  </button>
+                </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
                 <div className="relative">
