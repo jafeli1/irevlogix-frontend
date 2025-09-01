@@ -131,7 +131,7 @@ export default function ContractorTechnicianDetailPage() {
   const fetchUploadedFiles = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ContractorTechnicians/${contractorId}/files`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ContractorTechnicians/${id}/files`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
