@@ -502,6 +502,25 @@ export default function ProcessedMaterialDetailPage() {
     setShowTestModal(true);
   };
 
+  const fetchUploadedTestFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterialTests/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedTestFiles(data);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded test files:', error);
+    }
+  };
+
   const fetchDocuments = async () => {
     if (!data) return;
     

@@ -6,6 +6,15 @@ import Link from 'next/link';
 import AppLayout from '../../../../components/AppLayout';
 import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../../utils/rbac';
 
+interface FreightClaimFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
 interface FreightLossDamageClaim {
   id?: number;
   freightLossDamageClaimId: number;
@@ -130,6 +139,25 @@ export default function FreightLossDamageClaimDetailPage() {
       ...prev,
       freightLossDamageClaimId: claimId
     }));
+  };
+
+  const fetchUploadedFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/FreightLossDamageClaims/${claimId}/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles(data);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded files:', error);
+    }
   };
 
   const fetchClaim = async () => {

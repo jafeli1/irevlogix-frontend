@@ -37,6 +37,15 @@ interface ContractorTechnicianData {
   updateSummary: string;
 }
 
+interface ContractorFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
 interface User {
   id: number;
   firstName: string;
@@ -136,6 +145,25 @@ export default function ContractorTechnicianDetailPage() {
 
     loadData();
   }, [id, isNew, router]);
+
+  const fetchUploadedFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ContractorTechnicians/${contractorId}/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles(data);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded files:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
