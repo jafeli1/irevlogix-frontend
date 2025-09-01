@@ -108,6 +108,7 @@ export default function LotDetail() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
+  const [uploadedCertificates, setUploadedCertificates] = useState<any[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -120,6 +121,7 @@ export default function LotDetail() {
     fetchMaterialTypes();
     fetchUsers();
     fetchShipments();
+    fetchCertificates();
   }, [router, lotId]);
 
   const fetchLot = async () => {
@@ -271,6 +273,29 @@ export default function LotDetail() {
     }
   };
 
+  const fetchCertificates = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessingLots/${lotId}/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedCertificates(data);
+      } else {
+        console.error('Failed to fetch certificates');
+        setUploadedCertificates([]);
+      }
+    } catch (error) {
+      console.error('Error fetching certificates:', error);
+      setUploadedCertificates([]);
+    }
+  };
+
   const handleCertificateUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -298,6 +323,7 @@ export default function LotDetail() {
       alert(`Certificate uploaded successfully: ${result.fileName}`);
       
       fetchLot();
+      fetchCertificates();
     } catch (error) {
       console.error('Upload error:', error);
       alert('Failed to upload certificate. Please try again.');
@@ -1118,10 +1144,38 @@ export default function LotDetail() {
 
                       <div>
                         <h5 className="text-md font-medium text-gray-900 mb-3">Certificate of Recycling</h5>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                          <p className="text-gray-500">No certificate uploaded yet</p>
-                          <p className="text-sm text-gray-400 mt-1">Upload PDF, DOC, or image files</p>
-                        </div>
+                        {uploadedCertificates.length > 0 ? (
+                          <div className="space-y-3">
+                            {uploadedCertificates.map((cert, index) => (
+                              <div key={index} className="border border-gray-200 rounded-lg p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">{cert.fileName}</p>
+                                    <p className="text-xs text-gray-500">
+                                      Uploaded: {new Date(cert.uploadDate).toLocaleDateString()} • 
+                                      Size: {(cert.fileSize / 1024).toFixed(1)} KB
+                                    </p>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <a
+                                      href={`https://irevlogix-backend.onrender.com${cert.filePath}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                    >
+                                      View
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                            <p className="text-gray-500">No certificate uploaded yet</p>
+                            <p className="text-sm text-gray-400 mt-1">Upload PDF, DOC, or image files</p>
+                          </div>
+                        )}
                       </div>
 
                       <div>
