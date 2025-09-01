@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function ChangePassword() {
+function ChangePasswordContent() {
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -184,5 +184,13 @@ export default function ChangePassword() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ChangePassword() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ChangePasswordContent />
+    </Suspense>
   );
 }
