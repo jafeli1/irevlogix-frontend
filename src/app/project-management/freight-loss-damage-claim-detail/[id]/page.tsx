@@ -141,24 +141,6 @@ export default function FreightLossDamageClaimDetailPage() {
     }));
   };
 
-  const fetchUploadedFiles = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/FreightLossDamageClaims/${claimId}/files`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUploadedFiles(data);
-      }
-    } catch (error) {
-      console.error('Error fetching uploaded files:', error);
-    }
-  };
 
   const fetchClaim = async () => {
     try {
@@ -889,7 +871,7 @@ export default function FreightLossDamageClaimDetailPage() {
             </div>
           )}
 
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200"></div>
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
             <Link
               href="/project-management/freight-loss-damage-claims"
               className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"

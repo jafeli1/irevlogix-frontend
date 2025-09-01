@@ -72,15 +72,6 @@ interface ProcessedMaterialTestFile {
   documentType: string;
 }
 
-interface ProcessedMaterialTestFile {
-  fileName: string;
-  fullFileName: string;
-  filePath: string;
-  fileSize: number;
-  uploadDate: string;
-  documentType: string;
-}
-
 export default function ProcessedMaterialDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -136,6 +127,7 @@ export default function ProcessedMaterialDetailPage() {
   const [documentUploading, setDocumentUploading] = useState(false);
   const [showDocumentDeleteConfirm, setShowDocumentDeleteConfirm] = useState(false);
   const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null);
+  const [uploadedTestFiles, setUploadedTestFiles] = useState<ProcessedMaterialTestFile[]>([]);
 
   const fetchDetail = async () => {
     setLoading(true);
@@ -502,24 +494,6 @@ export default function ProcessedMaterialDetailPage() {
     setShowTestModal(true);
   };
 
-  const fetchUploadedTestFiles = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterialTests/files`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUploadedTestFiles(data);
-      }
-    } catch (error) {
-      console.error('Error fetching uploaded test files:', error);
-    }
-  };
 
   const fetchDocuments = async () => {
     if (!data) return;

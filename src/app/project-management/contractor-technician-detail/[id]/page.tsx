@@ -53,24 +53,6 @@ interface User {
   email: string;
 }
 
-interface ContractorFile {
-  fileName: string;
-  fullFileName: string;
-  filePath: string;
-  fileSize: number;
-  uploadDate: string;
-  documentType: string;
-}
-
-interface ContractorFile {
-  fileName: string;
-  fullFileName: string;
-  filePath: string;
-  fileSize: number;
-  uploadDate: string;
-  documentType: string;
-}
-
 export default function ContractorTechnicianDetailPage() {
   const router = useRouter();
   const params = useParams();
