@@ -17,6 +17,15 @@ interface User {
   email: string;
 }
 
+interface Certificate {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
 interface Shipment {
   id: number;
   shipmentNumber: string;
