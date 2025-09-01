@@ -41,9 +41,27 @@ export default function Login() {
         const data = await response.json();
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        
+        if (data.sessionTimeoutMinutes) {
+          localStorage.setItem('sessionTimeoutMinutes', data.sessionTimeoutMinutes.toString());
+        }
+        
+        if (data.passwordExpiringSoon && data.daysUntilPasswordExpiry > 0) {
+          localStorage.setItem('passwordExpiryWarning', JSON.stringify({
+            expiringSoon: true,
+            daysUntilExpiry: data.daysUntilPasswordExpiry
+          }));
+        }
+        
         router.push('/dashboard');
       } else {
         const errorData = await response.json();
+        
+        if (errorData.passwordExpired || errorData.requirePasswordChange) {
+          router.push('/change-password?expired=true');
+          return;
+        }
+        
         setError(errorData.message || 'Login failed');
       }
     } catch {
