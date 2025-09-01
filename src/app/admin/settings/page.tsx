@@ -38,6 +38,24 @@ interface SettingsFormData {
   passwordComplexityRequirements: string;
 }
 
+interface AdminFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
+interface AdminFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<'application' | 'general' | 'security'>('application');
   const [settings, setSettings] = useState<ApplicationSetting[]>([]);
@@ -46,6 +64,7 @@ export default function AdminSettingsPage() {
   const [success, setSuccess] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>('');
+  const [uploadedFiles, setUploadedFiles] = useState<AdminFile[]>([]);
   const [formData, setFormData] = useState<SettingsFormData>({
     settingKey: '',
     settingValue: '',
@@ -120,7 +139,31 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     fetchSettings();
+    fetchUploadedFiles();
   }, [fetchSettings]);
+
+  const fetchUploadedFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Admin/settings/files', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles(data);
+      } else {
+        console.error('Failed to fetch uploaded files');
+        setUploadedFiles([]);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded files:', error);
+      setUploadedFiles([]);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -166,6 +209,7 @@ export default function AdminSettingsPage() {
 
       if (response.ok) {
         const result = await response.json();
+        await fetchUploadedFiles();
         return result.filePath;
       } else {
         throw new Error('Failed to upload logo');
@@ -588,6 +632,37 @@ export default function AdminSettingsPage() {
                 </div>
                 <p className="mt-1 text-sm text-gray-500">Read-only description of password requirements</p>
               </div>
+
+              {uploadedFiles.length > 0 && (
+                <div className="mt-8">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">Uploaded Files</h4>
+                  <div className="space-y-3">
+                    {uploadedFiles.map((file, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{file.fileName}</p>
+                            <p className="text-xs text-gray-500">
+                              Uploaded: {new Date(file.uploadDate).toLocaleDateString()} • 
+                              Size: {(file.fileSize / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <a
+                              href={`https://irevlogix-backend.onrender.com${file.filePath}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              View
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
