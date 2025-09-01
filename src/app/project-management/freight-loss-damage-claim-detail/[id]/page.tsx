@@ -63,15 +63,6 @@ interface FreightClaimFile {
   documentType: string;
 }
 
-interface FreightClaimFile {
-  fileName: string;
-  fullFileName: string;
-  filePath: string;
-  fileSize: number;
-  uploadDate: string;
-  documentType: string;
-}
-
 export default function FreightLossDamageClaimDetailPage() {
   const router = useRouter();
   const params = useParams();
