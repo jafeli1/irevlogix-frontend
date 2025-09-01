@@ -53,6 +53,15 @@ interface ReverseRequestData {
   closureComments: string;
 }
 
+interface ReverseRequestFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
 export default function ReverseRequestDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -123,6 +132,7 @@ export default function ReverseRequestDetailPage() {
     helpfulPhoto2?: File;
     helpfulPhoto3?: File;
   }>({});
+  const [uploadedFiles, setUploadedFiles] = useState<ReverseRequestFile[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -139,6 +149,7 @@ export default function ReverseRequestDetailPage() {
       if (userPermissions && hasPermission(userPermissions, 'ProjectManagement', 'Read')) {
         if (!isNew) {
           await fetchReverseRequest();
+          await fetchUploadedFiles();
         }
       }
       setLoading(false);
@@ -178,6 +189,29 @@ export default function ReverseRequestDetailPage() {
     } catch (error) {
       console.error('Error fetching reverse request:', error);
       setError('Error loading reverse request data');
+    }
+  };
+
+  const fetchUploadedFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/reverserequests/${id}/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles(data);
+      } else {
+        console.error('Failed to fetch uploaded files');
+        setUploadedFiles([]);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded files:', error);
+      setUploadedFiles([]);
     }
   };
 

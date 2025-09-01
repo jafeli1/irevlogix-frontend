@@ -63,6 +63,24 @@ type ProcessedMaterialDocument = {
   dateCreated: string;
 };
 
+interface ProcessedMaterialTestFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
+interface ProcessedMaterialTestFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
 export default function ProcessedMaterialDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -179,6 +197,7 @@ export default function ProcessedMaterialDetailPage() {
     fetchDetail();
     fetchMaterialTypes();
     fetchProcessingLots();
+    fetchUploadedTestFiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, id]);
 
@@ -393,6 +412,7 @@ export default function ProcessedMaterialDetailPage() {
       }
 
       await fetchTestResults();
+      await fetchUploadedTestFiles();
       setShowTestModal(false);
       setEditingTest(null);
       setTestFormData({
@@ -444,6 +464,29 @@ export default function ProcessedMaterialDetailPage() {
     }
   };
 
+  const fetchUploadedTestFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterialTests/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedTestFiles(data);
+      } else {
+        console.error('Failed to fetch uploaded test files');
+        setUploadedTestFiles([]);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded test files:', error);
+      setUploadedTestFiles([]);
+    }
+  };
+
   const openAddTestModal = () => {
     setEditingTest(null);
     setTestFormData({
@@ -457,6 +500,25 @@ export default function ProcessedMaterialDetailPage() {
     setUploadFile(null);
     setTestFormErrors({});
     setShowTestModal(true);
+  };
+
+  const fetchUploadedTestFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterialTests/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedTestFiles(data);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded test files:', error);
+    }
   };
 
   const fetchDocuments = async () => {
@@ -1251,6 +1313,37 @@ export default function ProcessedMaterialDetailPage() {
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+
+              {uploadedTestFiles.length > 0 && (
+                <div className="mt-8">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">Uploaded Test Documents</h4>
+                  <div className="space-y-3">
+                    {uploadedTestFiles.map((file, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{file.fileName}</p>
+                            <p className="text-xs text-gray-500">
+                              Uploaded: {new Date(file.uploadDate).toLocaleDateString()} • 
+                              Size: {(file.fileSize / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <a
+                              href={`https://irevlogix-backend.onrender.com${file.filePath}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              View
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

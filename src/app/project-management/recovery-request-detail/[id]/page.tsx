@@ -53,6 +53,15 @@ interface RecoveryRequestData {
   closureComments: string;
 }
 
+interface RecoveryRequestFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
 export default function RecoveryRequestDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -123,6 +132,7 @@ export default function RecoveryRequestDetailPage() {
     helpfulPhoto2?: File;
     helpfulPhoto3?: File;
   }>({});
+  const [uploadedFiles, setUploadedFiles] = useState<RecoveryRequestFile[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -139,6 +149,7 @@ export default function RecoveryRequestDetailPage() {
       if (userPermissions && hasPermission(userPermissions, 'ProjectManagement', 'Read')) {
         if (!isNew) {
           await fetchRecoveryRequest();
+          await fetchUploadedFiles();
         }
       }
       setLoading(false);
@@ -178,6 +189,29 @@ export default function RecoveryRequestDetailPage() {
     } catch (error) {
       console.error('Error fetching recovery request:', error);
       setError('Error loading recovery request data');
+    }
+  };
+
+  const fetchUploadedFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/recoveryrequests/${id}/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles(data);
+      } else {
+        console.error('Failed to fetch uploaded files');
+        setUploadedFiles([]);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded files:', error);
+      setUploadedFiles([]);
     }
   };
 

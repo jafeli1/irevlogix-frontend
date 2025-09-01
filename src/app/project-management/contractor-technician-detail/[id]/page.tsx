@@ -37,11 +37,38 @@ interface ContractorTechnicianData {
   updateSummary: string;
 }
 
+interface ContractorFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
 interface User {
   id: number;
   firstName: string;
   lastName: string;
   email: string;
+}
+
+interface ContractorFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
+interface ContractorFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
 }
 
 export default function ContractorTechnicianDetailPage() {
@@ -96,6 +123,7 @@ export default function ContractorTechnicianDetailPage() {
     thirdPartyAgreement?: File;
     misc?: File;
   }>({});
+  const [uploadedFiles, setUploadedFiles] = useState<ContractorFile[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -110,13 +138,32 @@ export default function ContractorTechnicianDetailPage() {
       setPermissions(userPermissions);
 
       if (userPermissions && hasPermission(userPermissions, 'ProjectManagement', 'Read')) {
-        await Promise.all([fetchUsers(), !isNew && fetchContractorTechnician()]);
+        await Promise.all([fetchUsers(), !isNew && fetchContractorTechnician(), !isNew && fetchUploadedFiles()]);
       }
       setLoading(false);
     };
 
     loadData();
   }, [id, isNew, router]);
+
+  const fetchUploadedFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ContractorTechnicians/${contractorId}/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles(data);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded files:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -235,6 +282,7 @@ export default function ContractorTechnicianDetailPage() {
 
     if (response.ok) {
       const result = await response.json();
+      await fetchUploadedFiles();
       return result.filePath;
     }
     throw new Error('File upload failed');
@@ -868,6 +916,37 @@ export default function ContractorTechnicianDetailPage() {
                   placeholder="Describe any updates or changes made to this contractor technician record"
                 />
               </div>
+
+              {uploadedFiles.length > 0 && (
+                <div className="mt-8">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">Uploaded Documents</h4>
+                  <div className="space-y-3">
+                    {uploadedFiles.map((file, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{file.fileName}</p>
+                            <p className="text-xs text-gray-500">
+                              Uploaded: {new Date(file.uploadDate).toLocaleDateString()} • 
+                              Size: {(file.fileSize / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <a
+                              href={`https://irevlogix-backend.onrender.com${file.filePath}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              View
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

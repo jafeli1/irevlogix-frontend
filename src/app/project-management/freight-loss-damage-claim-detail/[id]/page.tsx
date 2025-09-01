@@ -6,6 +6,15 @@ import Link from 'next/link';
 import AppLayout from '../../../../components/AppLayout';
 import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../../utils/rbac';
 
+interface FreightClaimFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
 interface FreightLossDamageClaim {
   id?: number;
   freightLossDamageClaimId: number;
@@ -43,6 +52,24 @@ interface FreightLossDamageClaim {
   createdBy?: number;
   updatedBy?: number;
   clientId?: string;
+}
+
+interface FreightClaimFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
+}
+
+interface FreightClaimFile {
+  fileName: string;
+  fullFileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadDate: string;
+  documentType: string;
 }
 
 export default function FreightLossDamageClaimDetailPage() {
@@ -97,6 +124,7 @@ export default function FreightLossDamageClaimDetailPage() {
     attachment3?: File;
     attachment4?: File;
   }>({});
+  const [uploadedFiles, setUploadedFiles] = useState<FreightClaimFile[]>([]);
 
 
   const generateClaimId = () => {
@@ -111,6 +139,25 @@ export default function FreightLossDamageClaimDetailPage() {
       ...prev,
       freightLossDamageClaimId: claimId
     }));
+  };
+
+  const fetchUploadedFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/FreightLossDamageClaims/${claimId}/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles(data);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded files:', error);
+    }
   };
 
   const fetchClaim = async () => {
@@ -148,6 +195,29 @@ export default function FreightLossDamageClaimDetailPage() {
     }
   };
 
+  const fetchUploadedFiles = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/FreightLossDamageClaims/${id}/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles(data);
+      } else {
+        console.error('Failed to fetch uploaded files');
+        setUploadedFiles([]);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded files:', error);
+      setUploadedFiles([]);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       const token = localStorage.getItem('token');
@@ -163,6 +233,7 @@ export default function FreightLossDamageClaimDetailPage() {
         generateClaimId();
       } else {
         fetchClaim();
+        fetchUploadedFiles();
       }
     };
 
@@ -255,6 +326,8 @@ export default function FreightLossDamageClaimDetailPage() {
             }
           }
         }
+
+        await fetchUploadedFiles();
 
         setSuccess(isNew ? 'Claim created successfully!' : 'Claim updated successfully!');
         
@@ -782,10 +855,41 @@ export default function FreightLossDamageClaimDetailPage() {
                   </div>
                 ))}
               </div>
+
+              {uploadedFiles.length > 0 && (
+                <div className="mt-8">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4">Uploaded Attachments</h4>
+                  <div className="space-y-3">
+                    {uploadedFiles.map((file, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{file.fileName}</p>
+                            <p className="text-xs text-gray-500">
+                              Uploaded: {new Date(file.uploadDate).toLocaleDateString()} • 
+                              Size: {(file.fileSize / 1024).toFixed(1)} KB
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <a
+                              href={`https://irevlogix-backend.onrender.com${file.filePath}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              View
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200"></div>
             <Link
               href="/project-management/freight-loss-damage-claims"
               className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
