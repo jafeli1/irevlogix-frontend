@@ -74,7 +74,7 @@ export default function Register() {
               Registration Successful!
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-              Your account has been created successfully.
+              Please check your email to confirm your account before signing in.
             </p>
             <div className="mt-6">
               <Link
