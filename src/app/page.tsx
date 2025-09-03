@@ -4,7 +4,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function Home() {
-  const [activeSection, setActiveSection] = useState('hero'); 
+  const [activeSection, setActiveSection] = useState('hero');
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    company: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +40,42 @@ export default function Home() {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleContactChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setContactForm({
+      ...contactForm,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError('');
+    setSubmitSuccess(false);
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contactForm),
+      });
+
+      if (response.ok) {
+        setSubmitSuccess(true);
+        setContactForm({ name: '', email: '', company: '', message: '' });
+      } else {
+        const errorData = await response.json();
+        setSubmitError(errorData.error || 'Failed to send message');
+      }
+    } catch {
+      setSubmitError('Network error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -380,7 +425,7 @@ export default function Home() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Us</h3>
                     <p className="text-gray-600">info@irevlogix.ai</p>
-                    <p className="text-gray-600">support@irevlogix.ai</p>
+                    <p className="text-gray-600">support@irevlogix.com</p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -411,7 +456,17 @@ export default function Home() {
               </div>
             </div>
             <div className="bg-gray-50 p-8 rounded-xl">
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleContactSubmit}>
+                {submitError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                    {submitError}
+                  </div>
+                )}
+                {submitSuccess && (
+                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+                    Thank you! Your message has been sent successfully.
+                  </div>
+                )}
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                     Full Name
@@ -419,8 +474,12 @@ export default function Home() {
                   <input
                     type="text"
                     id="name"
+                    name="name"
+                    value={contactForm.name}
+                    onChange={handleContactChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Your full name"
+                    required
                   />
                 </div>
                 <div>
@@ -430,8 +489,12 @@ export default function Home() {
                   <input
                     type="email"
                     id="email"
+                    name="email"
+                    value={contactForm.email}
+                    onChange={handleContactChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="your@email.com"
+                    required
                   />
                 </div>
                 <div>
@@ -441,6 +504,9 @@ export default function Home() {
                   <input
                     type="text"
                     id="company"
+                    name="company"
+                    value={contactForm.company}
+                    onChange={handleContactChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Your company name"
                   />
@@ -451,16 +517,21 @@ export default function Home() {
                   </label>
                   <textarea
                     id="message"
+                    name="message"
                     rows={4}
+                    value={contactForm.message}
+                    onChange={handleContactChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Tell us about your recycling needs..."
+                    required
                   ></textarea>
                 </div>
                 <button
                   type="submit"
-                  className="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                  disabled={isSubmitting}
+                  className="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Send Message
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
             </div>
