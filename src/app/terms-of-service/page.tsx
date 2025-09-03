@@ -1,31 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function TermsOfService() {
-  const [activeSection, setActiveSection] = useState('hero'); 
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = ['hero'];
-      const scrollPosition = window.scrollY + 100;
-
-      for (const section of sections) {
-        const element = document.getElementById(section);
-        if (element) {
-          const { offsetTop, offsetHeight } = element;
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(section);
-            break;
-          }
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -61,7 +38,7 @@ export default function TermsOfService() {
           <div className="prose prose-lg max-w-none">
             <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">1. Acceptance of iRevLogix Website Terms</h2>
             <p className="text-gray-700 mb-6">
-              When "iRevLogix", "iRevLogix website", "we", "us" or "our" is used in these Terms of Use it means xBusiness Services Corporation, the owner and trademark owner of the iRevLogix website.
+              When &ldquo;iRevLogix&rdquo;, &ldquo;iRevLogix website&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo; or &ldquo;our&rdquo; is used in these Terms of Use it means xBusiness Services Corporation, the owner and trademark owner of the iRevLogix website.
             </p>
             <p className="text-gray-700 mb-6">
               PLEASE READ THESE TERMS OF USE CAREFULLY BEFORE USING THE WEBSITE. BY ACCESSING THE WEBSITE (OTHER THAN TO FIRST READ THESE TERMS OF USE) YOU AGREE TO COMPLY WITH THESE TERMS OF USE. IF YOU DO NOT AGREE TO THESE TERMS OF USE, YOU MAY NOT ACCESS THE WEBSITE. ANY SUCH CHANGES OR ADDITIONAL TERMS OF USE WILL BE POSTED ON THE WEBSITE AND WILL BECOME EFFECTIVE IMMEDIATELY UPON NOTIFICATION TO YOU. IF YOU DO NOT AGREE TO THESE TERMS OF USE YOU MAY NOT ACCESS THE WEBSITE.
@@ -94,7 +71,7 @@ export default function TermsOfService() {
 
             <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">4. iRevLogix Disclaimer</h2>
             <p className="text-gray-700 mb-6">
-              YOU EXPRESSLY AGREE THAT USE OF THE iRevLogix WEBSITE IS AT YOUR SOLE RISK. THE iRevLogix WEBSITE SERVICE AND CONTENT IS PROVIDED ON AN "AS IS" BASIS WITHOUT WARRANTY OF ANY KIND, EXPRESSED OR IMPLIED.
+              YOU EXPRESSLY AGREE THAT USE OF THE iRevLogix WEBSITE IS AT YOUR SOLE RISK. THE iRevLogix WEBSITE SERVICE AND CONTENT IS PROVIDED ON AN &ldquo;AS IS&rdquo; BASIS WITHOUT WARRANTY OF ANY KIND, EXPRESSED OR IMPLIED.
             </p>
 
             <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">5. iRevLogix Liability Limits</h2>
