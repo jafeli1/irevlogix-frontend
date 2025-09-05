@@ -173,7 +173,7 @@ export default function ReverseLogisticsDashboard() {
   const fetchOriginators = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/shipments/originators', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/shipments/originators', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -220,6 +220,7 @@ export default function ReverseLogisticsDashboard() {
       case 'received': return 'bg-green-100 text-green-800';
       case 'processing': return 'bg-purple-100 text-purple-800';
       case 'completed': return 'bg-gray-100 text-gray-800';
+      case 'delivered': return 'bg-green-200 text-green-900';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -318,6 +319,7 @@ export default function ReverseLogisticsDashboard() {
                   <option value="Received">Received</option>
                   <option value="Processing">Processing</option>
                   <option value="Completed">Completed</option>
+                  <option value="Delivered">Delivered</option>
                 </select>
               </div>
               
