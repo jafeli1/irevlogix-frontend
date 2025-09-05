@@ -173,7 +173,7 @@ export default function ReverseLogisticsDashboard() {
   const fetchOriginators = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/shipments/originators', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/assets/originators', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
