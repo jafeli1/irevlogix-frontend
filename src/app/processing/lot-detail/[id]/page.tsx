@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
-import AppLayout from '../../../../components/AppLayout';
+import { useParams, useRouter } from 'next/navigation';
+import AppLayout from '@/components/AppLayout';
 
 interface MaterialType {
   id: number;
@@ -14,16 +13,6 @@ interface User {
   id: number;
   firstName: string;
   lastName: string;
-  email: string;
-}
-
-interface Certificate {
-  fileName: string;
-  fullFileName: string;
-  filePath: string;
-  fileSize: number;
-  uploadDate: string;
-  documentType: string;
 }
 
 interface Shipment {
@@ -31,51 +20,11 @@ interface Shipment {
   shipmentNumber: string;
 }
 
-interface ProcessingStep {
-  id: number;
-  stepName: string;
-  description?: string;
-  startTime?: string;
-  endTime?: string;
-  responsibleUserId?: number;
-  responsibleUser?: User;
-  processingCostPerUnit?: number;
-  laborHours?: number;
-  machineHours?: number;
-  energyConsumption?: number;
-  isCompleted: boolean;
-}
-
-interface IncomingMaterial {
-  id: number;
-  materialType?: MaterialType;
-  quantity: number;
-  condition?: string;
-  sourceShipmentId?: number;
-  actualReceivedWeight?: number;
-  contaminationPercentage?: number;
-  incomingMaterialCost?: number;
-}
-
 interface Certificate {
   fileName: string;
-  fullFileName: string;
   filePath: string;
-  fileSize: number;
   uploadDate: string;
-  documentType: string;
-}
-
-interface ProcessedMaterial {
-  id: number;
-  materialType?: MaterialType;
-  quantity: number;
-  unitOfMeasure?: string;
-  processedWeight?: number;
-  qualityGrade?: string;
-  destinationDownstreamVendor?: string;
-  expectedSalesPricePerUnit?: number;
-  actualSalesPricePerUnit?: number;
+  fileSize: number;
 }
 
 interface ProcessingLot {
@@ -83,50 +32,61 @@ interface ProcessingLot {
   lotNumber: string;
   status: string;
   description?: string;
-  assignedOperator?: string;
-  assignedOperatorId?: number;
   processingCost?: number;
-  startDate?: string;
-  completionDate?: string;
-  totalIncomingWeight?: number;
-  totalProcessedWeight?: number;
-  incomingMaterialCost?: number;
   expectedRevenue?: number;
   actualRevenue?: number;
-  incomingMaterialNotes?: string;
+  incomingMaterialCost?: number;
+  totalIncomingWeight?: number;
+  totalProcessedWeight?: number;
+  dateCreated: string;
+  createdBy?: string;
+  clientId: string;
+  sourceShipmentId?: number;
+  completionDate?: string;
   contaminationPercentage?: number;
-  qualityControlNotes?: string;
-  certificationStatus?: string;
   certificationNumber?: string;
+  incomingMaterialNotes?: string;
+  qualityControlNotes?: string;
   processingNotes?: string;
   processingMethod?: string;
-  sourceShipmentId?: number;
   netProfit?: number;
-  dateCreated: string;
-  dateUpdated: string;
   weight?: number;
-  processingSteps: ProcessingStep[];
-  incomingMaterials: IncomingMaterial[];
-  processedMaterials: ProcessedMaterial[];
+  processingSteps?: any[];
+  processedMaterials?: any[];
+  incomingMaterials?: any[];
 }
 
 export default function LotDetail() {
-  const router = useRouter();
   const params = useParams();
+  const router = useRouter();
   const lotId = params.id as string;
-  
+
   const [lot, setLot] = useState<ProcessingLot | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('incoming');
+  const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedLot, setEditedLot] = useState<Partial<ProcessingLot>>({});
   const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [activeTab, setActiveTab] = useState('incoming');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   const [uploadedCertificates, setUploadedCertificates] = useState<Certificate[]>([]);
+  const [showOutgoingMaterialModal, setShowOutgoingMaterialModal] = useState(false);
+  const [outgoingMaterialForm, setOutgoingMaterialForm] = useState({
+    materialTypeId: '',
+    description: '',
+    quantity: '',
+    unitOfMeasure: 'kg',
+    qualityGrade: '',
+    location: '',
+    processedWeight: '',
+    destinationVendor: '',
+    expectedSalesPrice: '',
+    actualSalesPrice: ''
+  });
+  const [outgoingMaterialErrors, setOutgoingMaterialErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -140,30 +100,27 @@ export default function LotDetail() {
     fetchUsers();
     fetchShipments();
     fetchCertificates();
-  }, [router, lotId]);
+  }, [lotId, router]);
 
   const fetchLot = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
       const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessingLots/${lotId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
         setLot(data);
         setEditedLot(data);
-      } else if (response.status === 404) {
-        setError('Processing lot not found');
       } else {
         setError('Failed to fetch lot details');
       }
-    } catch {
+    } catch (err) {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -176,68 +133,68 @@ export default function LotDetail() {
       const response = await fetch('https://irevlogix-backend.onrender.com/api/MaterialTypes', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
         setMaterialTypes(data);
       }
-    } catch {
-      console.error('Failed to fetch material types');
+    } catch (err) {
+      console.error('Failed to fetch material types:', err);
     }
   };
 
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/users', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Users', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
         setUsers(data);
       }
-    } catch {
-      console.error('Failed to fetch users');
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
     }
   };
 
   const fetchShipments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/shipments?pageSize=1000', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Shipments', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
-        setShipments(data.data || data);
+        setShipments(data);
       }
-    } catch {
-      console.error('Failed to fetch shipments');
+    } catch (err) {
+      console.error('Failed to fetch shipments:', err);
     }
   };
 
   const validateEditForm = () => {
     const errors: Record<string, string> = {};
     
-    if (!editedLot.description?.trim()) {
-      errors.description = 'Description is required';
+    if (!editedLot.lotNumber?.trim()) {
+      errors.lotNumber = 'Lot number is required';
     }
     
-    if (!editedLot.sourceShipmentId) {
-      errors.sourceShipmentId = 'Source Shipment is required';
+    if (!editedLot.status?.trim()) {
+      errors.status = 'Status is required';
     }
-    
+
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -249,44 +206,35 @@ export default function LotDetail() {
 
     try {
       const token = localStorage.getItem('token');
-      
       const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessingLots/${lotId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          Description: editedLot.description,
-          Status: editedLot.status,
-          OperatorUserId: editedLot.assignedOperatorId,
-          ProcessingCost: editedLot.processingCost,
-          StartDate: editedLot.startDate,
-          CompletionDate: editedLot.completionDate,
-          TotalIncomingWeight: editedLot.totalIncomingWeight,
-          TotalProcessedWeight: editedLot.totalProcessedWeight,
-          IncomingMaterialCost: editedLot.incomingMaterialCost,
-          ExpectedRevenue: editedLot.expectedRevenue,
-          ActualRevenue: editedLot.actualRevenue,
-          IncomingMaterialNotes: editedLot.incomingMaterialNotes,
-          ContaminationPercentage: editedLot.contaminationPercentage,
-          QualityControlNotes: editedLot.qualityControlNotes,
-          CertificationStatus: editedLot.certificationStatus,
-          CertificationNumber: editedLot.certificationNumber,
-          ProcessingNotes: editedLot.processingNotes,
-          ProcessingMethod: editedLot.processingMethod,
-          SourceShipmentId: editedLot.sourceShipmentId
-        }),
+          ...editedLot,
+          id: parseInt(lotId),
+          processingCost: editedLot.processingCost ? parseFloat(editedLot.processingCost.toString()) : null,
+          expectedRevenue: editedLot.expectedRevenue ? parseFloat(editedLot.expectedRevenue.toString()) : null,
+          actualRevenue: editedLot.actualRevenue ? parseFloat(editedLot.actualRevenue.toString()) : null,
+          incomingMaterialCost: editedLot.incomingMaterialCost ? parseFloat(editedLot.incomingMaterialCost.toString()) : null,
+          totalIncomingWeight: editedLot.totalIncomingWeight ? parseFloat(editedLot.totalIncomingWeight.toString()) : null,
+          totalProcessedWeight: editedLot.totalProcessedWeight ? parseFloat(editedLot.totalProcessedWeight.toString()) : null,
+          contaminationPercentage: editedLot.contaminationPercentage ? parseFloat(editedLot.contaminationPercentage.toString()) : null,
+          sourceShipmentId: editedLot.sourceShipmentId ? parseInt(editedLot.sourceShipmentId.toString()) : null
+        })
       });
 
       if (response.ok) {
-        setLot(editedLot as ProcessingLot);
+        const updatedLot = await response.json();
+        setLot(updatedLot);
         setIsEditing(false);
         setValidationErrors({});
       } else {
         setError('Failed to update lot');
       }
-    } catch {
+    } catch (err) {
       setError('Network error. Please try again.');
     }
   };
@@ -294,70 +242,62 @@ export default function LotDetail() {
   const fetchCertificates = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessingLots/${lotId}/files`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessingLots/${lotId}/certificates`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       if (response.ok) {
         const data = await response.json();
         setUploadedCertificates(data);
-      } else {
-        console.error('Failed to fetch certificates');
-        setUploadedCertificates([]);
       }
-    } catch (error) {
-      console.error('Error fetching certificates:', error);
-      setUploadedCertificates([]);
+    } catch (err) {
+      console.error('Failed to fetch certificates:', err);
     }
   };
 
-  const handleCertificateUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleCertificateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('documentType', 'certificate');
-      formData.append('description', 'Processing lot certificate');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('processingLotId', lotId);
 
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessingLots/${lotId}/upload`, {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessingLots/upload-certificate', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`
         },
-        body: formData,
+        body: formData
       });
 
-      if (!response.ok) {
-        throw new Error('Upload failed');
+      if (response.ok) {
+        fetchCertificates();
+      } else {
+        setError('Failed to upload certificate');
       }
-
-      const result = await response.json();
-      alert(`Certificate uploaded successfully: ${result.fileName}`);
-      
-      fetchLot();
-      fetchCertificates();
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Failed to upload certificate. Please try again.');
+    } catch (err) {
+      setError('Network error. Please try again.');
     } finally {
       setUploading(false);
-      event.target.value = '';
+      e.target.value = '';
     }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'in progress': return 'bg-blue-100 text-blue-800';
-      case 'ready for sale': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    const colors: Record<string, string> = {
+      'Active': 'bg-green-100 text-green-800',
+      'Completed': 'bg-blue-100 text-blue-800',
+      'On Hold': 'bg-yellow-100 text-yellow-800',
+      'Cancelled': 'bg-red-100 text-red-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   const formatDate = (dateString?: string) => {
@@ -370,471 +310,498 @@ export default function LotDetail() {
     return new Date(dateString).toLocaleString();
   };
 
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (amount === null || amount === undefined) return 'N/A';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  const openAddOutgoingMaterialModal = () => {
+    setOutgoingMaterialForm({
+      materialTypeId: '',
+      description: '',
+      quantity: '',
+      unitOfMeasure: 'kg',
+      qualityGrade: '',
+      location: '',
+      processedWeight: '',
+      destinationVendor: '',
+      expectedSalesPrice: '',
+      actualSalesPrice: ''
+    });
+    setOutgoingMaterialErrors({});
+    setShowOutgoingMaterialModal(true);
+  };
+
+  const handleOutgoingMaterialInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setOutgoingMaterialForm(prev => ({ ...prev, [name]: value }));
+    if (outgoingMaterialErrors[name]) {
+      setOutgoingMaterialErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleOutgoingMaterialSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessedMaterials', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          MaterialTypeId: outgoingMaterialForm.materialTypeId ? parseInt(outgoingMaterialForm.materialTypeId) : null,
+          Description: outgoingMaterialForm.description,
+          Quantity: parseFloat(outgoingMaterialForm.quantity),
+          UnitOfMeasure: outgoingMaterialForm.unitOfMeasure,
+          QualityGrade: outgoingMaterialForm.qualityGrade,
+          Location: outgoingMaterialForm.location,
+          ProcessingLotId: parseInt(lotId),
+          ProcessingCostPerUnit: parseFloat(outgoingMaterialForm.expectedSalesPrice) || null,
+          Status: 'Processed'
+        }),
+      });
+
+      if (response.ok) {
+        setShowOutgoingMaterialModal(false);
+        fetchLot();
+      } else {
+        setError('Failed to add outgoing material');
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading lot details...</p>
+      <AppLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
-  if (error || !lot) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto">
-          <div className="text-center">
-            <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-red-100">
-              <div className="text-red-600 text-2xl">⚠</div>
-            </div>
-            <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-              {error || 'Lot not found'}
-            </h2>
-            <div className="mt-6">
-              <Link
-                href="/processing/lots"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-              >
-                Back to Processing Lots
-              </Link>
-            </div>
+      <AppLayout>
+        <div className="text-center py-12">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+            <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="mt-2 text-lg font-medium text-gray-900">{error}</h2>
+          <div className="mt-6">
+            <button
+              onClick={() => router.push('/processing/lots')}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Back to Processing Lots
+            </button>
           </div>
         </div>
-      </div>
+      </AppLayout>
+    );
+  }
+
+  if (!lot) {
+    return (
+      <AppLayout>
+        <div className="text-center py-12">
+          <h2 className="text-lg font-medium text-gray-900">Lot not found</h2>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
     <AppLayout>
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Processing Lot {lot.lotNumber}
-                </h1>
-                <p className="mt-1 text-sm text-gray-600">
-                  Created {formatDateTime(lot.dateCreated)}
-                </p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(lot.status)}`}>
-                  {lot.status}
-                </span>
-                <Link
-                  href="/processing/lots"
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Processing Lot Details</h1>
+              <p className="mt-2 text-sm text-gray-600">
+                Lot #{lot.lotNumber} • Created {formatDate(lot.dateCreated)}
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              {!isEditing ? (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                 >
-                  Back to Lots
-                </Link>
-                {!isEditing ? (
+                  Edit
+                </button>
+              ) : (
+                <>
                   <button
-                    onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditedLot(lot);
+                      setValidationErrors({});
+                    }}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
-                    Edit
+                    Cancel
                   </button>
-                ) : (
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => {
-                        setIsEditing(false);
-                        setEditedLot(lot);
-                      }}
-                      className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
-                    >
-                      Save
-                    </button>
-                  </div>
-                )}
-              </div>
+                  <button
+                    onClick={handleSave}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    Save Changes
+                  </button>
+                </>
+              )}
             </div>
           </div>
+        </div>
 
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-              <div className="lg:col-span-2">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Lot Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Lot ID</label>
-                    <p className="mt-1 text-sm text-gray-900">{lot.lotNumber}</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      {isEditing && <span className="text-red-500">*</span>} Description
-                    </label>
-                    {isEditing ? (
-                      <div>
-                        <textarea
-                          value={editedLot.description || ''}
-                          onChange={(e) => {
-                            setEditedLot(prev => ({ ...prev, description: e.target.value }));
-                            if (validationErrors.description) {
-                              setValidationErrors(prev => ({ ...prev, description: '' }));
-                            }
-                          }}
-                          className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            validationErrors.description ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                          rows={2}
-                        />
-                        {validationErrors.description && (
-                          <p className="text-red-500 text-sm mt-1">{validationErrors.description}</p>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.description || 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      {isEditing && <span className="text-red-500">*</span>} Source Shipment
-                    </label>
-                    {isEditing ? (
-                      <div>
-                        <select
-                          value={editedLot.sourceShipmentId || ''}
-                          onChange={(e) => {
-                            setEditedLot(prev => ({ ...prev, sourceShipmentId: e.target.value ? parseInt(e.target.value) : undefined }));
-                            if (validationErrors.sourceShipmentId) {
-                              setValidationErrors(prev => ({ ...prev, sourceShipmentId: '' }));
-                            }
-                          }}
-                          className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            validationErrors.sourceShipmentId ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        >
-                          <option value="">Select Shipment</option>
-                          {shipments.map(shipment => (
-                            <option key={shipment.id} value={shipment.id}>
-                              {shipment.shipmentNumber}
-                            </option>
-                          ))}
-                        </select>
-                        {validationErrors.sourceShipmentId && (
-                          <p className="text-red-500 text-sm mt-1">{validationErrors.sourceShipmentId}</p>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">
-                        {lot.sourceShipmentId ? shipments.find(s => s.id === lot.sourceShipmentId)?.shipmentNumber || `ID: ${lot.sourceShipmentId}` : 'N/A'}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Assigned Operator</label>
-                    {isEditing ? (
-                      <select
-                        value={editedLot.assignedOperatorId || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, assignedOperatorId: e.target.value ? parseInt(e.target.value) : undefined }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select Operator</option>
-                        {users.map(user => (
-                          <option key={user.id} value={user.id}>
-                            {user.firstName} {user.lastName}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.assignedOperator || 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Status</label>
-                    {isEditing ? (
-                      <select
-                        value={editedLot.status || lot.status}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, status: e.target.value }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="In Progress">In Progress</option>
-                        <option value="Ready for Sale">Ready for Sale</option>
-                        <option value="Completed">Completed</option>
-                      </select>
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.status}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                    {isEditing ? (
-                      <input
-                        type="date"
-                        value={editedLot.startDate || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.startDate ? formatDate(lot.startDate) : 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Completion Date</label>
-                    {isEditing ? (
-                      <input
-                        type="date"
-                        value={editedLot.completionDate || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, completionDate: e.target.value }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.completionDate ? formatDate(lot.completionDate) : 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Processing Cost ($)</label>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editedLot.processingCost || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, processingCost: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.processingCost ? `$${lot.processingCost.toFixed(2)}` : 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Total Incoming Weight (lbs)</label>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editedLot.totalIncomingWeight || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, totalIncomingWeight: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.totalIncomingWeight ? `${lot.totalIncomingWeight} lbs` : 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Total Processed Weight (lbs)</label>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editedLot.totalProcessedWeight || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, totalProcessedWeight: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.totalProcessedWeight ? `${lot.totalProcessedWeight} lbs` : 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Incoming Material Cost ($)</label>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editedLot.incomingMaterialCost || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, incomingMaterialCost: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.incomingMaterialCost ? `$${lot.incomingMaterialCost.toFixed(2)}` : 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Expected Revenue ($)</label>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editedLot.expectedRevenue || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, expectedRevenue: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.expectedRevenue ? `$${lot.expectedRevenue.toFixed(2)}` : 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Actual Revenue ($)</label>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editedLot.actualRevenue || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, actualRevenue: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.actualRevenue ? `$${lot.actualRevenue.toFixed(2)}` : 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Contamination Percentage (%)</label>
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        value={editedLot.contaminationPercentage || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, contaminationPercentage: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.contaminationPercentage ? `${lot.contaminationPercentage}%` : 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Certification Status</label>
-                    {isEditing ? (
-                      <select
-                        value={editedLot.certificationStatus || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, certificationStatus: e.target.value }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Select Status</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Certified">Certified</option>
-                        <option value="Rejected">Rejected</option>
-                        <option value="Not Required">Not Required</option>
-                      </select>
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.certificationStatus || 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Certification Number</label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editedLot.certificationNumber || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, certificationNumber: e.target.value }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter certification number"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.certificationNumber || 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div className="md:col-span-2 lg:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700">Incoming Material Notes</label>
-                    {isEditing ? (
-                      <textarea
-                        value={editedLot.incomingMaterialNotes || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, incomingMaterialNotes: e.target.value }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
-                        rows={3}
-                        placeholder="Enter notes about incoming materials..."
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.incomingMaterialNotes || 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div className="md:col-span-2 lg:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700">Quality Control Notes</label>
-                    {isEditing ? (
-                      <textarea
-                        value={editedLot.qualityControlNotes || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, qualityControlNotes: e.target.value }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
-                        rows={3}
-                        placeholder="Enter quality control notes..."
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.qualityControlNotes || 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div className="md:col-span-2 lg:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700">Processing Notes</label>
-                    {isEditing ? (
-                      <textarea
-                        value={editedLot.processingNotes || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, processingNotes: e.target.value }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
-                        rows={3}
-                        placeholder="Enter processing notes..."
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.processingNotes || 'N/A'}</p>
-                    )}
-                  </div>
-
-                  <div className="md:col-span-2 lg:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700">Processing Method</label>
-                    {isEditing ? (
-                      <textarea
-                        value={editedLot.processingMethod || ''}
-                        onChange={(e) => setEditedLot(prev => ({ ...prev, processingMethod: e.target.value }))}
-                        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
-                        rows={3}
-                        placeholder="Describe the processing method used..."
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">{lot.processingMethod || 'N/A'}</p>
-                    )}
-                  </div>
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <div className="bg-white shadow rounded-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Lot Information</h2>
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lot.status)}`}>
+                  {lot.status}
+                </span>
               </div>
 
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Summary</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Total Weight:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {lot.weight ? `${lot.weight} lbs` : 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Processing Cost:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {lot.processingCost ? `$${lot.processingCost.toFixed(2)}` : 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Expected Revenue:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {lot.expectedRevenue ? `$${lot.expectedRevenue.toFixed(2)}` : 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Net Profit:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {lot.netProfit ? `$${lot.netProfit.toFixed(2)}` : 'N/A'}
-                    </span>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Lot Number</label>
+                  {isEditing ? (
+                    <div>
+                      <input
+                        type="text"
+                        value={editedLot.lotNumber || ''}
+                        onChange={(e) => setEditedLot(prev => ({ ...prev, lotNumber: e.target.value }))}
+                        className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          validationErrors.lotNumber ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter lot number"
+                      />
+                      {validationErrors.lotNumber && (
+                        <p className="mt-1 text-sm text-red-600">{validationErrors.lotNumber}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.lotNumber}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  {isEditing ? (
+                    <div>
+                      <select
+                        value={editedLot.status || ''}
+                        onChange={(e) => setEditedLot(prev => ({ ...prev, status: e.target.value }))}
+                        className={`mt-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          validationErrors.status ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Select Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Completed">Completed</option>
+                        <option value="On Hold">On Hold</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+                      {validationErrors.status && (
+                        <p className="mt-1 text-sm text-red-600">{validationErrors.status}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.status}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Source Shipment</label>
+                  {isEditing ? (
+                    <select
+                      value={editedLot.sourceShipmentId || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, sourceShipmentId: e.target.value ? parseInt(e.target.value) : undefined }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Shipment</option>
+                      {shipments.map(shipment => (
+                        <option key={shipment.id} value={shipment.id}>
+                          {shipment.shipmentNumber}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">
+                      {shipments.find(s => s.id === lot.sourceShipmentId)?.shipmentNumber || 'N/A'}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Created By</label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {users.find(user => user.id.toString() === lot.createdBy)?.firstName} {users.find(user => user.id.toString() === lot.createdBy)?.lastName || 'N/A'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Completion Date</label>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={editedLot.completionDate ? new Date(editedLot.completionDate).toISOString().split('T')[0] : ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, completionDate: e.target.value ? new Date(e.target.value).toISOString() : undefined }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{formatDate(lot.completionDate)}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Processing Cost</label>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editedLot.processingCost || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, processingCost: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.processingCost ? `$${lot.processingCost.toFixed(2)}` : 'N/A'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Expected Revenue</label>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editedLot.expectedRevenue || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, expectedRevenue: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.expectedRevenue ? `$${lot.expectedRevenue.toFixed(2)}` : 'N/A'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Actual Revenue</label>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editedLot.actualRevenue || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, actualRevenue: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.actualRevenue ? `$${lot.actualRevenue.toFixed(2)}` : 'N/A'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Incoming Material Cost</label>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editedLot.incomingMaterialCost || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, incomingMaterialCost: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.incomingMaterialCost ? `$${lot.incomingMaterialCost.toFixed(2)}` : 'N/A'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Total Incoming Weight</label>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editedLot.totalIncomingWeight || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, totalIncomingWeight: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.totalIncomingWeight ? `${lot.totalIncomingWeight} lbs` : 'N/A'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Total Processed Weight</label>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editedLot.totalProcessedWeight || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, totalProcessedWeight: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.totalProcessedWeight ? `${lot.totalProcessedWeight} lbs` : 'N/A'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contamination Percentage</label>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={editedLot.contaminationPercentage || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, contaminationPercentage: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="0.00"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.contaminationPercentage ? `${lot.contaminationPercentage}%` : 'N/A'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Certification Status</label>
+                  {isEditing ? (
+                    <select
+                      value={editedLot.certificationStatus || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, certificationStatus: e.target.value }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Status</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Certified">Certified</option>
+                      <option value="Rejected">Rejected</option>
+                      <option value="Not Required">Not Required</option>
+                    </select>
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.certificationStatus || 'N/A'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Certification Number</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedLot.certificationNumber || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, certificationNumber: e.target.value }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter certification number"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.certificationNumber || 'N/A'}</p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2 lg:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700">Incoming Material Notes</label>
+                  {isEditing ? (
+                    <textarea
+                      value={editedLot.incomingMaterialNotes || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, incomingMaterialNotes: e.target.value }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
+                      rows={3}
+                      placeholder="Enter notes about incoming materials..."
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.incomingMaterialNotes || 'N/A'}</p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2 lg:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700">Quality Control Notes</label>
+                  {isEditing ? (
+                    <textarea
+                      value={editedLot.qualityControlNotes || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, qualityControlNotes: e.target.value }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
+                      rows={3}
+                      placeholder="Enter quality control notes..."
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.qualityControlNotes || 'N/A'}</p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2 lg:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700">Processing Notes</label>
+                  {isEditing ? (
+                    <textarea
+                      value={editedLot.processingNotes || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, processingNotes: e.target.value }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
+                      rows={3}
+                      placeholder="Enter processing notes..."
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.processingNotes || 'N/A'}</p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2 lg:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700">Processing Method</label>
+                  {isEditing ? (
+                    <textarea
+                      value={editedLot.processingMethod || ''}
+                      onChange={(e) => setEditedLot(prev => ({ ...prev, processingMethod: e.target.value }))}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
+                      rows={3}
+                      placeholder="Describe the processing method used..."
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">{lot.processingMethod || 'N/A'}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Summary</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Total Weight:</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {lot.weight ? `${lot.weight} lbs` : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Processing Cost:</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {lot.processingCost ? `$${lot.processingCost.toFixed(2)}` : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Expected Revenue:</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {lot.expectedRevenue ? `$${lot.expectedRevenue.toFixed(2)}` : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Net Profit:</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {lot.netProfit ? `$${lot.netProfit.toFixed(2)}` : 'N/A'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -919,24 +886,24 @@ export default function LotDetail() {
                                 Source Shipment
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actual Weight
+                                Actual Received Weight
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Contamination %
                               </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Cost
+                                Incoming Material Cost
                               </th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {lot.incomingMaterials?.map((material) => (
-                              <tr key={material.id}>
+                            {lot.incomingMaterials?.map((material, index) => (
+                              <tr key={index}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                   {material.materialType?.name || 'N/A'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {material.quantity}
+                                  {material.quantity || 'N/A'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                   {material.condition || 'N/A'}
@@ -964,54 +931,30 @@ export default function LotDetail() {
 
                 {activeTab === 'steps' && (
                   <div>
-                    <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-lg font-medium text-gray-900">Processing Steps</h4>
-                      <Link href={`/processing/processing-steps?lotId=${lotId}`} className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                        Add Processing Step
-                      </Link>
-                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-4">Processing Steps</h4>
                     {lot.processingSteps?.length === 0 ? (
-                      <p className="text-gray-500 text-center py-8">No processing steps defined for this lot</p>
+                      <p className="text-gray-500 text-center py-8">No processing steps recorded yet</p>
                     ) : (
                       <div className="space-y-4">
-                        {lot.processingSteps?.map((step) => (
-                          <div key={step.id} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <h5 className="text-lg font-medium text-gray-900">{step.stepName}</h5>
-                                <p className="text-sm text-gray-600 mt-1">{step.description}</p>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                                  <div>
-                                    <span className="text-xs font-medium text-gray-500">Start Time</span>
-                                    <p className="text-sm text-gray-900">{formatDateTime(step.startTime)}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-xs font-medium text-gray-500">End Time</span>
-                                    <p className="text-sm text-gray-900">{formatDateTime(step.endTime)}</p>
-                                  </div>
-                                  <div>
-                                    <span className="text-xs font-medium text-gray-500">Responsible User</span>
-                                    <p className="text-sm text-gray-900">
-                                      {step.responsibleUser ? `${step.responsibleUser.firstName} ${step.responsibleUser.lastName}` : 'N/A'}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <span className="text-xs font-medium text-gray-500">Labor Hours</span>
-                                    <p className="text-sm text-gray-900">{step.laborHours || 'N/A'}</p>
-                                  </div>
-                                </div>
+                        {lot.processingSteps?.map((step, index) => (
+                          <div key={index} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 className="text-md font-medium text-gray-900">{step.stepName || `Step ${index + 1}`}</h5>
+                              <span className="text-sm text-gray-500">{formatDateTime(step.completedAt)}</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{step.description || 'No description provided'}</p>
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <span className="font-medium text-gray-700">Labor Hours:</span>
+                                <span className="ml-1 text-gray-900">{step.laborHours || 'N/A'}</span>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  step.isCompleted ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                }`}>
-                                  {step.isCompleted ? 'Completed' : 'In Progress'}
-                                </span>
-                                {!step.isCompleted && (
-                                  <button className="text-sm text-blue-600 hover:text-blue-900">
-                                    Mark Complete
-                                  </button>
-                                )}
+                              <div>
+                                <span className="font-medium text-gray-700">Machine Hours:</span>
+                                <span className="ml-1 text-gray-900">{step.machineHours || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-700">Energy Consumption:</span>
+                                <span className="ml-1 text-gray-900">{step.energyConsumption ? `${step.energyConsumption} kWh` : 'N/A'}</span>
                               </div>
                             </div>
                           </div>
@@ -1025,7 +968,10 @@ export default function LotDetail() {
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="text-lg font-medium text-gray-900">Outgoing Processed Materials</h4>
-                      <button className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                      <button 
+                        onClick={openAddOutgoingMaterialModal}
+                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                      >
                         Add Outgoing Material
                       </button>
                     </div>
@@ -1218,7 +1164,7 @@ export default function LotDetail() {
                             Total Incoming Material Cost
                           </label>
                           <p className="mt-1 text-lg font-semibold text-gray-900">
-                            {lot.incomingMaterials?.reduce((sum, material) => sum + (material.incomingMaterialCost || 0), 0).toFixed(2) || '0.00'}
+                            ${lot.incomingMaterials?.reduce((sum, material) => sum + (material.incomingMaterialCost || 0), 0).toFixed(2) || '0.00'}
                           </p>
                         </div>
                         <div>
@@ -1279,6 +1225,104 @@ export default function LotDetail() {
             </div>
           </div>
         </div>
+
+        {showOutgoingMaterialModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Add Outgoing Material</h3>
+                
+                <form onSubmit={handleOutgoingMaterialSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Material Type</label>
+                      <select
+                        name="materialTypeId"
+                        value={outgoingMaterialForm.materialTypeId}
+                        onChange={handleOutgoingMaterialInputChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select Material Type</option>
+                        {materialTypes.map(type => (
+                          <option key={type.id} value={type.id}>{type.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Quantity <span className="text-red-500">*</span></label>
+                      <input
+                        type="number"
+                        name="quantity"
+                        value={outgoingMaterialForm.quantity}
+                        onChange={handleOutgoingMaterialInputChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Description <span className="text-red-500">*</span></label>
+                    <textarea
+                      name="description"
+                      value={outgoingMaterialForm.description}
+                      onChange={handleOutgoingMaterialInputChange}
+                      rows={3}
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Unit of Measure</label>
+                      <select
+                        name="unitOfMeasure"
+                        value={outgoingMaterialForm.unitOfMeasure}
+                        onChange={handleOutgoingMaterialInputChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="kg">kg</option>
+                        <option value="lbs">lbs</option>
+                        <option value="tons">tons</option>
+                        <option value="units">units</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Quality Grade</label>
+                      <input
+                        type="text"
+                        name="qualityGrade"
+                        value={outgoingMaterialForm.qualityGrade}
+                        onChange={handleOutgoingMaterialInputChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., Grade A, Grade B"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setShowOutgoingMaterialModal(false)}
+                      className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                      Add Material
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
     </AppLayout>
   );
 }
