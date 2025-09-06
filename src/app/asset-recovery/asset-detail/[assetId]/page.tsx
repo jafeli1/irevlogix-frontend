@@ -152,9 +152,15 @@ export default function AssetDetailPage() {
         });
         if (res.ok) {
           const data: AssetDocument[] = await res.json();
-          setDocuments(data);
+          setDocuments(Array.isArray(data) ? data : []);
+        } else {
+          console.warn('Failed to fetch documents:', res.status);
+          setDocuments([]);
         }
-      } catch {}
+      } catch (error) {
+        console.warn('Error fetching documents:', error);
+        setDocuments([]);
+      }
     }
 
     const fetchCategories = async () => {
@@ -278,9 +284,13 @@ export default function AssetDetailPage() {
       if (response.ok) {
         const data = await response.json();
         setChainOfCustody(Array.isArray(data) ? data : []);
+      } else {
+        console.warn('Failed to fetch chain of custody:', response.status);
+        setChainOfCustody([]);
       }
     } catch (error) {
       console.error('Error fetching chain of custody:', error);
+      setChainOfCustody([]);
     }
   };
 

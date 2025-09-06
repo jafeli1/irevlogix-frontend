@@ -22,13 +22,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: errorText }, { status: response.status });
+      console.error(`Backend error for asset ${id} documents:`, response.status, errorText);
+      if (response.status === 404) {
+        return NextResponse.json([]);
+      }
+      return NextResponse.json({ error: errorText || 'Backend error' }, { status: response.status });
     }
 
     const data = await response.json();
     const totalCount = response.headers.get('X-Total-Count');
     
-    const nextResponse = NextResponse.json(data);
+    const nextResponse = NextResponse.json(Array.isArray(data) ? data : []);
     if (totalCount) {
       nextResponse.headers.set('X-Total-Count', totalCount);
     }
@@ -62,7 +66,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: errorText }, { status: response.status });
+      console.error(`Backend error creating document for asset ${id}:`, response.status, errorText);
+      return NextResponse.json({ error: errorText || 'Backend error' }, { status: response.status });
     }
 
     const data = await response.json();

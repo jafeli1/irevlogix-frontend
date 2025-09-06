@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: errorText }, { status: response.status });
+      console.error('Backend error for assets list:', response.status, errorText);
+      return NextResponse.json({ error: errorText || 'Backend error' }, { status: response.status });
     }
 
     const data = await response.json();
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     
     return nextResponse;
   } catch (error) {
-    console.error('Error proxying assets request:', error);
+    console.error('Error proxying assets list request:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -59,13 +60,14 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: errorText }, { status: response.status });
+      console.error('Backend error creating asset:', response.status, errorText);
+      return NextResponse.json({ error: errorText || 'Backend error' }, { status: response.status });
     }
 
     const data = await response.json();
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
-    console.error('Error proxying asset creation:', error);
+    console.error('Error proxying asset creation request:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

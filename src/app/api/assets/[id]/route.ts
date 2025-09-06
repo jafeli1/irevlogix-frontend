@@ -20,7 +20,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: errorText }, { status: response.status });
+      console.error(`Backend error for asset ${id}:`, response.status, errorText);
+      return NextResponse.json({ error: errorText || 'Backend error' }, { status: response.status });
     }
 
     const data = await response.json();
@@ -53,7 +54,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: errorText }, { status: response.status });
+      console.error(`Backend error updating asset ${id}:`, response.status, errorText);
+      return NextResponse.json({ error: errorText || 'Backend error' }, { status: response.status });
     }
 
     const data = await response.json();
@@ -83,7 +85,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: errorText }, { status: response.status });
+      console.error(`Backend error deleting asset ${id}:`, response.status, errorText);
+      return NextResponse.json({ error: errorText || 'Backend error' }, { status: response.status });
     }
 
     return NextResponse.json({ success: true });

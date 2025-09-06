@@ -22,11 +22,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: errorText }, { status: response.status });
+      console.error(`Backend error for asset ${id} chain of custody:`, response.status, errorText);
+      if (response.status === 404) {
+        return NextResponse.json([]);
+      }
+      return NextResponse.json({ error: errorText || 'Backend error' }, { status: response.status });
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json(Array.isArray(data) ? data : []);
   } catch (error) {
     console.error('Error proxying asset chain of custody request:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -55,7 +59,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: errorText }, { status: response.status });
+      console.error(`Backend error creating chain of custody for asset ${id}:`, response.status, errorText);
+      return NextResponse.json({ error: errorText || 'Backend error' }, { status: response.status });
     }
 
     const data = await response.json();
