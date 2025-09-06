@@ -122,7 +122,7 @@ export default function AssetDetailPage() {
         setLoading(true);
         setError("");
         const token = localStorage.getItem("token");
-        const res = await fetch(`https://irevlogix-backend.onrender.com/api/assets/${assetId}`, {
+        const res = await fetch(`/api/assets/${assetId}`, {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
         });
         if (res.status === 401) {
@@ -147,7 +147,7 @@ export default function AssetDetailPage() {
       if (!assetId) return;
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/api/assets/${assetId}/documents`, {
+        const res = await fetch(`/api/assets/${assetId}/documents`, {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
         });
         if (res.ok) {
@@ -177,7 +177,7 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('https://irevlogix-backend.onrender.com/api/assettracking/statuses', {
+        const response = await fetch('/api/assettracking/statuses', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
@@ -193,7 +193,7 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('https://irevlogix-backend.onrender.com/api/Vendors', {
+        const response = await fetch('/api/vendors', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
@@ -209,7 +209,7 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('https://irevlogix-backend.onrender.com/api/Users', {
+        const response = await fetch('/api/users', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
@@ -225,7 +225,7 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('https://irevlogix-backend.onrender.com/api/Shipments', {
+        const response = await fetch('/api/shipments', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
@@ -241,7 +241,7 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessingLots', {
+        const response = await fetch('/api/processing-lots', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
@@ -272,7 +272,7 @@ export default function AssetDetailPage() {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/Assets/${assetId}/chain-of-custody`, {
+      const response = await fetch(`/api/assets/${assetId}/chain-of-custody`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
       if (response.ok) {
@@ -376,7 +376,7 @@ export default function AssetDetailPage() {
     try {
       const token = localStorage.getItem("token");
       
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/Assets/${assetId}/chain-of-custody`, {
+      const response = await fetch(`/api/assets/${assetId}/chain-of-custody`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
