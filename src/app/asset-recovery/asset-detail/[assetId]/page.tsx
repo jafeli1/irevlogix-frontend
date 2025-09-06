@@ -183,7 +183,7 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('/api/assettracking/statuses', {
+        const response = await fetch('/api/assettrackingstatuses', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
@@ -354,7 +354,7 @@ export default function AssetDetailPage() {
     try {
       const token = localStorage.getItem("token");
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/api/assets/${assetId}`, {
+      const response = await fetch(`/api/assets/${assetId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
