@@ -1467,7 +1467,7 @@ export default function VendorDetailPage() {
                 </div>
               ) : (
                 <p className="mt-1 text-sm text-gray-900">
-                  {data?.materialsOfInterest && data.materialsOfInterest.length > 0
+                  {data?.materialsOfInterest && Array.isArray(data.materialsOfInterest) && data.materialsOfInterest.length > 0
                     ? data.materialsOfInterest
                         .map(id => materialTypes.find(mt => mt.id === id)?.name)
                         .filter(Boolean)
