@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Authorization header required' }, { status: 401 });
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/assets/${id}/documents?${queryString}`, {
+    const response = await fetch(`${BACKEND_URL}/api/Assets/${id}/documents?${queryString}`, {
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const body = await request.json();
 
-    const response = await fetch(`${BACKEND_URL}/api/assets/${id}/documents`, {
+    const response = await fetch(`${BACKEND_URL}/api/Assets/${id}/documents`, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,

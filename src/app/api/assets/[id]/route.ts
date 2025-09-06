@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Authorization header required' }, { status: 401 });
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/assets/${id}`, {
+    const response = await fetch(`${BACKEND_URL}/api/Assets/${id}`, {
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const body = await request.json();
 
-    const response = await fetch(`${BACKEND_URL}/api/assets/${id}`, {
+    const response = await fetch(`${BACKEND_URL}/api/Assets/${id}`, {
       method: 'PUT',
       headers: {
         'Authorization': authHeader,
@@ -73,7 +73,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: 'Authorization header required' }, { status: 401 });
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/assets/${id}`, {
+    const response = await fetch(`${BACKEND_URL}/api/Assets/${id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': authHeader,
