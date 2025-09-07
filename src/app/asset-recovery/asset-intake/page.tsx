@@ -181,7 +181,7 @@ export default function AssetIntakePage() {
         console.log('Asset Intake: No token found for users fetch');
         return;
       }
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/users', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/users?pageSize=100', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -189,7 +189,7 @@ export default function AssetIntakePage() {
       });
       if (response.ok) {
         const data = await response.json();
-        setUsers(data);
+        setUsers(Array.isArray(data.data) ? data.data : []);
         console.log('Asset Intake: Users fetched successfully');
       } else {
         console.warn('Asset Intake: Failed to fetch users - response not ok:', response.status);
@@ -207,7 +207,7 @@ export default function AssetIntakePage() {
         console.log('Asset Intake: No token found for shipments fetch');
         return;
       }
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/Shipments', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Shipments?pageSize=100', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -215,8 +215,8 @@ export default function AssetIntakePage() {
       });
       if (response.ok) {
         const data = await response.json();
-        setShipments(data);
-        console.log('Asset Intake: Shipments fetched successfully');
+        setShipments(Array.isArray(data.data) ? data.data : []);
+        console.log('Asset Intake: Shipments fetched successfully', data.data);
       } else {
         console.warn('Asset Intake: Failed to fetch shipments - response not ok:', response.status);
       }
@@ -233,7 +233,7 @@ export default function AssetIntakePage() {
         console.log('Asset Intake: No token found for processing lots fetch');
         return;
       }
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessingLots', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessingLots?pageSize=100', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -241,7 +241,7 @@ export default function AssetIntakePage() {
       });
       if (response.ok) {
         const data = await response.json();
-        setProcessingLots(data);
+        setProcessingLots(Array.isArray(data.data) ? data.data : []);
         console.log('Asset Intake: Processing lots fetched successfully');
       } else {
         console.warn('Asset Intake: Failed to fetch processing lots - response not ok:', response.status);
@@ -262,7 +262,7 @@ export default function AssetIntakePage() {
         return;
       }
 
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/assetcategories', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/assetcategories?pageSize=100', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -271,7 +271,7 @@ export default function AssetIntakePage() {
 
       if (response.ok) {
         const data = await response.json();
-        setCategories(data);
+        setCategories(Array.isArray(data.data) ? data.data : []);
         console.log('Asset Intake: Categories fetched successfully');
       } else {
         console.warn('Asset Intake: Failed to fetch categories - response not ok:', response.status);
@@ -291,7 +291,7 @@ export default function AssetIntakePage() {
         return;
       }
 
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/assettracking/statuses', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/assettracking/statuses?pageSize=100', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -300,7 +300,7 @@ export default function AssetIntakePage() {
 
       if (response.ok) {
         const data = await response.json();
-        setStatuses(data && Array.isArray(data) && data.length ? data : FALLBACK_STATUSES);
+        setStatuses(data.data && Array.isArray(data.data) && data.data.length ? data.data : FALLBACK_STATUSES);
         console.log('Asset Intake: Statuses fetched successfully');
       } else {
         console.warn('Asset Intake: Failed to fetch statuses - response not ok, using fallback:', response.status);
@@ -317,7 +317,7 @@ export default function AssetIntakePage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/Vendors', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Vendors?pageSize=100', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -326,7 +326,7 @@ export default function AssetIntakePage() {
 
       if (response.ok) {
         const data = await response.json();
-        setVendors(Array.isArray(data) ? data : []);
+        setVendors(Array.isArray(data.data) ? data.data : []);
         console.log('Asset Intake: Vendors fetched successfully');
       } else {
         console.warn('Asset Intake: Failed to fetch vendors:', response.status);
