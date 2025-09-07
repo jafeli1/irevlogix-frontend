@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AppLayout from '../../../../components/AppLayout';
 import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../../utils/rbac';
-import { US_STATES } from '../../../../utils/constants';
 
 interface ContractorTechnicianData {
   id?: number;
@@ -17,7 +16,7 @@ interface ContractorTechnicianData {
   firstName: string;
   lastName: string;
   city: string;
-  stateId: string | null;
+  stateId: number | null;
   zipCode: string;
   phone: string;
   email: string;
@@ -234,8 +233,8 @@ export default function ContractorTechnicianDetailPage() {
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-              type === 'number' ? (value ? parseInt(value) : null) : 
-              name === 'stateId' ? value : value
+              name === 'stateId' ? (value === '' ? null : parseInt(value, 10)) :
+              value
     }));
 
     if (validationErrors[name]) {
@@ -292,13 +291,33 @@ export default function ContractorTechnicianDetailPage() {
       }
 
       const submitData = {
-        ...formData,
+        userId: formData.userId,
+        approved: formData.approved,
+        preferred: formData.preferred,
+        technicianSource: formData.technicianSource,
+        comments: formData.comments,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        city: formData.city,
+        stateId: formData.stateId,
+        zipCode: formData.zipCode,
+        phone: formData.phone,
+        email: formData.email,
+        shippingAddress: formData.shippingAddress,
         onboardDate: formData.onboardDate ? new Date(formData.onboardDate).toISOString() : null,
         expirationDate: formData.expirationDate ? new Date(formData.expirationDate).toISOString() : null,
+        backgroundCheckOnboarding: formData.backgroundCheckOnboarding,
+        drugTestOnboarding: formData.drugTestOnboarding,
+        thirdPartyAgreementOnboarding: formData.thirdPartyAgreementOnboarding,
         backgroundCheckDate: formData.backgroundCheckDate ? new Date(formData.backgroundCheckDate).toISOString() : null,
         drugTestDate: formData.drugTestDate ? new Date(formData.drugTestDate).toISOString() : null,
         thirdPartyServiceProviderAgreementVersion: formData.thirdPartyServiceProviderAgreementVersion ? new Date(formData.thirdPartyServiceProviderAgreementVersion).toISOString() : null,
-        trainingCompletionDate: formData.trainingCompletionDate ? new Date(formData.trainingCompletionDate).toISOString() : null
+        trainingCompletionDate: formData.trainingCompletionDate ? new Date(formData.trainingCompletionDate).toISOString() : null,
+        backgroundCheckFormUpload: formData.backgroundCheckFormUpload,
+        drugTestUpload: formData.drugTestUpload,
+        thirdPartyServiceProviderAgreementUpload: formData.thirdPartyServiceProviderAgreementUpload,
+        miscUpload: formData.miscUpload,
+        updateSummary: formData.updateSummary
       };
 
       const url = isNew ? '/api/contractortechnicians' : `/api/contractortechnicians/${id}`;
@@ -604,20 +623,17 @@ export default function ContractorTechnicianDetailPage() {
 
                 <div>
                   <label htmlFor="stateId" className="block text-sm font-medium text-gray-700">
-                    State
+                    State ID
                   </label>
-                  <select
+                  <input
+                    type="number"
                     id="stateId"
                     name="stateId"
                     value={formData.stateId || ''}
                     onChange={handleInputChange}
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value="">Select State</option>
-                    {US_STATES.map((state) => (
-                      <option key={state.value} value={state.value}>{state.label}</option>
-                    ))}
-                  </select>
+                    placeholder="Enter state ID"
+                  />
                 </div>
 
                 <div>
