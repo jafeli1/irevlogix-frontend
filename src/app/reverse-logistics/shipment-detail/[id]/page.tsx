@@ -140,7 +140,7 @@ export default function ShipmentDetail() {
       setDocumentsLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`/api/shipments/${shipmentId}/documents`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}/documents`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -171,7 +171,7 @@ export default function ShipmentDetail() {
         formData.append('description', description);
       }
 
-      const response = await fetch(`/api/shipments/${shipmentId}/documents`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}/documents`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
