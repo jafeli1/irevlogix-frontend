@@ -130,7 +130,7 @@ export default function AssetTrackingPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('https://irevlogix-backend.onrender.com/api/Vendors?pageSize=100', {
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/Vendors?pageSize=1000', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -139,7 +139,7 @@ export default function AssetTrackingPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setVendors(Array.isArray(data.data) ? data.data : []);
+        setVendors(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error('Error fetching vendors:', error);
@@ -160,7 +160,7 @@ export default function AssetTrackingPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setAssetCategories(Array.isArray(data.data) ? data.data : []);
+        setAssetCategories(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error('Error fetching asset categories:', error);

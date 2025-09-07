@@ -161,12 +161,12 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('/api/assetcategories?pageSize=100', {
+        const response = await fetch('/api/assetcategories?pageSize=1000', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
           const data = await response.json();
-          setCategories(Array.isArray(data.data) ? data.data : []);
+          setCategories(Array.isArray(data) ? data : []);
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -177,12 +177,12 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('/api/assettrackingstatuses?pageSize=100', {
+        const response = await fetch('/api/assettrackingstatuses?pageSize=1000', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
           const data = await response.json();
-          setStatuses(Array.isArray(data.data) ? data.data : []);
+          setStatuses(Array.isArray(data) ? data : []);
         }
       } catch (error) {
         console.error('Error fetching statuses:', error);
@@ -193,12 +193,12 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('/api/vendors?pageSize=100', {
+        const response = await fetch('/api/vendors?pageSize=1000', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
           const data = await response.json();
-          setVendors(Array.isArray(data.data) ? data.data : []);
+          setVendors(Array.isArray(data) ? data : []);
         }
       } catch (error) {
         console.error('Error fetching vendors:', error);
@@ -209,12 +209,12 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('/api/users?pageSize=100', {
+        const response = await fetch('/api/users?pageSize=1000', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
           const data = await response.json();
-          setUsers(Array.isArray(data.data) ? data.data : []);
+          setUsers(Array.isArray(data) ? data : []);
         }
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -225,7 +225,7 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('/api/shipments?pageSize=100', {
+        const response = await fetch('/api/shipments?pageSize=1000', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
@@ -241,12 +241,12 @@ export default function AssetDetailPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        const response = await fetch('/api/processing-lots?pageSize=100', {
+        const response = await fetch('/api/processing-lots?pageSize=1000', {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
         if (response.ok) {
           const data = await response.json();
-          setProcessingLots(Array.isArray(data.data) ? data.data : []);
+          setProcessingLots(Array.isArray(data) ? data : []);
         }
       } catch (error) {
         console.error('Error fetching processing lots:', error);
