@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AppLayout from '../../../../components/AppLayout';
 import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../../utils/rbac';
+import { US_STATES } from '../../../../utils/constants';
 
 interface ContractorTechnicianData {
   id?: number;
@@ -16,7 +17,7 @@ interface ContractorTechnicianData {
   firstName: string;
   lastName: string;
   city: string;
-  stateId: number | null;
+  stateId: string | null;
   zipCode: string;
   phone: string;
   email: string;
@@ -233,7 +234,8 @@ export default function ContractorTechnicianDetailPage() {
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-              type === 'number' ? (value ? parseInt(value) : null) : value
+              type === 'number' ? (value ? parseInt(value) : null) : 
+              name === 'stateId' ? value : value
     }));
 
     if (validationErrors[name]) {
@@ -602,16 +604,20 @@ export default function ContractorTechnicianDetailPage() {
 
                 <div>
                   <label htmlFor="stateId" className="block text-sm font-medium text-gray-700">
-                    State ID
+                    State
                   </label>
-                  <input
-                    type="number"
+                  <select
                     id="stateId"
                     name="stateId"
                     value={formData.stateId || ''}
                     onChange={handleInputChange}
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
+                  >
+                    <option value="">Select State</option>
+                    {US_STATES.map((state) => (
+                      <option key={state.value} value={state.value}>{state.label}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

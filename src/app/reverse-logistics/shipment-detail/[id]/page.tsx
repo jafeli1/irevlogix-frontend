@@ -112,7 +112,7 @@ export default function ShipmentDetail() {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}`, {
+      const response = await fetch(`/api/shipments/${shipmentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ export default function ShipmentDetail() {
       setDocumentsLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}/documents`, {
+      const response = await fetch(`/api/shipments/${shipmentId}/documents`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -171,7 +171,7 @@ export default function ShipmentDetail() {
         formData.append('description', description);
       }
 
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}/documents`, {
+      const response = await fetch(`/api/shipments/${shipmentId}/documents`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -200,7 +200,7 @@ export default function ShipmentDetail() {
       setDocumentsLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}/documents/${documentId}`, {
+      const response = await fetch(`/api/shipments/${shipmentId}/documents/${documentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -223,7 +223,7 @@ export default function ShipmentDetail() {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}`, {
+      const response = await fetch(`/api/shipments/${shipmentId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -653,7 +653,7 @@ export default function ShipmentDetail() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               <div className="flex space-x-2">
                                 <a
-                                  href={`https://irevlogix-backend.onrender.com/api/shipments/${shipmentId}/documents/${doc.id}/download`}
+                                  href={`/api/shipments/${shipmentId}/documents/${doc.id}/download`}
                                   className="text-blue-600 hover:text-blue-900"
                                 >
                                   Download
