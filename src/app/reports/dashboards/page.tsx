@@ -53,6 +53,9 @@ interface FinancialSummary {
   totalProcessingCost: number;
   totalIncomingMaterialCost: number;
   netProfit: number;
+  reuseRevenue: number;
+  resaleRevenue: number;
+  materialSalesRevenue: number;
 }
 
 interface ComplianceSummary {
@@ -189,9 +192,9 @@ export default function ReportsDashboardsPage() {
       return daysSince > overdueThresholdDays || status === 'overdue';
     });
 
-    const revenueReuse = 0;
-    const revenueResale = 0;
-    const revenueMaterial = 0;
+    const revenueReuse = financialSummary?.reuseRevenue ?? 0;
+    const revenueResale = financialSummary?.resaleRevenue ?? 0;
+    const revenueMaterial = financialSummary?.materialSalesRevenue ?? 0;
 
     const costTransportation = 0;
     const costDestruction = 0;
