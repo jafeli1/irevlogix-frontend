@@ -134,43 +134,51 @@ export default function CustomReportsPage() {
     
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const dataSource = DATA_SOURCES.find(ds => ds.id === selectedDataSource);
       if (!dataSource) return;
 
       const queryParams = new URLSearchParams({
         page: pagination.page.toString(),
-        pageSize: pagination.pageSize.toString(),
-        export: 'csv'
+        pageSize: '10'
       });
 
       filters.forEach(filter => {
         if (filter.column && filter.value) {
-          queryParams.append(filter.column, filter.value.toString());
+          queryParams.append(filter.column, filter.value);
         }
       });
 
-      const response = await fetch(`/api/${dataSource.endpoint}/export?${queryParams}`);
+      const response = await fetch(`https://irevlogix-backend.onrender.com${dataSource.endpoint}?${queryParams}`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+
       if (response.ok) {
-        const csvData = await response.text();
-        const lines = csvData.split('\n');
-        const headers = lines[0].split(',');
-        const rows = lines.slice(1, 11).map(line => line.split(','));
+        const result = await response.json();
+        const data = Array.isArray(result) ? result : (result.data || result.items || []);
         
-        const data = rows.map(row => {
+        const filteredData = data.slice(0, 10).map((item: any) => {
           const obj: Record<string, string | number> = {};
-          headers.forEach((header, index) => {
-            if (selectedColumns.includes(header.replace(/"/g, ''))) {
-              obj[header.replace(/"/g, '')] = row[index]?.replace(/"/g, '') || '';
-            }
+          selectedColumns.forEach(columnKey => {
+            obj[columnKey] = item[columnKey] || '';
           });
           return obj;
         });
         
-        setPreviewData(data);
-        setPagination(prev => ({ ...prev, totalCount: lines.length - 1 }));
+        setPreviewData(filteredData);
+        
+        const totalCount = response.headers.get('X-Total-Count') 
+          ? parseInt(response.headers.get('X-Total-Count') || '0', 10)
+          : data.length;
+        
+        setPagination(prev => ({ ...prev, totalCount }));
       }
     } catch (error) {
       console.error('Error fetching preview data:', error);
+      setPreviewData([]);
+      setPagination(prev => ({ ...prev, totalCount: 0 }));
     } finally {
       setLoading(false);
     }
@@ -214,6 +222,14 @@ export default function CustomReportsPage() {
     setSelectedColumns(template.selectedColumns);
     setFilters(template.filters);
     setSorting(template.sorting);
+    
+    setPagination(prev => ({ ...prev, page: 1 }));
+    
+    setTimeout(() => {
+      if (template.dataSource && template.selectedColumns.length > 0) {
+        fetchPreviewData();
+      }
+    }, 100);
   };
 
   const deleteTemplate = (templateId: string) => {
@@ -593,7 +609,7 @@ export default function CustomReportsPage() {
                     {/* Pagination */}
                     <div className="mt-4 flex justify-between items-center">
                       <div className="text-sm text-gray-700 dark:text-gray-300">
-                        Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)} of {pagination.totalCount} results
+                        Showing {pagination.totalCount > 0 ? ((pagination.page - 1) * pagination.pageSize) + 1 : 0} to {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)} of {pagination.totalCount} results
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -604,7 +620,7 @@ export default function CustomReportsPage() {
                           Previous
                         </button>
                         <span className="px-3 py-1 text-gray-700 dark:text-gray-300">
-                          Page {pagination.page} of {Math.ceil(pagination.totalCount / pagination.pageSize)}
+                          Page {pagination.page} of {Math.max(1, Math.ceil(pagination.totalCount / pagination.pageSize))}
                         </span>
                         <button
                           onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
