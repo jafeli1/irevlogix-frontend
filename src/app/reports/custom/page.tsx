@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import AppLayout from '../../../components/AppLayout';
 import * as XLSX from 'xlsx';
 
@@ -19,7 +19,7 @@ interface ColumnDefinition {
 interface FilterConfig {
   column: string;
   type: 'text' | 'date' | 'number' | 'select';
-  value: any;
+  value: string;
   operator?: 'equals' | 'contains' | 'gte' | 'lte' | 'between';
 }
 
@@ -114,7 +114,7 @@ export default function CustomReportsPage() {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterConfig[]>([]);
   const [sorting, setSorting] = useState<SortConfig[]>([]);
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<Record<string, string | number>[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, totalCount: 0 });
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
@@ -129,11 +129,58 @@ export default function CustomReportsPage() {
     loadTemplates();
   }, []);
 
+  const fetchPreviewData = useCallback(async () => {
+    if (!selectedDataSource || selectedColumns.length === 0) return;
+    
+    setLoading(true);
+    try {
+      const dataSource = DATA_SOURCES.find(ds => ds.id === selectedDataSource);
+      if (!dataSource) return;
+
+      const queryParams = new URLSearchParams({
+        page: pagination.page.toString(),
+        pageSize: pagination.pageSize.toString(),
+        export: 'csv'
+      });
+
+      filters.forEach(filter => {
+        if (filter.column && filter.value) {
+          queryParams.append(filter.column, filter.value.toString());
+        }
+      });
+
+      const response = await fetch(`/api/${dataSource.endpoint}/export?${queryParams}`);
+      if (response.ok) {
+        const csvData = await response.text();
+        const lines = csvData.split('\n');
+        const headers = lines[0].split(',');
+        const rows = lines.slice(1, 11).map(line => line.split(','));
+        
+        const data = rows.map(row => {
+          const obj: Record<string, string | number> = {};
+          headers.forEach((header, index) => {
+            if (selectedColumns.includes(header.replace(/"/g, ''))) {
+              obj[header.replace(/"/g, '')] = row[index]?.replace(/"/g, '') || '';
+            }
+          });
+          return obj;
+        });
+        
+        setPreviewData(data);
+        setPagination(prev => ({ ...prev, totalCount: lines.length - 1 }));
+      }
+    } catch (error) {
+      console.error('Error fetching preview data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedDataSource, selectedColumns, filters, pagination.page, pagination.pageSize]);
+
   useEffect(() => {
     if (selectedDataSource && selectedColumns.length > 0) {
       fetchPreviewData();
     }
-  }, [selectedDataSource, selectedColumns, filters, sorting, pagination.page]);
+  }, [selectedDataSource, selectedColumns, filters, sorting, pagination.page, fetchPreviewData]);
 
   const loadTemplates = () => {
     const saved = localStorage.getItem('reportTemplates');
@@ -175,46 +222,6 @@ export default function CustomReportsPage() {
     localStorage.setItem('reportTemplates', JSON.stringify(updatedTemplates));
   };
 
-  const fetchPreviewData = async () => {
-    if (!selectedDataSource) return;
-
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const dataSource = DATA_SOURCES.find(ds => ds.id === selectedDataSource);
-      if (!dataSource) return;
-
-      const params = new URLSearchParams();
-      params.set('page', pagination.page.toString());
-      params.set('pageSize', pagination.pageSize.toString());
-
-      filters.forEach(filter => {
-        if (filter.value) {
-          params.set(filter.column, filter.value.toString());
-        }
-      });
-
-      const response = await fetch(`https://irevlogix-backend.onrender.com${dataSource.endpoint}?${params.toString()}`, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : ''
-        }
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        const data = result.data || result.items || result;
-        setPreviewData(Array.isArray(data) ? data : []);
-        setPagination(prev => ({
-          ...prev,
-          totalCount: result.totalCount || data.length
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching preview data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const exportToExcel = async () => {
     if (!selectedDataSource || selectedColumns.length === 0) return;
@@ -247,7 +254,7 @@ export default function CustomReportsPage() {
         const rows = lines.slice(1).map(line => line.split(','));
 
         const filteredData = rows.map(row => {
-          const obj: any = {};
+          const obj: Record<string, string | number> = {};
           headers.forEach((header, index) => {
             if (selectedColumns.includes(header.replace(/"/g, ''))) {
               obj[header.replace(/"/g, '')] = row[index]?.replace(/"/g, '') || '';
