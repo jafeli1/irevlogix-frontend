@@ -159,10 +159,11 @@ export default function CustomReportsPage() {
         const result = await response.json();
         const data = Array.isArray(result) ? result : (result.data || result.items || []);
         
-        const filteredData = data.slice(0, 10).map((item: any) => {
+        const filteredData = data.slice(0, 10).map((item: Record<string, unknown>) => {
           const obj: Record<string, string | number> = {};
           selectedColumns.forEach(columnKey => {
-            obj[columnKey] = item[columnKey] || '';
+            const value = item[columnKey];
+            obj[columnKey] = typeof value === 'string' || typeof value === 'number' ? value : '';
           });
           return obj;
         });
