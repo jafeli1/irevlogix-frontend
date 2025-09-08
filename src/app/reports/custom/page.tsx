@@ -38,6 +38,24 @@ interface ReportTemplate {
   createdDate: Date;
 }
 
+interface ScheduledReport {
+  id: number;
+  name: string;
+  dataSource: string;
+  selectedColumns: string[];
+  filters?: FilterConfig[];
+  sorting?: SortConfig[];
+  frequency: 'daily' | 'weekly' | 'monthly';
+  recipients: string[];
+  deliveryTime: string;
+  dayOfWeek?: number;
+  dayOfMonth?: number;
+  isActive: boolean;
+  lastRunDate?: Date;
+  nextRunDate?: Date;
+  dateCreated: Date;
+}
+
 const DATA_SOURCES: DataSource[] = [
   { id: 'assets', name: 'Assets', endpoint: '/api/Assets' },
   { id: 'shipments', name: 'Shipments', endpoint: '/api/Shipments' },
@@ -120,6 +138,16 @@ export default function CustomReportsPage() {
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [templateName, setTemplateName] = useState('');
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [scheduledReports, setScheduledReports] = useState<ScheduledReport[]>([]);
+  const [showScheduling, setShowScheduling] = useState(false);
+  const [schedulingForm, setSchedulingForm] = useState({
+    name: '',
+    frequency: 'daily' as 'daily' | 'weekly' | 'monthly',
+    deliveryTime: '09:00',
+    dayOfWeek: 1,
+    dayOfMonth: 1,
+    recipients: ['']
+  });
 
   const availableColumns = useMemo(() => {
     return selectedDataSource ? COLUMN_DEFINITIONS[selectedDataSource] || [] : [];
@@ -127,6 +155,7 @@ export default function CustomReportsPage() {
 
   useEffect(() => {
     loadTemplates();
+    loadScheduledReports();
   }, []);
 
   const fetchPreviewData = useCallback(async () => {
@@ -237,6 +266,142 @@ export default function CustomReportsPage() {
     const updatedTemplates = templates.filter(t => t.id !== templateId);
     setTemplates(updatedTemplates);
     localStorage.setItem('reportTemplates', JSON.stringify(updatedTemplates));
+  };
+
+  const loadScheduledReports = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/ScheduledReports', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const reports = await response.json();
+        setScheduledReports(reports);
+      }
+    } catch (error) {
+      console.error('Error loading scheduled reports:', error);
+    }
+  }, []);
+
+  const saveScheduledReport = async () => {
+    if (!schedulingForm.name || !selectedDataSource || selectedColumns.length === 0) {
+      alert('Please fill in all required fields and select columns');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const [hours, minutes] = schedulingForm.deliveryTime.split(':');
+      const deliveryTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+
+      const payload = {
+        name: schedulingForm.name,
+        dataSource: selectedDataSource,
+        selectedColumns: selectedColumns,
+        filters: filters,
+        sorting: sorting,
+        frequency: schedulingForm.frequency,
+        recipients: schedulingForm.recipients.filter(r => r.trim() !== ''),
+        deliveryTime: deliveryTime,
+        dayOfWeek: schedulingForm.frequency === 'weekly' ? schedulingForm.dayOfWeek : null,
+        dayOfMonth: schedulingForm.frequency === 'monthly' ? schedulingForm.dayOfMonth : null
+      };
+
+      const response = await fetch('https://irevlogix-backend.onrender.com/api/ScheduledReports', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert('Scheduled report saved successfully!');
+        setSchedulingForm({
+          name: '',
+          frequency: 'daily',
+          deliveryTime: '09:00',
+          dayOfWeek: 1,
+          dayOfMonth: 1,
+          recipients: ['']
+        });
+        setShowScheduling(false);
+        loadScheduledReports();
+      } else {
+        alert('Failed to save scheduled report');
+      }
+    } catch (error) {
+      console.error('Error saving scheduled report:', error);
+      alert('Error saving scheduled report');
+    }
+  };
+
+  const toggleScheduledReport = async (reportId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ScheduledReports/${reportId}/toggle`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        loadScheduledReports();
+      }
+    } catch (error) {
+      console.error('Error toggling scheduled report:', error);
+    }
+  };
+
+  const deleteScheduledReport = async (reportId: number) => {
+    if (!confirm('Are you sure you want to delete this scheduled report?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ScheduledReports/${reportId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        loadScheduledReports();
+      }
+    } catch (error) {
+      console.error('Error deleting scheduled report:', error);
+    }
+  };
+
+  const addRecipient = () => {
+    setSchedulingForm(prev => ({
+      ...prev,
+      recipients: [...prev.recipients, '']
+    }));
+  };
+
+  const updateRecipient = (index: number, value: string) => {
+    setSchedulingForm(prev => ({
+      ...prev,
+      recipients: prev.recipients.map((r, i) => i === index ? value : r)
+    }));
+  };
+
+  const removeRecipient = (index: number) => {
+    setSchedulingForm(prev => ({
+      ...prev,
+      recipients: prev.recipients.filter((_, i) => i !== index)
+    }));
   };
 
 
@@ -642,6 +807,191 @@ export default function CustomReportsPage() {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Scheduling Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Report Scheduling</h3>
+              <button
+                onClick={() => setShowScheduling(!showScheduling)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                {showScheduling ? 'Cancel' : 'Schedule Report'}
+              </button>
+            </div>
+
+            {showScheduling && (
+              <div className="space-y-4 border-t pt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Schedule Name
+                  </label>
+                  <input
+                    type="text"
+                    value={schedulingForm.name}
+                    onChange={(e) => setSchedulingForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter schedule name"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Frequency
+                    </label>
+                    <select
+                      value={schedulingForm.frequency}
+                      onChange={(e) => setSchedulingForm(prev => ({ ...prev, frequency: e.target.value as 'daily' | 'weekly' | 'monthly' }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Delivery Time
+                    </label>
+                    <input
+                      type="time"
+                      value={schedulingForm.deliveryTime}
+                      onChange={(e) => setSchedulingForm(prev => ({ ...prev, deliveryTime: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {schedulingForm.frequency === 'weekly' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Day of Week
+                      </label>
+                      <select
+                        value={schedulingForm.dayOfWeek}
+                        onChange={(e) => setSchedulingForm(prev => ({ ...prev, dayOfWeek: parseInt(e.target.value) }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value={1}>Monday</option>
+                        <option value={2}>Tuesday</option>
+                        <option value={3}>Wednesday</option>
+                        <option value={4}>Thursday</option>
+                        <option value={5}>Friday</option>
+                        <option value={6}>Saturday</option>
+                        <option value={0}>Sunday</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {schedulingForm.frequency === 'monthly' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Day of Month
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={schedulingForm.dayOfMonth}
+                        onChange={(e) => setSchedulingForm(prev => ({ ...prev, dayOfMonth: parseInt(e.target.value) }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Recipients
+                  </label>
+                  {schedulingForm.recipients.map((recipient, index) => (
+                    <div key={index} className="flex items-center space-x-2 mb-2">
+                      <input
+                        type="email"
+                        value={recipient}
+                        onChange={(e) => updateRecipient(index, e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter email address"
+                      />
+                      {schedulingForm.recipients.length > 1 && (
+                        <button
+                          onClick={() => removeRecipient(index)}
+                          className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={addRecipient}
+                    className="px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                  >
+                    Add Recipient
+                  </button>
+                </div>
+
+                <div className="flex space-x-2">
+                  <button
+                    onClick={saveScheduledReport}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                  >
+                    Save Schedule
+                  </button>
+                  <button
+                    onClick={() => setShowScheduling(false)}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Scheduled Reports List */}
+            {scheduledReports.length > 0 && (
+              <div className="mt-6 border-t pt-4">
+                <h4 className="text-md font-medium text-gray-900 mb-3">Scheduled Reports</h4>
+                <div className="space-y-2">
+                  {scheduledReports.map((report) => (
+                    <div key={report.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{report.name}</span>
+                          <span className={`px-2 py-1 text-xs rounded-full ${report.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {report.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {report.dataSource} • {report.frequency} at {report.deliveryTime} • {report.recipients.length} recipient(s)
+                        </div>
+                        {report.nextRunDate && (
+                          <div className="text-xs text-gray-500">
+                            Next run: {new Date(report.nextRunDate).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => toggleScheduledReport(report.id)}
+                          className={`px-3 py-1 text-sm rounded-md ${report.isActive ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white`}
+                        >
+                          {report.isActive ? 'Pause' : 'Activate'}
+                        </button>
+                        <button
+                          onClick={() => deleteScheduledReport(report.id)}
+                          className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
