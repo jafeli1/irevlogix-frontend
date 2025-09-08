@@ -157,11 +157,10 @@ export default function KnowledgeBasePage() {
             </div>
             <div className="px-6 py-6">
               <div className="prose max-w-none">
-                {selectedArticle.content.split('\n').map((paragraph, index) => (
-                  <p key={index} className="mb-4 text-gray-700 leading-relaxed">
-                    {paragraph}
-                  </p>
-                ))}
+                <div 
+                  className="text-gray-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: selectedArticle.content }}
+                />
               </div>
               {selectedArticle.tags && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
