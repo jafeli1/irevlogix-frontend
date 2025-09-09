@@ -4,12 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AppLayout from '../../components/AppLayout';
 import { UserPermissions, fetchUserPermissions, hasPermission } from '../../utils/rbac';
+import InteractiveDashboard from '../../components/InteractiveDashboard';
 
-interface DashboardMetrics {
-  activeShipments: number;
-  processingLots: number;
-  monthlyRevenue: number;
-}
 
 interface UserProfile {
   id: number;
@@ -57,11 +53,6 @@ const quickActions: QuickAction[] = [
 
 export default function Dashboard() {
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({ roles: [], permissions: [] });
-  const metrics: DashboardMetrics = {
-    activeShipments: 12,
-    processingLots: 8,
-    monthlyRevenue: 24500
-  };
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -110,6 +101,8 @@ export default function Dashboard() {
         </p>
       </div>
 
+      <InteractiveDashboard />
+
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-8">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
@@ -136,74 +129,6 @@ export default function Dashboard() {
                 {userPermissions.permissions.length} permissions across {
                   [...new Set(userPermissions.permissions.map(p => p.module))].length
                 } modules
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-lg">📦</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                    Active Shipments
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                    {metrics.activeShipments}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-lg">⚙️</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                    Processing Lots
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                    {metrics.processingLots}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-lg">📊</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                    Monthly Revenue
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                    ${metrics.monthlyRevenue.toLocaleString()}
-                  </dd>
-                </dl>
               </div>
             </div>
           </div>
