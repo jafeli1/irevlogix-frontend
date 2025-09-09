@@ -24,7 +24,6 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-
     try {
       const response = await fetch('https://irevlogix-backend.onrender.com/api/auth/login', {
         method: 'POST',

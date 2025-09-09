@@ -48,7 +48,7 @@ const quickActions: QuickAction[] = [
   {
     title: 'Generate Report',
     description: 'Create compliance or analytics report',
-    href: '/reports',
+    href: '/reports/standard',
     color: 'bg-purple-600 hover:bg-purple-700',
     module: 'Reporting',
     action: 'Read'
