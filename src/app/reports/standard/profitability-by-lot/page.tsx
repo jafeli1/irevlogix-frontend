@@ -55,6 +55,7 @@ export default function ProfitabilityByLotPage() {
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({ roles: [], permissions: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [filteredData, setFilteredData] = useState<ProcessingLot[]>([]);
+  const [processingLots, setProcessingLots] = useState<ProcessingLot[]>([]);
   const [filters, setFilters] = useState<ReportFilters>({
     startDate: '',
     endDate: '',
@@ -83,7 +84,25 @@ export default function ProfitabilityByLotPage() {
       }
     };
 
+    const fetchProcessingLots = async () => {
+      try {
+        const response = await fetch('https://irevlogix-backend.onrender.com/api/ProcessingLots?pageSize=1000', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setProcessingLots(data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch processing lots:', error);
+      }
+    };
+
     loadPermissions();
+    fetchProcessingLots();
   }, [router]);
 
   const fetchReportData = async () => {
@@ -274,10 +293,20 @@ export default function ProfitabilityByLotPage() {
     <AppLayout>
       <div className="space-y-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profitability by Lot Report</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Summarizes total revenue, processing costs, and net profit for each processing lot
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profitability by Lot Report</h1>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Summarizes total revenue, processing costs, and net profit for each processing lot
+              </p>
+            </div>
+            <button
+              onClick={() => router.push('/reports/standard')}
+              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Return to Standard Reports
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -322,15 +351,20 @@ export default function ProfitabilityByLotPage() {
               <label htmlFor="lotNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Lot Number
               </label>
-              <input
-                type="text"
+              <select
                 id="lotNumber"
                 name="lotNumber"
-                placeholder="Search by lot number..."
                 value={filters.lotNumber}
                 onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              />
+              >
+                <option value="">All Lots</option>
+                {processingLots.map((lot) => (
+                  <option key={lot.id} value={lot.lotNumber}>
+                    {lot.lotNumber}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
