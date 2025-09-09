@@ -4,11 +4,60 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AppLayout from '../../../../components/AppLayout';
 import { UserPermissions, fetchUserPermissions, hasPermission } from '../../../../utils/rbac';
+import * as XLSX from 'xlsx';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+import { Bar, Pie } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
+
+interface WasteDiversionItem {
+  id: number;
+  materialType: string;
+  processedWeight: number;
+  weightUnit: string;
+  status: string;
+  dateCreated: string;
+  normalizedWeight: number;
+}
+
+interface ReportFilters {
+  startDate: string;
+  endDate: string;
+  materialType: string;
+  weightUnit: string;
+}
 
 export default function WasteDiversionLandfillAvoidancePage() {
   const router = useRouter();
   const [userPermissions, setUserPermissions] = useState<UserPermissions>({ roles: [], permissions: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const [filteredData, setFilteredData] = useState<WasteDiversionItem[]>([]);
+  const [filters, setFilters] = useState<ReportFilters>({
+    startDate: '',
+    endDate: '',
+    materialType: '',
+    weightUnit: ''
+  });
+  const [showPreview, setShowPreview] = useState(false);
+  const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -30,6 +79,178 @@ export default function WasteDiversionLandfillAvoidancePage() {
 
     loadPermissions();
   }, [router]);
+
+  const normalizeWeight = (weight: number, unit: string): number => {
+    const conversionFactors: Record<string, number> = {
+      'kg': 1,
+      'lbs': 0.453592,
+      'tons': 1000,
+      'g': 0.001
+    };
+    return weight * (conversionFactors[unit.toLowerCase()] || 1);
+  };
+
+  const fetchReportData = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const queryParams = new URLSearchParams();
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+      if (filters.materialType) queryParams.append('materialType', filters.materialType);
+      if (filters.weightUnit) queryParams.append('weightUnit', filters.weightUnit);
+
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ProcessedMaterials?${queryParams.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const processedData = data.map((item: WasteDiversionItem) => ({
+          ...item,
+          materialType: item.materialType || 'Unknown',
+          weightUnit: item.weightUnit || 'kg',
+          normalizedWeight: normalizeWeight(item.processedWeight || 0, item.weightUnit || 'kg')
+        }));
+        setFilteredData(processedData);
+        setShowPreview(true);
+      } else {
+        setError('Failed to fetch waste diversion data');
+      }
+    } catch (error) {
+      console.error('Error fetching report data:', error);
+      setError('An error occurred while fetching the report data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFilters({ ...filters, [e.target.name]: e.target.value });
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      startDate: '',
+      endDate: '',
+      materialType: '',
+      weightUnit: ''
+    });
+    setShowPreview(false);
+    setFilteredData([]);
+  };
+
+  const exportToExcel = () => {
+    const exportData = filteredData.map(item => ({
+      'Material Type': item.materialType,
+      'Processed Weight': item.processedWeight,
+      'Weight Unit': item.weightUnit,
+      'Normalized Weight (kg)': item.normalizedWeight.toFixed(2),
+      'Status': item.status,
+      'Date Created': new Date(item.dateCreated).toLocaleDateString()
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Waste Diversion Report');
+    XLSX.writeFile(wb, `waste-diversion-landfill-avoidance-${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportToCSV = () => {
+    const csvContent = [
+      ['Material Type', 'Processed Weight', 'Weight Unit', 'Normalized Weight (kg)', 'Status', 'Date Created'],
+      ...filteredData.map(item => [
+        item.materialType,
+        item.processedWeight,
+        item.weightUnit,
+        item.normalizedWeight.toFixed(2),
+        item.status,
+        new Date(item.dateCreated).toLocaleDateString()
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `waste-diversion-landfill-avoidance-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const getChartData = () => {
+    if (!filteredData.length) return null;
+
+    const materialTypeData = filteredData.reduce((acc: Record<string, number>, item) => {
+      acc[item.materialType] = (acc[item.materialType] || 0) + item.normalizedWeight;
+      return acc;
+    }, {});
+
+    const materialEntries = Object.entries(materialTypeData).sort(([,a], [,b]) => b - a);
+
+    if (chartType === 'bar') {
+      return {
+        labels: materialEntries.map(([type]) => type),
+        datasets: [
+          {
+            label: 'Weight Diverted (kg)',
+            data: materialEntries.map(([, weight]) => weight),
+            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+            borderColor: 'rgba(34, 197, 94, 1)',
+            borderWidth: 1,
+          }
+        ],
+      };
+    } else {
+      return {
+        labels: materialEntries.map(([type]) => type),
+        datasets: [
+          {
+            data: materialEntries.map(([, weight]) => weight),
+            backgroundColor: [
+              '#22C55E', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6',
+              '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6B7280'
+            ],
+            borderWidth: 2,
+          },
+        ],
+      };
+    }
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Waste Diversion by Material Type',
+      },
+    },
+    scales: chartType === 'bar' ? {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Weight (kg)'
+        },
+        ticks: {
+          callback: function(value: number | string) {
+            return value.toLocaleString() + ' kg';
+          }
+        }
+      }
+    } : undefined,
+  };
 
   if (isLoading) {
     return (
@@ -54,25 +275,23 @@ export default function WasteDiversionLandfillAvoidancePage() {
     );
   }
 
+  const chartData = getChartData();
+  const totalWeight = filteredData.reduce((sum, item) => sum + item.normalizedWeight, 0);
+  const totalItems = filteredData.length;
+  const uniqueMaterialTypes = new Set(filteredData.map(item => item.materialType)).size;
+  const avgWeightPerItem = totalItems > 0 ? totalWeight / totalItems : 0;
+
   return (
     <AppLayout>
       <div className="space-y-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Waste Diversion & Landfill Avoidance Report</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Quantifies the total weight of materials diverted from landfills, broken down by material type (e.g., plastics, metals, paper)
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🚧</div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Report Under Development
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              This report is currently being developed and will be available soon.
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Waste Diversion & Landfill Avoidance Report</h1>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Quantifies the total weight of materials diverted from landfills, broken down by material type (e.g., plastics, metals, paper)
+              </p>
+            </div>
             <button
               onClick={() => router.push('/reports/standard')}
               className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
@@ -81,6 +300,173 @@ export default function WasteDiversionLandfillAvoidancePage() {
             </button>
           </div>
         </div>
+
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Report Parameters</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div>
+              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Start Date
+              </label>
+              <input
+                type="date"
+                id="startDate"
+                name="startDate"
+                value={filters.startDate}
+                onChange={handleFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                End Date
+              </label>
+              <input
+                type="date"
+                id="endDate"
+                name="endDate"
+                value={filters.endDate}
+                onChange={handleFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="materialType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Material Type
+              </label>
+              <input
+                type="text"
+                id="materialType"
+                name="materialType"
+                placeholder="Enter material type..."
+                value={filters.materialType}
+                onChange={handleFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="weightUnit" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Weight Unit
+              </label>
+              <select
+                id="weightUnit"
+                name="weightUnit"
+                value={filters.weightUnit}
+                onChange={handleFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">All Units</option>
+                <option value="kg">Kilograms</option>
+                <option value="lbs">Pounds</option>
+                <option value="tons">Tons</option>
+                <option value="g">Grams</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-4 mb-6">
+            <button
+              onClick={fetchReportData}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Generate Report
+            </button>
+            <button
+              onClick={clearFilters}
+              className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Clear Filters
+            </button>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
+        </div>
+
+        {showPreview && (
+          <>
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Waste Diversion Summary</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={exportToExcel}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    Export Excel
+                  </button>
+                  <button
+                    onClick={exportToCSV}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-green-600 dark:text-green-400">Total Weight Diverted</h3>
+                  <p className="text-2xl font-bold text-green-900 dark:text-green-100">{totalWeight.toLocaleString()} kg</p>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Items</h3>
+                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{totalItems}</p>
+                </div>
+                <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-purple-600 dark:text-purple-400">Material Types</h3>
+                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{uniqueMaterialTypes}</p>
+                </div>
+                <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-orange-600 dark:text-orange-400">Avg Weight/Item</h3>
+                  <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{avgWeightPerItem.toFixed(1)} kg</p>
+                </div>
+              </div>
+            </div>
+
+            {chartData && (
+              <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Waste Diversion Visualization</h2>
+                  <select
+                    value={chartType}
+                    onChange={(e) => setChartType(e.target.value as 'bar' | 'pie')}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="bar">Bar Chart</option>
+                    <option value="pie">Pie Chart</option>
+                  </select>
+                </div>
+                <div className="h-96">
+                  {chartType === 'bar' ? (
+                    <Bar data={chartData} options={chartOptions} />
+                  ) : (
+                    <Pie data={chartData} options={chartOptions} />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {filteredData.length === 0 && (
+              <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">📊</div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Data Found</h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    No waste diversion data found for the selected filters. Try adjusting your search criteria.
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </AppLayout>
   );
