@@ -84,6 +84,7 @@ const navigationItems: NavigationItem[] = [
     subItems: [
       { name: 'Dashboards', href: '/reports/dashboards', module: 'Reporting', action: 'Read' },
       { name: 'Custom Reports', href: '/reports/custom', module: 'Reporting', action: 'Create' },
+      { name: 'Standard Reports', href: '/reports/standard', module: 'Reporting', action: 'Create' },
     ]
   },
   {
