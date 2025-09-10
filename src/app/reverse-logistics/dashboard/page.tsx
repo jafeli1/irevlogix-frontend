@@ -246,6 +246,12 @@ export default function ReverseLogisticsDashboard() {
                 <p className="mt-1 text-sm text-gray-600">Manage and track all shipments</p>
               </div>
               <div className="flex space-x-3">
+                <Link
+                  href="/reverse-logistics/shipment-intake"
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Back to Shipment Intake
+                </Link>
                 <button
                   onClick={exportToCSV}
                   className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
