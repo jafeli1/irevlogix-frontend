@@ -42,7 +42,7 @@ export default function ContaminationAnalysisPage() {
       <AppLayout>
         <div className="text-center py-8">
           <h2 className="text-2xl font-bold text-gray-900">Access Denied</h2>
-          <p className="mt-2 text-gray-600">You don't have permission to view this page.</p>
+          <p className="mt-2 text-gray-600">You don&apos;t have permission to view this page.</p>
         </div>
       </AppLayout>
     );
