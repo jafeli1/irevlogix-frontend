@@ -898,13 +898,6 @@ export default function ShipmentIntake() {
 
               {activeTab === 'manual' && (
                 <div>
-                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-blue-700">
-                      <span className="font-medium">AI Material Classification Assistant:</span> 
-                      When you enter a description, AI will suggest relevant Material Types or Asset Categories to improve data accuracy. 
-                      <em>(Feature coming soon)</em>
-                    </p>
-                  </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div>

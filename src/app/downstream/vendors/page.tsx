@@ -508,7 +508,6 @@ export default function VendorsPage() {
                   </select>
                 </div>
               </div>
-              <div className="text-sm text-gray-500">AI Suggestion: Vendor Performance Scorecard [Placeholder]</div>
               <div className="flex items-center gap-3 justify-end">
                 <button type="button" onClick={() => setShowCreate(false)} className="px-3 py-2 border rounded">Cancel</button>
                 <button disabled={createSubmitting} type="submit" className="px-3 py-2 bg-blue-600 text-white rounded">{createSubmitting ? "Saving..." : "Save"}</button>

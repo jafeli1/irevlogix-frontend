@@ -1087,24 +1087,6 @@ export default function LotDetail() {
                       </button>
                     </div>
                     
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                      <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 text-sm font-medium">AI</span>
-                          </div>
-                        </div>
-                        <div className="ml-3">
-                          <h5 className="text-sm font-medium text-blue-900">AI Quality Grade Prediction</h5>
-                          <p className="text-sm text-blue-700 mt-1">
-                            Based on incoming material properties and processing parameters, our AI will predict the likely output quality grade to aid in pricing and vendor matching.
-                          </p>
-                          <p className="text-xs text-blue-600 mt-2 italic">
-                            [AI Suggestion Placeholder - OpenAI GPT-4o-mini integration coming soon]
-                          </p>
-                        </div>
-                      </div>
-                    </div>
 
                     {lot.processedMaterials?.length === 0 ? (
                       <p className="text-gray-500 text-center py-8">No outgoing materials processed yet</p>

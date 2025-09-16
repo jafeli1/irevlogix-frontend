@@ -436,12 +436,6 @@ export default function ReverseRequestDetailPage() {
         <form onSubmit={handleSubmit} className="p-6">
           {activeTab === 'general' && (
             <div className="space-y-6">
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-sm text-blue-700">
-                  <span className="font-medium">AI Suggestion — Automated Request Processing:</span>
-                  AI will analyze request details and suggest optimal pickup scheduling and resource allocation. (Placeholder — feature coming soon)
-                </p>
-              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex items-center">

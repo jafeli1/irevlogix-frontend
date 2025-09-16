@@ -1433,9 +1433,6 @@ export default function ProcessedMaterialDetailPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-white border rounded p-4">
-                <div className="text-sm text-gray-400">[AI Suggestion Placeholder - insights coming soon]</div>
-              </div>
             </div>
           )}
         </>

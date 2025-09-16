@@ -350,10 +350,6 @@ export default function ReportsDashboardsPage() {
                     <div className="text-2xl font-semibold">{(esgSummary?.energySavedKwh ?? totals.energySaved).toLocaleString(undefined, { maximumFractionDigits: 0 })} kWh</div>
                     <div className="text-xs text-gray-400 mt-1">Assumption: {(esgSummary?.factors?.energyKwhPerLb ?? 0.8)} kWh per lb processed</div>
                   </div>
-                  <div className="bg-white border rounded p-4">
-                    <div className="text-sm text-gray-500">ESG Impact Forecaster</div>
-                    <div className="text-gray-400">AI placeholder – to be implemented with gpt-4o-mini</div>
-                  </div>
                 </div>
               </div>
             )}
@@ -395,10 +391,6 @@ export default function ReportsDashboardsPage() {
                   </div>
                 </div>
 
-                <div className="bg-white border rounded p-4">
-                  <div className="text-sm text-gray-500 mb-1">AI Suggestions</div>
-                  <div className="text-gray-400">Placeholder for profit optimization suggestions</div>
-                </div>
               </div>
             )}
 
