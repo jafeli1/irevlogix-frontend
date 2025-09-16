@@ -36,7 +36,7 @@ const navigationItems: NavigationItem[] = [
     name: 'AI - Operations',
     module: 'ProjectManagement',
     action: 'Read',
-    icon: '🤖',
+    icon: '✨',
     subItems: [
       { name: 'Returns Forecast', href: '/ai-operations/returns-forecast', module: 'ProjectManagement', action: 'Read' },
       { name: 'Contamination Analysis', href: '/ai-operations/contamination-analysis', module: 'ProjectManagement', action: 'Read' },
