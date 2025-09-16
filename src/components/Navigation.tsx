@@ -33,6 +33,22 @@ const navigationItems: NavigationItem[] = [
     ]
   },
   {
+    name: 'AI - Operations',
+    module: 'ProjectManagement',
+    action: 'Read',
+    icon: '🤖',
+    subItems: [
+      { name: 'Returns Forecast', href: '/ai-operations/returns-forecast', module: 'ProjectManagement', action: 'Read' },
+      { name: 'Contamination Analysis', href: '/ai-operations/contamination-analysis', module: 'ProjectManagement', action: 'Read' },
+      { name: 'Optimal Disposition', href: '/ai-operations/optimal-disposition', module: 'ProjectManagement', action: 'Read' },
+      { name: 'Material Classification', href: '/ai-operations/material-classification', module: 'ProjectManagement', action: 'Read' },
+      { name: 'Quality Grade', href: '/ai-operations/quality-grade', module: 'ProjectManagement', action: 'Read' },
+      { name: 'Vendor Performance', href: '/ai-operations/vendor-performance', module: 'ProjectManagement', action: 'Read' },
+      { name: 'Asset Categorization', href: '/ai-operations/asset-categorization', module: 'ProjectManagement', action: 'Read' },
+      { name: 'ESG Impact Forecaster', href: '/ai-operations/esg-impact-forecaster', module: 'ProjectManagement', action: 'Read' },
+    ]
+  },
+  {
     name: 'Project Management',
     module: 'ProjectManagement',
     action: 'Read',
