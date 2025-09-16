@@ -789,12 +789,6 @@ export default function AssetIntakePage() {
 
 {activeTab === 'basic' && (
             <>
-              <div className="mb-4 mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-sm text-blue-700">
-                  <span className="font-medium">AI Suggestion — Automated Asset Categorization &amp; Value Estimation:</span>
-                  Using uploaded images or descriptions, AI will suggest Asset Category, Manufacturer, Model, and an initial value estimate. (Placeholder — feature coming soon)
-                </p>
-              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="assetID" className="block text-sm font-medium text-gray-700">

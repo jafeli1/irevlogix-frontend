@@ -398,13 +398,6 @@ export default function ProcessedMaterialsPage() {
             </div>
             <form onSubmit={onSubmitCreate} className="flex flex-col flex-1 min-h-0">
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-700">
-                    <span className="font-medium">AI Suggestion — Material Quality & Pricing Optimization:</span>
-                    AI will suggest optimal quality grades, pricing estimates, and vendor recommendations based on material type and processing history.
-                    <em> (Feature coming soon)</em>
-                  </p>
-                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm mb-1">Material Type <span className="text-red-500">*</span></label>
