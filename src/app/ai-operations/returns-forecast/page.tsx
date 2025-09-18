@@ -84,7 +84,7 @@ export default function ReturnsForecastPage() {
       params.append('aggregationPeriod', filters.aggregationPeriod);
       params.append('weeksAhead', filters.weeksAhead.toString());
 
-      const response = await fetch(`/api/AIOperations/returns-forecast?${params}`, {
+      const response = await fetch(`/api/ai-operations/returns-forecast?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
