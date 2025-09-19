@@ -51,7 +51,8 @@ export default function ReturnsForecastPage() {
   const [forecastData, setForecastData] = useState<ReturnsForecastResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [materialTypes, setMaterialTypes] = useState<Array<{ id: number; name: string }>>([]);
-  const [originatorClients, setOriginatorClients] = useState<Array<{ id: number; originatorClient: string }>>([]);
+  type OriginatorOption = { id: number; originatorClient: string };
+  const [originatorClients, setOriginatorClients] = useState<OriginatorOption[]>([]);
   const [filters, setFilters] = useState({
     materialTypeId: '',
     originatorClientId: '',
@@ -85,10 +86,12 @@ export default function ReturnsForecastPage() {
           setMaterialTypes(mt);
         }
         if (ocRes.ok) {
-          const oc = await ocRes.json();
-          const mapped = Array.isArray(oc)
-            ? oc.map((o: any) => ({ id: o.id ?? o.Id, originatorClient: o.originatorClient ?? o.OriginatorClient ?? o.name ?? o.label }))
-            : [];
+          const oc = await ocRes.json() as unknown;
+          const arr = Array.isArray(oc) ? (oc as Array<Record<string, unknown>>) : [];
+          const mapped: OriginatorOption[] = arr.map(o => ({
+            id: Number((o.id ?? o.Id) as number),
+            originatorClient: String((o.originatorClient ?? o.OriginatorClient ?? o.name ?? o.label) as string),
+          }));
           setOriginatorClients(mapped);
         }
       } catch (e) {
@@ -106,14 +109,14 @@ export default function ReturnsForecastPage() {
     try {
       const params = new URLSearchParams();
       if (filters.materialTypeId) {
-        const mt = materialTypes.find(m => String(m.id) === String(filters.materialTypeId));
+        const mt = materialTypes.find((m: { id: number; name: string }) => String(m.id) === String(filters.materialTypeId));
         if (mt?.name) params.append('materialType', mt.name);
       }
       if (filters.originatorClientId) params.append('originatorClientId', String(filters.originatorClientId));
       params.append('aggregationPeriod', filters.aggregationPeriod);
       params.append('weeksAhead', filters.weeksAhead.toString());
 
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/AIOperations/returns-forecast?${params}`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ai-operations/returns-forecast?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
