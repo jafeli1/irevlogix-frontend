@@ -50,8 +50,10 @@ export default function ReturnsForecastPage() {
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [forecastData, setForecastData] = useState<ReturnsForecastResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [materialTypes, setMaterialTypes] = useState<Array<{ id: number; name: string }>>([]);
+  const [originatorClients, setOriginatorClients] = useState<Array<{ id: number; originatorClient: string }>>([]);
   const [filters, setFilters] = useState({
-    materialType: '',
+    materialTypeId: '',
     originatorClientId: '',
     aggregationPeriod: 'weekly',
     weeksAhead: 4
@@ -68,6 +70,27 @@ export default function ReturnsForecastPage() {
       
       const userPermissions = await fetchUserPermissions(token);
       setPermissions(userPermissions);
+
+      try {
+        const [mtRes, ocRes] = await Promise.all([
+          fetch('https://irevlogix-backend.onrender.com/api/materialtypes?pageSize=1000', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch('https://irevlogix-backend.onrender.com/api/OriginatorClients?pageSize=1000', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+        if (mtRes.ok) {
+          const mt = await mtRes.json();
+          setMaterialTypes(mt);
+        }
+        if (ocRes.ok) {
+          const oc = await ocRes.json();
+          setOriginatorClients(oc);
+        }
+      } catch (e) {
+        console.error('Error loading filter options', e);
+      }
       
       await loadForecastData(token);
       setLoading(false);
@@ -79,12 +102,15 @@ export default function ReturnsForecastPage() {
   const loadForecastData = async (token: string) => {
     try {
       const params = new URLSearchParams();
-      if (filters.materialType) params.append('materialType', filters.materialType);
-      if (filters.originatorClientId) params.append('originatorClientId', filters.originatorClientId);
+      if (filters.materialTypeId) {
+        const mt = materialTypes.find(m => String(m.id) === String(filters.materialTypeId));
+        if (mt?.name) params.append('materialType', mt.name);
+      }
+      if (filters.originatorClientId) params.append('originatorClientId', String(filters.originatorClientId));
       params.append('aggregationPeriod', filters.aggregationPeriod);
       params.append('weeksAhead', filters.weeksAhead.toString());
 
-      const response = await fetch(`/api/ai-operations/returns-forecast?${params}`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ai-operations/returns-forecast?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -221,23 +247,29 @@ export default function ReturnsForecastPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Material Type</label>
-            <input
-              type="text"
-              value={filters.materialType}
-              onChange={(e) => setFilters({...filters, materialType: e.target.value})}
-              placeholder="All types"
+            <select
+              value={filters.materialTypeId}
+              onChange={(e) => setFilters({ ...filters, materialTypeId: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            >
+              <option value="">All Material Types</option>
+              {materialTypes.map(mt => (
+                <option key={mt.id} value={mt.id}>{mt.name}</option>
+              ))}
+            </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Originator Client ID</label>
-            <input
-              type="number"
+            <label className="block text-sm font-medium text-gray-700 mb-2">Originator Client</label>
+            <select
               value={filters.originatorClientId}
-              onChange={(e) => setFilters({...filters, originatorClientId: e.target.value})}
-              placeholder="All clients"
+              onChange={(e) => setFilters({ ...filters, originatorClientId: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            >
+              <option value="">All Originators</option>
+              {originatorClients.map(oc => (
+                <option key={oc.id} value={oc.id}>{oc.originatorClient}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Aggregation Period</label>
