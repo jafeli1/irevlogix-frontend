@@ -154,18 +154,18 @@ export default function ReturnsForecastPage() {
     if (!forecastData || !forecastData.hasSufficientData) return null;
 
     const allPeriods = [
-      ...forecastData.historicalData.map(d => d.period),
-      ...forecastData.predictedData.map(d => d.period)
+      ...forecastData.historicalData.map((d: ForecastDataPoint) => d.period),
+      ...forecastData.predictedData.map((d: ForecastDataPoint) => d.period)
     ];
 
     const historicalVolumes = [
-      ...forecastData.historicalData.map(d => d.volume),
+      ...forecastData.historicalData.map((d: ForecastDataPoint) => d.volume),
       ...Array(forecastData.predictedData.length).fill(null)
     ];
 
     const predictedVolumes = [
       ...Array(forecastData.historicalData.length).fill(null),
-      ...forecastData.predictedData.map(d => d.volume)
+      ...forecastData.predictedData.map((d: ForecastDataPoint) => d.volume)
     ];
 
     return {
