@@ -73,10 +73,10 @@ export default function ReturnsForecastPage() {
 
       try {
         const [mtRes, ocRes] = await Promise.all([
-          fetch('https://irevlogix-backend.onrender.com/api/materialtypes?pageSize=1000', {
+          fetch('https://irevlogix-backend.onrender.com/api/MaterialTypes?pageSize=1000', {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
-          fetch('https://irevlogix-backend.onrender.com/api/OriginatorClients?pageSize=1000', {
+          fetch('https://irevlogix-backend.onrender.com/api/Shipments/originators', {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
@@ -86,7 +86,10 @@ export default function ReturnsForecastPage() {
         }
         if (ocRes.ok) {
           const oc = await ocRes.json();
-          setOriginatorClients(oc);
+          const mapped = Array.isArray(oc)
+            ? oc.map((o: any) => ({ id: o.id ?? o.Id, originatorClient: o.originatorClient ?? o.OriginatorClient ?? o.name ?? o.label }))
+            : [];
+          setOriginatorClients(mapped);
         }
       } catch (e) {
         console.error('Error loading filter options', e);
@@ -110,7 +113,7 @@ export default function ReturnsForecastPage() {
       params.append('aggregationPeriod', filters.aggregationPeriod);
       params.append('weeksAhead', filters.weeksAhead.toString());
 
-      const response = await fetch(`https://irevlogix-backend.onrender.com/api/ai-operations/returns-forecast?${params}`, {
+      const response = await fetch(`https://irevlogix-backend.onrender.com/api/AIOperations/returns-forecast?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
