@@ -90,7 +90,7 @@ export default function ContaminationAnalysisPage() {
     try {
       const params = new URLSearchParams();
       if (filters.materialTypeId) {
-        const mt = materialTypes.find(m => String(m.id) === String(filters.materialTypeId));
+        const mt = materialTypes.find((m: { id: number; name: string }) => String(m.id) === String(filters.materialTypeId));
         if (mt?.name) params.append('materialType', mt.name);
       }
       if (filters.originatorClientId) params.append('originatorClientId', String(filters.originatorClientId));
