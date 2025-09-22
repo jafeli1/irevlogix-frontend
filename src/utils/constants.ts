@@ -105,3 +105,35 @@ export const COUNTRIES = [
   { value: 'SR', label: 'Suriname' },
   { value: 'ZA', label: 'South Africa' }
 ];
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://irevlogix-backend.onrender.com';
+
+export const COMPLIANCE_DOCUMENT_TYPES: string[] = [
+  'Auto Insurance',
+  'Business License',
+  'Certificate of Insurance',
+  'Commercial General Liability',
+  'Commercial Property Insurance',
+  'Cyber Liability Insurance',
+  'Directors and Officers Insurance',
+  'Employment Practices Liability',
+  'Environmental Liability Insurance',
+  'Equipment Insurance',
+  'Errors and Omissions Insurance',
+  'Fire Department Permit',
+  'General Liability Insurance',
+  'Health Insurance',
+  'Inland Marine Insurance',
+  'Key Person Life Insurance',
+  'Liquor Liability Insurance',
+  'Operating Permit',
+  'Product Liability Insurance',
+  'Professional Liability Insurance',
+  'Property Insurance',
+  'Public Liability Insurance',
+  'Safety Policy',
+  'Special Event Permit',
+  'Umbrella Insurance',
+  'Vehicle Insurance',
+  'Workers Compensation Insurance',
+  'Zoning Permit'
+];
