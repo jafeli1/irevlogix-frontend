@@ -6,6 +6,8 @@ import AppLayout from '../../../components/AppLayout';
 import { fetchUserPermissions, hasPermission, UserPermissions } from '../../../utils/rbac';
 import { COMPLIANCE_DOCUMENT_TYPES, BACKEND_URL } from '../../../utils/constants';
 
+interface SimpleUser { id: number; firstName: string; lastName: string; }
+
 interface ComplianceDoc {
   id: number;
   documentType?: string;
@@ -56,6 +58,7 @@ export default function DocumentsTrackerList() {
   });
   const [formErrors, setFormErrors] = useState<{[k:string]: string}>({});
   const [error, setError] = useState('');
+  const [users, setUsers] = useState<SimpleUser[]>([]);
 
   const fetchDocs = useCallback(async () => {
     try {
@@ -79,12 +82,24 @@ export default function DocumentsTrackerList() {
     }
   }, [pagination.page, pagination.pageSize]);
 
+  const fetchUsers = async (token: string) => {
+    try {
+      const res = await fetch('/api/admin/users?page=1&pageSize=1000', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(Array.isArray(data) ? data : (data.items || []));
+      }
+    } catch {
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
       const perms = await fetchUserPermissions(token);
       setPermissions(perms);
+      await fetchUsers(token);
       if (hasPermission(perms, 'ProjectManagement', 'Read')) {
         await fetchDocs();
       }
@@ -333,6 +348,19 @@ export default function DocumentsTrackerList() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Review Comment</label>
                   <textarea value={formData.reviewComment} onChange={(e) => setFormData(prev => ({ ...prev, reviewComment: e.target.value }))} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 resize-y" rows={3} placeholder="Optional review comments" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Reviewed By</label>
+                  <select
+                    value={formData.reviewedBy}
+                    onChange={(e) => setFormData(prev => ({ ...prev, reviewedBy: e.target.value }))}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Reviewer</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

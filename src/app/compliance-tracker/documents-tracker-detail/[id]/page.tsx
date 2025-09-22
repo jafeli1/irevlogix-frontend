@@ -24,6 +24,8 @@ interface ComplianceDocDetail {
   dateUpdated: string;
 }
 
+interface SimpleUser { id: number; firstName: string; lastName: string; }
+
 export default function DocumentsTrackerDetail() {
   const params = useParams();
   const router = useRouter();
@@ -35,6 +37,7 @@ export default function DocumentsTrackerDetail() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [edited, setEdited] = useState<Partial<ComplianceDocDetail>>({});
+  const [users, setUsers] = useState<SimpleUser[]>([]);
 
   useEffect(() => {
     const init = async () => {
@@ -42,12 +45,27 @@ export default function DocumentsTrackerDetail() {
       if (!token) return router.push('/login');
       const perms = await fetchUserPermissions(token);
       setPermissions(perms);
+      await fetchUsers();
       await fetchDetail();
       setLoading(false);
     };
     init();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token')!;
+      const res = await fetch('/api/admin/users?page=1&pageSize=1000', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(Array.isArray(data) ? data : (data.items || []));
+      }
+    } catch {
+    }
+  };
 
   const fetchDetail = async () => {
     try {
@@ -193,22 +211,101 @@ export default function DocumentsTrackerDetail() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Reviewed By (User ID)</label>
-            <input type="number" value={edited.reviewedBy ?? ''} onChange={(e) => setEdited(prev => ({ ...prev, reviewedBy: e.target.value ? parseInt(e.target.value) : null }))} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
+            <label className="block text-sm font-medium text-gray-700">Reviewed By</label>
+            <select value={edited.reviewedBy ?? ''} onChange={(e) => setEdited(prev => ({ ...prev, reviewedBy: e.target.value ? parseInt(e.target.value) : null }))} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+              <option value="">Select Reviewer</option>
+              {users.map(u => (
+                <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">File</label>
-            {detail.filename ? (
-              <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-900">{detail.filename}</span>
-                {detail.documentUrl && (
-                  <a href={fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm">Download</a>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">No file uploaded.</p>
-            )}
+            <div className="space-y-2">
+              {detail.filename ? (
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-900">{detail.filename}</span>
+                  {detail.documentUrl && (
+                    <a href={fileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-sm">Download</a>
+                  )}
+                  {hasPermission(permissions!, 'ProjectManagement', 'Update') && (
+                    <button
+                      onClick={async () => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png';
+                        input.onchange = async (e: Event) => {
+                          const target = e.target as HTMLInputElement | null;
+                          const f = target?.files?.[0];
+                          if (!f) return;
+                          const token = localStorage.getItem('token')!;
+                          const fd = new FormData();
+                          fd.append('file', f);
+                          const res = await fetch(`/api/compliance-tracker/documents/${id}/upload`, {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${token}` },
+                            body: fd
+                          });
+                          if (res.ok) await fetchDetail(); else setError('Failed to replace file.');
+                        };
+                        input.click();
+                      }}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Replace
+                    </button>
+                  )}
+                  {hasPermission(permissions!, 'ProjectManagement', 'Delete') && (
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Delete the attached file?')) return;
+                        const token = localStorage.getItem('token')!;
+                        const res = await fetch(`/api/compliance-tracker/documents/${id}/file`, {
+                          method: 'DELETE',
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                        if (res.ok || res.status === 204) await fetchDetail(); else setError('Failed to delete file.');
+                      }}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-500">No file uploaded.</span>
+                  {hasPermission(permissions!, 'ProjectManagement', 'Update') && (
+                    <button
+                      onClick={async () => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png';
+                        input.onchange = async (e: Event) => {
+                          const target = e.target as HTMLInputElement | null;
+                          const f = target?.files?.[0];
+                          if (!f) return;
+                          const token = localStorage.getItem('token')!;
+                          const fd = new FormData();
+                          fd.append('file', f);
+                          const res = await fetch(`/api/compliance-tracker/documents/${id}/upload`, {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${token}` },
+                            body: fd
+                          });
+                          if (res.ok) await fetchDetail(); else setError('Failed to upload file.');
+                        };
+                        input.click();
+                      }}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Upload
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
