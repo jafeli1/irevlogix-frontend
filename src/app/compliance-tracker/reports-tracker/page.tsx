@@ -52,7 +52,8 @@ export default function ReportsTrackerPage() {
 
   useEffect(() => {
     const init = async () => {
-      const p = await fetchUserPermissions();
+      const token = localStorage.getItem('token') || '';
+      const p = await fetchUserPermissions(token);
       setPerms(p);
       await load();
     };
