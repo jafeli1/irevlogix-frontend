@@ -67,7 +67,8 @@ const navigationItems: NavigationItem[] = [
     icon: '✅',
     subItems: [
       { name: 'Documents Tracker', href: '/compliance-tracker/documents-tracker', module: 'ProjectManagement', action: 'Read' },
-      { name: 'Certifications Tracker', href: '/compliance-tracker/certifications-tracker', module: 'ProjectManagement', action: 'Read' }
+      { name: 'Certifications Tracker', href: '/compliance-tracker/certifications-tracker', module: 'ProjectManagement', action: 'Read' },
+      { name: 'Reports Tracker', href: '/compliance-tracker/reports-tracker', module: 'ProjectManagement', action: 'Read' }
     ]
   },
   {
