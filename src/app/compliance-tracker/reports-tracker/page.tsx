@@ -31,7 +31,9 @@ export default function ReportsTrackerPage() {
       });
       if (!res.ok) throw new Error('Failed to load');
       const data: unknown = await res.json();
-      const arr: unknown[] = Array.isArray(data) ? data : (typeof data === 'object' && data !== null && Array.isArray((data as any).items) ? (data as any).items : []);
+      const hasItems = (val: unknown): val is { items: unknown[] } =>
+        typeof val === 'object' && val !== null && Array.isArray((val as { items?: unknown }).items);
+      const arr: unknown[] = Array.isArray(data) ? data : hasItems(data) ? data.items : [];
       const items: ScheduledReport[] = arr.map((d: unknown) => {
         const o = d as Record<string, unknown>;
         return {
