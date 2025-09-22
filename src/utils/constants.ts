@@ -137,3 +137,13 @@ export const COMPLIANCE_DOCUMENT_TYPES: string[] = [
   'Workers Compensation Insurance',
   'Zoning Permit'
 ];
+export const COMPLIANCE_CERTIFICATION_TYPES: string[] = [
+  'R2',
+  'e-Stewards',
+  'ISO 14001',
+  'NAID AAA',
+  'ISO 45001',
+  'ISO 9001',
+  'RIOS',
+  'APR PCR',
+];
