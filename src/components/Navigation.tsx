@@ -61,6 +61,15 @@ const navigationItems: NavigationItem[] = [
     ]
   },
   {
+    name: 'Compliance Tracker',
+    module: 'ProjectManagement',
+    action: 'Read',
+    icon: '✅',
+    subItems: [
+      { name: 'Documents Tracker', href: '/compliance-tracker/documents-tracker', module: 'ProjectManagement', action: 'Read' }
+    ]
+  },
+  {
     name: 'Material Processing',
     module: 'Processing',
     action: 'Read',
