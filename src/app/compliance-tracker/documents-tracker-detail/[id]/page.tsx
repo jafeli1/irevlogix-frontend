@@ -76,7 +76,13 @@ export default function DocumentsTrackerDetail() {
       if (res.ok) {
         const data = await res.json();
         setDetail(data);
-        setEdited(data);
+        const fmt = (s?: string | null) => (s ? s.split('T')[0] : '');
+        setEdited({
+          ...data,
+          issueDate: fmt(data.issueDate),
+          expirationDate: fmt(data.expirationDate),
+          dateReceived: fmt(data.dateReceived),
+        });
       } else {
         setError('Failed to load document detail.');
       }
