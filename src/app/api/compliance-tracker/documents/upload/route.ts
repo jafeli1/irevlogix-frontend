@@ -7,8 +7,11 @@ export async function POST(req: NextRequest) {
   const res = await fetch(`${BACKEND_URL}/api/ComplianceTrackerDocuments/upload`, {
     method: 'POST',
     headers: { Authorization: token },
-    body: form as any
+    body: form
   });
   const text = await res.text();
-  return new NextResponse(text, { status: res.status, headers: { 'Content-Type': res.headers.get('content-type') || 'application/json' } });
+  return new NextResponse(text, {
+    status: res.status,
+    headers: { 'Content-Type': res.headers.get('content-type') || 'application/json' }
+  });
 }
