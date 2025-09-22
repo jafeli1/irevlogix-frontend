@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import AppLayout from '../../../components/AppLayout';
 import { fetchUserPermissions, hasPermission, UserPermissions } from '../../../utils/rbac';
-import { BACKEND_URL } from '../../../utils/constants';
 
 interface ScheduledReport {
   id: number;
@@ -31,16 +30,20 @@ export default function ReportsTrackerPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to load');
-      const data = await res.json();
-      const items: ScheduledReport[] = (Array.isArray(data) ? data : (data.items || [])).map((d: any) => ({
-        id: d.id,
-        name: d.name,
-        reportType: d.reportType,
-        lastRunDate: d.lastRunDate,
-        nextRunDate: d.nextRunDate,
-        createdBy: d.createdBy,
-        dateCreated: d.dateCreated
-      }));
+      const data: unknown = await res.json();
+      const arr: unknown[] = Array.isArray(data) ? data : (typeof data === 'object' && data !== null && Array.isArray((data as any).items) ? (data as any).items : []);
+      const items: ScheduledReport[] = arr.map((d: unknown) => {
+        const o = d as Record<string, unknown>;
+        return {
+          id: typeof o.id === 'number' ? o.id : Number(o.id ?? 0),
+          name: typeof o.name === 'string' ? o.name : '',
+          reportType: typeof o.reportType === 'string' ? o.reportType : '',
+          lastRunDate: typeof o.lastRunDate === 'string' ? o.lastRunDate : null,
+          nextRunDate: typeof o.nextRunDate === 'string' ? o.nextRunDate : null,
+          createdBy: typeof o.createdBy === 'number' ? o.createdBy : Number(o.createdBy ?? 0),
+          dateCreated: typeof o.dateCreated === 'string' ? o.dateCreated : ''
+        };
+      });
       items.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime());
       setReports(items);
     } catch {

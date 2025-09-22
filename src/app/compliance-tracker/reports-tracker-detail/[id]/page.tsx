@@ -54,8 +54,12 @@ export default function ReportsTrackerDetail() {
       try {
         const listRes = await fetch('/api/compliance-tracker/reports', { headers: { Authorization: `Bearer ${token}` } });
         if (listRes.ok) {
-          const list = await listRes.json();
-          const opts = Array.from(new Set((Array.isArray(list) ? list : (list.items || [])).map((x: any) => x.reportType).filter((x: any) => !!x)));
+          const list: unknown = await listRes.json();
+          const baseArr: unknown[] = Array.isArray(list) ? list : (typeof list === 'object' && list !== null && Array.isArray((list as any).items) ? (list as any).items : []);
+          const opts = Array.from(new Set(baseArr.map((x: unknown) => {
+            const o = x as { reportType?: unknown };
+            return typeof o.reportType === 'string' ? o.reportType : '';
+          }).filter((v): v is string => v.length > 0)));
           setReportTypeOptions(opts);
         }
       } catch {}
