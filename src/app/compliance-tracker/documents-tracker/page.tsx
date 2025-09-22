@@ -368,10 +368,6 @@ export default function DocumentsTrackerList() {
                   <input type="datetime-local" value={formData.lastReviewDate} onChange={(e) => setFormData(prev => ({ ...prev, lastReviewDate: e.target.value }))} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500" />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Reviewed By</label>
-                  <input type="number" value={formData.reviewedBy} onChange={(e) => setFormData(prev => ({ ...prev, reviewedBy: e.target.value }))} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="User ID" />
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Description</label>
