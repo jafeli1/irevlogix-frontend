@@ -125,6 +125,7 @@ const navigationItems: NavigationItem[] = [
       { name: 'Clients', href: '/admin/clients', module: 'Administration', action: 'Read' },
       { name: 'Users', href: '/admin/users', module: 'Administration', action: 'Read' },
       { name: 'Roles', href: '/admin/roles', module: 'Administration', action: 'Read' },
+      { name: 'Recyclers', href: '/admin/recyclers', module: 'Administration', action: 'Read' },
     ]
   },
   {
