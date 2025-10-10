@@ -33,6 +33,15 @@ const navigationItems: NavigationItem[] = [
     ]
   },
   {
+    name: 'AI - Market Intelligence',
+    module: 'ProjectManagement',
+    action: 'Read',
+    icon: '🧠',
+    subItems: [
+      { name: 'Market Intelligence', href: '/ai-market-intelligence/market-intelligence', module: 'ProjectManagement', action: 'Read' },
+    ]
+  },
+  {
     name: 'AI - Operations',
     module: 'ProjectManagement',
     action: 'Read',
