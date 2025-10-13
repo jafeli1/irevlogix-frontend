@@ -173,6 +173,38 @@ export default function RoleDetailPage() {
     }
   }, [loading, permissions, fetchRole, fetchAllPermissions, fetchAllUsers]);
 
+  const getModuleDisplayName = (module: string): string => {
+    const displayNames: { [key: string]: string } = {
+      'Administration': 'Administration',
+      'Authentication': 'Authentication',
+      'AssetRecovery': 'Asset Recovery',
+      'DownstreamMaterials': 'Downstream Materials',
+      'KnowledgeBase': 'Knowledge Base',
+      'Processing': 'Material Processing',
+      'ProjectManagement': 'Project Management',
+      'ReverseLogistics': 'Reverse Logistics',
+      'Reporting': 'Reporting',
+      'Training': 'Training'
+    };
+    return displayNames[module] || module;
+  };
+
+  const getModuleOrder = (module: string): number => {
+    const order: { [key: string]: number } = {
+      'Administration': 1,
+      'Authentication': 2,
+      'ReverseLogistics': 3,
+      'ProjectManagement': 4,
+      'Processing': 5,
+      'DownstreamMaterials': 6,
+      'AssetRecovery': 7,
+      'Reporting': 8,
+      'KnowledgeBase': 9,
+      'Training': 10
+    };
+    return order[module] || 999;
+  };
+
   const groupPermissionsByModule = (permissions: Permission[]): PermissionsByModule => {
     return permissions.reduce((acc, permission) => {
       if (!acc[permission.module]) {
@@ -460,9 +492,11 @@ export default function RoleDetailPage() {
 
             {activeTab === "permissions" && (
               <div className="space-y-6">
-                {Object.entries(permissionsByModule).map(([module, modulePermissions]) => (
+                {Object.entries(permissionsByModule)
+                  .sort(([moduleA], [moduleB]) => getModuleOrder(moduleA) - getModuleOrder(moduleB))
+                  .map(([module, modulePermissions]) => (
                   <div key={module} className="bg-white border rounded-lg p-6">
-                    <h3 className="text-lg font-semibold mb-4">{module}</h3>
+                    <h3 className="text-lg font-semibold mb-4">{getModuleDisplayName(module)}</h3>
                     <div className="space-y-3">
                       {modulePermissions.map((permission: Permission) => (
                         <div key={permission.id} className="flex items-center">
