@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import AppLayout from '../../../components/AppLayout';
 import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../utils/rbac';
+import { BACKEND_URL } from '../../../utils/constants';
 
 interface RecyclableComponent {
   name: string;
@@ -192,7 +193,7 @@ export default function MarketIntelligencePage() {
         });
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/marketintelligence/analyze`, {
+      const response = await fetch(`${BACKEND_URL}/api/marketintelligence/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
