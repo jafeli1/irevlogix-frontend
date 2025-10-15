@@ -2,8 +2,43 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import AppLayout from '../../../components/AppLayout';
 import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../utils/rbac';
+
+interface RecyclableComponent {
+  name: string;
+  material: string;
+  estimatedWeight: string;
+  estimatedValue: string;
+}
+
+interface MarketPriceInfo {
+  averagePrice?: string;
+  priceRange?: string;
+  marketTrend?: string;
+}
+
+interface EbayListing {
+  title: string;
+  price: number;
+  currency: string;
+  condition: string;
+  itemUrl: string;
+  imageUrl: string;
+}
+
+interface ProductAnalysisResult {
+  productName: string;
+  brand?: string;
+  model?: string;
+  category?: string;
+  specifications?: Record<string, string>;
+  components?: RecyclableComponent[];
+  marketPrice?: MarketPriceInfo;
+  summary?: string;
+  ebayListings?: EbayListing[];
+}
 
 export default function MarketIntelligencePage() {
   const router = useRouter();
@@ -15,7 +50,7 @@ export default function MarketIntelligencePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [validationError, setValidationError] = useState('');
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<ProductAnalysisResult | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -100,7 +135,7 @@ export default function MarketIntelligencePage() {
     if (files && files.length > 0) {
       handleImageUpload(files[0]);
     }
-  }, []);
+  }, [handleImageUpload]);
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -257,10 +292,13 @@ export default function MarketIntelligencePage() {
               <div className="space-y-1 text-center">
                 {imagePreview ? (
                   <div className="relative">
-                    <img
+                    <Image
                       src={imagePreview}
                       alt="Product preview"
+                      width={384}
+                      height={192}
                       className="mx-auto h-48 w-auto rounded-md"
+                      unoptimized
                     />
                     <button
                       onClick={clearImage}
@@ -442,7 +480,7 @@ export default function MarketIntelligencePage() {
                           </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                          {analysisResult.components.map((component: any, index: number) => (
+                          {analysisResult.components.map((component, index: number) => (
                             <tr key={index}>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                 {component.name}
@@ -512,7 +550,7 @@ export default function MarketIntelligencePage() {
                       Recent eBay Listings:
                     </h4>
                     <div className="space-y-3">
-                      {analysisResult.ebayListings.map((listing: any, index: number) => (
+                      {analysisResult.ebayListings.map((listing, index: number) => (
                         <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -536,10 +574,13 @@ export default function MarketIntelligencePage() {
                               </div>
                             </div>
                             {listing.imageUrl && (
-                              <img 
+                              <Image 
                                 src={listing.imageUrl} 
                                 alt={listing.title}
+                                width={80}
+                                height={80}
                                 className="w-20 h-20 object-cover rounded ml-4"
+                                unoptimized
                               />
                             )}
                           </div>
