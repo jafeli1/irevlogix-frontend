@@ -15,6 +15,7 @@ export default function MarketIntelligencePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -133,14 +134,52 @@ export default function MarketIntelligencePage() {
 
     setAnalyzing(true);
     setValidationError('');
+    setAnalysisResult(null);
 
     try {
-      console.log('Analyzing product...', { uploadedImage, productDescription });
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      let base64Image = null;
+      if (uploadedImage) {
+        const reader = new FileReader();
+        base64Image = await new Promise<string>((resolve, reject) => {
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            const base64Data = result.split(',')[1];
+            resolve(base64Data);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(uploadedImage);
+        });
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/marketintelligence/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          base64Image: base64Image,
+          productDescription: productDescription || null
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Analysis failed');
+      }
+
+      const result = await response.json();
+      setAnalysisResult(result);
       setAnalyzing(false);
     } catch (error) {
       console.error('Analysis error:', error);
-      setValidationError('Failed to analyze product. Please try again.');
+      setValidationError(error instanceof Error ? error.message : 'Failed to analyze product. Please try again.');
       setAnalyzing(false);
     }
   };
@@ -325,6 +364,194 @@ export default function MarketIntelligencePage() {
             </button>
           </div>
         </div>
+
+        {analysisResult && (
+          <>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                Section 1: Product Summary
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                    {analysisResult.productName}
+                  </h3>
+                  {analysisResult.brand && (
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Brand: {analysisResult.brand}
+                    </p>
+                  )}
+                  {analysisResult.model && (
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Model: {analysisResult.model}
+                    </p>
+                  )}
+                  {analysisResult.category && (
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Category: {analysisResult.category}
+                    </p>
+                  )}
+                </div>
+
+                {analysisResult.specifications && Object.keys(analysisResult.specifications).length > 0 && (
+                  <div>
+                    <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
+                      Specifications:
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {Object.entries(analysisResult.specifications).map(([key, value]) => (
+                        <div key={key} className="flex">
+                          <span className="font-medium text-gray-700 dark:text-gray-300 mr-2">{key}:</span>
+                          <span className="text-gray-600 dark:text-gray-400">{value as string}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {analysisResult.summary && (
+                  <div>
+                    <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
+                      Summary:
+                    </h4>
+                    <p className="text-gray-600 dark:text-gray-400">{analysisResult.summary}</p>
+                  </div>
+                )}
+
+                {analysisResult.components && analysisResult.components.length > 0 && (
+                  <div>
+                    <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-2">
+                      Recyclable Components:
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              Component
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              Material
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              Est. Weight
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              Est. Value
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                          {analysisResult.components.map((component: any, index: number) => (
+                            <tr key={index}>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                {component.name}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                {component.material}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                {component.estimatedWeight}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                {component.estimatedValue}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                Section 2: Secondary Market Price Analysis
+              </h2>
+              <div className="space-y-4">
+                {analysisResult.marketPrice && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {analysisResult.marketPrice.averagePrice && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Average Price
+                        </h4>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {analysisResult.marketPrice.averagePrice}
+                        </p>
+                      </div>
+                    )}
+                    {analysisResult.marketPrice.priceRange && (
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Price Range
+                        </h4>
+                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                          {analysisResult.marketPrice.priceRange}
+                        </p>
+                      </div>
+                    )}
+                    {analysisResult.marketPrice.marketTrend && (
+                      <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Market Trend
+                        </h4>
+                        <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                          {analysisResult.marketPrice.marketTrend}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {analysisResult.ebayListings && analysisResult.ebayListings.length > 0 && (
+                  <div>
+                    <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-3">
+                      Recent eBay Listings:
+                    </h4>
+                    <div className="space-y-3">
+                      {analysisResult.ebayListings.map((listing: any, index: number) => (
+                        <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <a 
+                                href={listing.itemUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                              >
+                                {listing.title}
+                              </a>
+                              <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
+                                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                  {listing.currency} ${listing.price.toFixed(2)}
+                                </span>
+                                {listing.condition && (
+                                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                    {listing.condition}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {listing.imageUrl && (
+                              <img 
+                                src={listing.imageUrl} 
+                                alt={listing.title}
+                                className="w-20 h-20 object-cover rounded ml-4"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </AppLayout>
   );
