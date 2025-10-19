@@ -45,6 +45,11 @@ export default function Login() {
           localStorage.setItem('sessionTimeoutMinutes', data.sessionTimeoutMinutes.toString());
         }
         
+        if (data.passwordExpired) {
+          router.push('/change-password?expired=true');
+          return;
+        }
+        
         if (data.passwordExpiringSoon && data.daysUntilPasswordExpiry > 0) {
           localStorage.setItem('passwordExpiryWarning', JSON.stringify({
             expiringSoon: true,

@@ -58,9 +58,14 @@ function ChangePasswordContent() {
       });
 
       if (response.ok) {
+        const data = await response.json();
         setSuccess('Password changed successfully!');
         if (typeof window !== "undefined") {
           localStorage.removeItem('passwordExpiryWarning');
+          
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+          }
         }
         
         setTimeout(() => {
