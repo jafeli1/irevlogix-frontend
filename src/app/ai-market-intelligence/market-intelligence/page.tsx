@@ -260,6 +260,79 @@ export default function MarketIntelligencePage() {
     setValidationError('');
   };
 
+  const downloadAnalysis = () => {
+    if (!analysisResult) return;
+
+    const content = `
+AI-Driven Recyclable Product Analysis and Market Intelligence Report
+====================================================================
+
+Product Information:
+-------------------
+Product: ${analysisResult.productName}
+${analysisResult.brand ? `Brand: ${analysisResult.brand}` : ''}
+${analysisResult.model ? `Model: ${analysisResult.model}` : ''}
+${analysisResult.category ? `Category: ${analysisResult.category}` : ''}
+
+Summary:
+--------
+${analysisResult.summary || 'N/A'}
+
+Secondary Market Product Price:
+------------------------------
+Average Price: ${analysisResult.marketPrice?.averagePrice || 'N/A'}
+Price Range: ${analysisResult.marketPrice?.priceRange || 'N/A'}
+Market Trend: ${analysisResult.marketPrice?.marketTrend || 'N/A'}
+
+Valuable Scrap Metal Components:
+--------------------------------
+${analysisResult.components?.map(c => `${c.name} (${c.material})
+  Estimated Weight: ${c.estimatedWeight}
+  Estimated Value: ${c.estimatedValue}`).join('\n\n') || 'None identified'}
+
+Component Composition Analysis:
+------------------------------
+${analysisResult.chartData?.componentComposition.data.map(d => `${d.label}: ${d.value} components`).join('\n') || 'No data available'}
+
+Metal Composition by Mass:
+------------------------
+${analysisResult.chartData?.metalComposition.data.map(d => `${d.label}: ${d.value}%`).join('\n') || 'No metal components'}
+
+Value Distribution:
+-----------------
+${analysisResult.chartData?.valueDistribution.data.map(d => `${d.label}: $${d.value}`).join('\n') || 'No value data'}
+
+eBay Listings (Sample):
+----------------------
+${analysisResult.ebayListings?.map((listing, i) => `${i + 1}. ${listing.title}
+   Price: $${listing.price} ${listing.currency}
+   Condition: ${listing.condition}
+   URL: ${listing.itemUrl}`).join('\n\n') || 'No listings available'}
+
+Matched Recyclers:
+-----------------
+${analysisResult.matchedRecyclers?.map((r, i) => `${i + 1}. ${r.companyName}
+   Address: ${r.address}
+   Certification: ${r.certificationType}
+   Phone: ${r.contactPhone}
+   Email: ${r.contactEmail}
+   Match Score: ${r.matchScore} - ${r.matchReason}`).join('\n\n') || 'No recyclers matched'}
+
+Generated: ${new Date().toLocaleString()}
+Report by iRevLogix.ai Market Intelligence
+    `.trim();
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `market-intelligence-${analysisResult.productName.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <AppLayout>
