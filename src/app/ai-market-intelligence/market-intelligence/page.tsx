@@ -39,6 +39,31 @@ interface MatchedRecycler {
   matchReason: string;
 }
 
+interface ResaleComponent {
+  name: string;
+  description: string;
+  estimatedValue: string;
+}
+
+interface GeneralRecyclable {
+  name: string;
+  material: string;
+  recyclingNotes: string;
+}
+
+interface HazardousComponent {
+  name: string;
+  hazardType: string;
+  safetyWarning: string;
+}
+
+interface ComponentPriceResult {
+  componentName: string;
+  averagePrice: string;
+  priceRange: string;
+  listings: EbayListing[];
+}
+
 interface ProductAnalysisResult {
   productName: string;
   brand?: string;
@@ -50,6 +75,9 @@ interface ProductAnalysisResult {
   summary?: string;
   ebayListings?: EbayListing[];
   matchedRecyclers?: MatchedRecycler[];
+  resaleComponents?: ResaleComponent[];
+  generalRecyclables?: GeneralRecyclable[];
+  hazardousComponents?: HazardousComponent[];
 }
 
 export default function MarketIntelligencePage() {
@@ -616,6 +644,121 @@ export default function MarketIntelligencePage() {
               </div>
             </div>
 
+            {analysisResult.resaleComponents && analysisResult.resaleComponents.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                  Components for Resale
+                </h2>
+                <ul className="space-y-3">
+                  {analysisResult.resaleComponents.map((component, index: number) => (
+                    <li key={index} className="flex items-start justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
+                      <div className="flex-1">
+                        <button
+                          onClick={() => fetchComponentPrice(component.name)}
+                          className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                          title="Click to see price"
+                          disabled={loadingPrices[component.name]}
+                        >
+                          {component.name}
+                        </button>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{component.description}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Estimated value: {component.estimatedValue}</p>
+                      </div>
+                      <div className="ml-4 text-right min-w-[200px]">
+                        {loadingPrices[component.name] && (
+                          <span className="text-sm text-gray-500">Loading...</span>
+                        )}
+                        {!loadingPrices[component.name] && componentPrices[component.name] && (
+                          <div className="text-sm">
+                            <div className="font-semibold text-gray-900 dark:text-gray-100">
+                              {componentPrices[component.name].averagePrice}
+                            </div>
+                            <div className="text-gray-600 dark:text-gray-400">
+                              {componentPrices[component.name].priceRange}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {analysisResult.generalRecyclables && analysisResult.generalRecyclables.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                  General Recyclables
+                </h2>
+                <ul className="space-y-3">
+                  {analysisResult.generalRecyclables.map((item, index: number) => (
+                    <li key={index} className="flex items-start justify-between border-b border-gray-200 dark:border-gray-700 pb-3">
+                      <div className="flex-1">
+                        <button
+                          onClick={() => fetchComponentPrice(item.name)}
+                          className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                          title="Click to see price"
+                          disabled={loadingPrices[item.name]}
+                        >
+                          {item.name}
+                        </button>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Material: {item.material}</p>
+                        {item.recyclingNotes && (
+                          <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">{item.recyclingNotes}</p>
+                        )}
+                      </div>
+                      <div className="ml-4 text-right min-w-[200px]">
+                        {loadingPrices[item.name] && (
+                          <span className="text-sm text-gray-500">Loading...</span>
+                        )}
+                        {!loadingPrices[item.name] && componentPrices[item.name] && (
+                          <div className="text-sm">
+                            <div className="font-semibold text-gray-900 dark:text-gray-100">
+                              {componentPrices[item.name].averagePrice}
+                            </div>
+                            <div className="text-gray-600 dark:text-gray-400">
+                              {componentPrices[item.name].priceRange}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {analysisResult.hazardousComponents && analysisResult.hazardousComponents.length > 0 && (
+              <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-lg shadow mb-6 border-2 border-red-500 dark:border-red-700">
+                <h2 className="text-xl font-semibold text-red-900 dark:text-red-100 mb-4 flex items-center">
+                  <svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Hazardous Components - WARNING
+                </h2>
+                <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/40 rounded border border-red-300 dark:border-red-700">
+                  <p className="text-sm text-red-800 dark:text-red-200 font-semibold">
+                    ⚠️ The following components require special handling and disposal. Do not attempt to process these materials without proper training and equipment.
+                  </p>
+                </div>
+                <ul className="space-y-4">
+                  {analysisResult.hazardousComponents.map((hazard, index: number) => (
+                    <li key={index} className="bg-white dark:bg-gray-800 p-4 rounded border border-red-300 dark:border-red-700">
+                      <div className="font-semibold text-red-900 dark:text-red-100 text-lg">{hazard.name}</div>
+                      <div className="text-sm text-red-700 dark:text-red-300 mt-1">
+                        <strong>Hazard Type:</strong> {hazard.hazardType}
+                      </div>
+                      <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-300 dark:border-yellow-700">
+                        <p className="text-sm text-yellow-900 dark:text-yellow-100">
+                          <strong>Safety Warning:</strong> {hazard.safetyWarning}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {analysisResult.matchedRecyclers && analysisResult.matchedRecyclers.length > 0 && (
               <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
@@ -670,6 +813,28 @@ export default function MarketIntelligencePage() {
                     <strong>Disclaimer:</strong> iRevLogix.ai is NOT affiliated with the recyclers listed above. They were selected based on the recyclable product components and if applicable the ones nearest to your location.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {analysisResult && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                    Download Analysis
+                  </h2>
+                  <button
+                    onClick={downloadAnalysis}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Download this Recyclable Product Analysis and Market Intelligence
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Download a complete text report of this analysis including all components, pricing, and recycler information.
+                </p>
               </div>
             )}
           </>
