@@ -39,6 +39,24 @@ interface MatchedRecycler {
   matchReason: string;
 }
 
+interface ChartDataPoint {
+  label: string;
+  value: number;
+  color: string;
+}
+
+interface VisualizationData {
+  componentComposition: {
+    data: ChartDataPoint[];
+  };
+  metalComposition: {
+    data: ChartDataPoint[];
+  };
+  valueDistribution: {
+    data: ChartDataPoint[];
+  };
+}
+
 interface ProductAnalysisResult {
   productName: string;
   brand?: string;
@@ -50,6 +68,7 @@ interface ProductAnalysisResult {
   summary?: string;
   ebayListings?: EbayListing[];
   matchedRecyclers?: MatchedRecycler[];
+  chartData?: VisualizationData;
 }
 
 export default function MarketIntelligencePage() {
@@ -669,6 +688,199 @@ export default function MarketIntelligencePage() {
                   <p className="text-sm text-blue-800 dark:text-blue-200">
                     <strong>Disclaimer:</strong> iRevLogix.ai is NOT affiliated with the recyclers listed above. They were selected based on the recyclable product components and if applicable the ones nearest to your location.
                   </p>
+                </div>
+              </div>
+            )}
+
+            {analysisResult.chartData && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
+                  Product Analysis Visualization
+                </h2>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {analysisResult.chartData.componentComposition.data.length > 0 && (
+                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 text-center">
+                        Component Composition Breakdown
+                      </h3>
+                      <div className="h-64 flex items-center justify-center">
+                        <Pie
+                          data={{
+                            labels: analysisResult.chartData.componentComposition.data.map(d => d.label),
+                            datasets: [{
+                              data: analysisResult.chartData.componentComposition.data.map(d => d.value),
+                              backgroundColor: analysisResult.chartData.componentComposition.data.map(d => d.color),
+                              borderWidth: 2,
+                              borderColor: '#ffffff'
+                            }]
+                          }}
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: {
+                                position: 'bottom',
+                                labels: {
+                                  color: '#6b7280',
+                                  padding: 15
+                                }
+                              },
+                              tooltip: {
+                                callbacks: {
+                                  label: function(context) {
+                                    return `${context.label}: ${context.parsed} components`;
+                                  }
+                                }
+                              }
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {analysisResult.chartData.metalComposition.data.length > 0 && (
+                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 text-center">
+                        Metal Composition by Mass
+                      </h3>
+                      <div className="h-64">
+                        <Bar
+                          data={{
+                            labels: analysisResult.chartData.metalComposition.data.map(d => d.label),
+                            datasets: [{
+                              label: 'Percentage by Mass',
+                              data: analysisResult.chartData.metalComposition.data.map(d => d.value),
+                              backgroundColor: analysisResult.chartData.metalComposition.data.map(d => d.color),
+                              borderWidth: 0
+                            }]
+                          }}
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: {
+                                display: false
+                              },
+                              tooltip: {
+                                callbacks: {
+                                  label: function(context) {
+                                    return `${context.parsed.y}% of total mass`;
+                                  }
+                                }
+                              }
+                            },
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                  callback: function(value) {
+                                    return value + '%';
+                                  },
+                                  color: '#6b7280'
+                                },
+                                grid: {
+                                  color: '#e5e7eb'
+                                }
+                              },
+                              x: {
+                                ticks: {
+                                  color: '#6b7280'
+                                },
+                                grid: {
+                                  display: false
+                                }
+                              }
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {analysisResult.chartData.valueDistribution.data.length > 0 && (
+                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg lg:col-span-2">
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 text-center">
+                        Value Distribution
+                      </h3>
+                      <div className="h-64">
+                        <Bar
+                          data={{
+                            labels: analysisResult.chartData.valueDistribution.data.map(d => d.label),
+                            datasets: [{
+                              label: 'Estimated Value ($)',
+                              data: analysisResult.chartData.valueDistribution.data.map(d => d.value),
+                              backgroundColor: analysisResult.chartData.valueDistribution.data.map(d => d.color),
+                              borderWidth: 0
+                            }]
+                          }}
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: {
+                                display: false
+                              },
+                              tooltip: {
+                                callbacks: {
+                                  label: function(context) {
+                                    return `$${context.parsed.y.toFixed(2)}`;
+                                  }
+                                }
+                              }
+                            },
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                                ticks: {
+                                  callback: function(value) {
+                                    return '$' + value;
+                                  },
+                                  color: '#6b7280'
+                                },
+                                grid: {
+                                  color: '#e5e7eb'
+                                }
+                              },
+                              x: {
+                                ticks: {
+                                  color: '#6b7280'
+                                },
+                                grid: {
+                                  display: false
+                                }
+                              }
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {analysisResult && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      Download Analysis Report
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Download a complete text report of this analysis including all components, pricing, charts data, and recycler information.
+                    </p>
+                  </div>
+                  <button
+                    onClick={downloadAnalysis}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center whitespace-nowrap"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Download this Recyclable Product Analysis and Market Intelligence
+                  </button>
                 </div>
               </div>
             )}
