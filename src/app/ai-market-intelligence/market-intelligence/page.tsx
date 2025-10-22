@@ -502,6 +502,12 @@ export default function MarketIntelligencePage() {
                     </div>
                   </div>
                 )}
+
+                <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    <strong>Note:</strong> Please be reminded that above is just a general estimate based on a web search today, {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}, and prices can fluctuate daily based on market conditions, location, and the purity of the scrap material.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -590,6 +596,12 @@ export default function MarketIntelligencePage() {
                     </div>
                   </div>
                 )}
+
+                <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    <strong>Note:</strong> Please be reminded that above is just a general estimate based on a web search today, {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}, and prices can fluctuate daily based on market conditions, location, and the purity of the scrap material.
+                  </p>
+                </div>
               </div>
             </div>
           </>
