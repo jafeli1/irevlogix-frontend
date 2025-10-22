@@ -29,6 +29,16 @@ interface EbayListing {
   imageUrl: string;
 }
 
+interface MatchedRecycler {
+  companyName: string;
+  address: string;
+  certificationType: string;
+  contactPhone: string;
+  contactEmail: string;
+  matchScore: number;
+  matchReason: string;
+}
+
 interface ProductAnalysisResult {
   productName: string;
   brand?: string;
@@ -39,6 +49,7 @@ interface ProductAnalysisResult {
   marketPrice?: MarketPriceInfo;
   summary?: string;
   ebayListings?: EbayListing[];
+  matchedRecyclers?: MatchedRecycler[];
 }
 
 export default function MarketIntelligencePage() {
@@ -604,6 +615,63 @@ export default function MarketIntelligencePage() {
                 </div>
               </div>
             </div>
+
+            {analysisResult.matchedRecyclers && analysisResult.matchedRecyclers.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                  Recyclers Matched to Your Product Components
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Company Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Address
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Certification Type
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Contact Phone
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Contact Email
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {analysisResult.matchedRecyclers.map((recycler, index: number) => (
+                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {recycler.companyName}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                            {recycler.address || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                            {recycler.certificationType || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                            {recycler.contactPhone || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                            {recycler.contactEmail || 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>Disclaimer:</strong> iRevLogix.ai is NOT affiliated with the recyclers listed above. They were selected based on the recyclable product components and if applicable the ones nearest to your location.
+                  </p>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
