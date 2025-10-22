@@ -6,6 +6,10 @@ import Image from 'next/image';
 import AppLayout from '../../../components/AppLayout';
 import { hasPermission, fetchUserPermissions, UserPermissions } from '../../../utils/rbac';
 import { BACKEND_URL } from '../../../utils/constants';
+import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { Pie, Bar } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface RecyclableComponent {
   name: string;
