@@ -225,6 +225,17 @@ export default function MarketIntelligencePage() {
           reader.onerror = reject;
           reader.readAsDataURL(uploadedImage);
         });
+
+        const formData = new FormData();
+        formData.append('file', uploadedImage);
+
+        await fetch(`${BACKEND_URL}/api/marketintelligence/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
       }
 
       const response = await fetch(`${BACKEND_URL}/api/marketintelligence/analyze`, {
@@ -515,7 +526,7 @@ Report by iRevLogix.ai Market Intelligence
           <>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Section 1: Product Summary
+                Product Summary
               </h2>
               <div className="space-y-4">
                 <div>
@@ -620,7 +631,7 @@ Report by iRevLogix.ai Market Intelligence
 
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Section 2: Secondary Market Price Analysis
+                Secondary Market Price Analysis
               </h2>
               <div className="space-y-4">
                 {analysisResult.marketPrice && (
