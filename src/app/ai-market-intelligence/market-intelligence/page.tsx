@@ -86,6 +86,12 @@ export default function MarketIntelligencePage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [analysisResult, setAnalysisResult] = useState<ProductAnalysisResult | null>(null);
+  const [optIn, setOptIn] = useState(false);
+  const [preferredContactEmail, setPreferredContactEmail] = useState('');
+  const [preferredContactPhone, setPreferredContactPhone] = useState('');
+  const [contactOptInError, setContactOptInError] = useState('');
+  const [contactOptInSuccess, setContactOptInSuccess] = useState('');
+  const [savingContactOptIn, setSavingContactOptIn] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -269,6 +275,86 @@ export default function MarketIntelligencePage() {
     setUploadedImage(null);
     setImagePreview(null);
     setValidationError('');
+  };
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+    return phoneRegex.test(phone) && phone.replace(/\D/g, '').length >= 10;
+  };
+
+  const handleSaveContactOptIn = async () => {
+    setContactOptInError('');
+    setContactOptInSuccess('');
+
+    if (preferredContactEmail && !validateEmail(preferredContactEmail)) {
+      setContactOptInError('Please enter a valid email address');
+      return;
+    }
+
+    if (preferredContactPhone && !validatePhone(preferredContactPhone)) {
+      setContactOptInError('Please enter a valid phone number (at least 10 digits)');
+      return;
+    }
+
+    setSavingContactOptIn(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const requestData = {
+        uploadedPhotoPath: uploadedImage ? uploadedImage.name : null,
+        detailedDescription: productDescription || null,
+        productSummary: analysisResult ? JSON.stringify({
+          productName: analysisResult.productName,
+          brand: analysisResult.brand,
+          model: analysisResult.model,
+          category: analysisResult.category,
+          specifications: analysisResult.specifications,
+          components: analysisResult.components,
+          summary: analysisResult.summary
+        }) : null,
+        secondaryMarketPriceAnalysis: analysisResult ? JSON.stringify({
+          marketPrice: analysisResult.marketPrice,
+          ebayListings: analysisResult.ebayListings
+        }) : null,
+        recyclersMatched: analysisResult?.matchedRecyclers ? JSON.stringify(analysisResult.matchedRecyclers) : null,
+        productAnalysisVisualizationData: analysisResult?.chartData ? JSON.stringify(analysisResult.chartData) : null,
+        optIn: optIn,
+        preferredContactEmail: preferredContactEmail || null,
+        preferredContactPhone: preferredContactPhone || null
+      };
+
+      const response = await fetch(`${BACKEND_URL}/api/productanalysiscontactoptin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save contact preferences');
+      }
+
+      setContactOptInSuccess('Your contact preferences have been saved successfully!');
+      setTimeout(() => setContactOptInSuccess(''), 5000);
+    } catch (error) {
+      console.error('Error saving contact opt-in:', error);
+      setContactOptInError(error instanceof Error ? error.message : 'Failed to save contact preferences. Please try again.');
+    } finally {
+      setSavingContactOptIn(false);
+    }
   };
 
   const downloadAnalysis = () => {
@@ -945,6 +1031,88 @@ Report by iRevLogix.ai Market Intelligence
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {analysisResult && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                  Would you like our dedicated Recycling Solutions team to contact you to discuss a fully managed, end-to-end service for this recyclable product?
+                </h2>
+                <div className="mb-6">
+                  <p className="text-gray-700 dark:text-gray-300 mb-3">We will provide the following:</p>
+                  <ol className="list-decimal list-inside space-y-2 text-gray-700 dark:text-gray-300 ml-4">
+                    <li>Detailed end to end and managed recycling lifecycle service plan for this recyclable product.</li>
+                    <li>Precise purchase price for this recyclable product and its components.</li>
+                    <li>Specific recycling vendor[s] we will work with to dispose this recyclable product.</li>
+                    <li>Documentation on how we select and manage the recycling vendor[s] throughout the recycling lifecycle on your behalf.</li>
+                    <li>Applicable certifications required to recycle this recyclable product, chain of custody, etc.</li>
+                    <li>Explain how you get paid.</li>
+                  </ol>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="optInCheckbox"
+                      checked={optIn}
+                      onChange={(e) => setOptIn(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <label htmlFor="optInCheckbox" className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                      Yes, contact me to discuss maximizing my return on this recyclable product.
+                    </label>
+                  </div>
+
+                  <div>
+                    <label htmlFor="preferredContactEmail" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                      Preferred Contact Email:
+                    </label>
+                    <input
+                      type="email"
+                      id="preferredContactEmail"
+                      value={preferredContactEmail}
+                      onChange={(e) => setPreferredContactEmail(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="your.email@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="preferredContactPhone" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                      Preferred Contact Phone:
+                    </label>
+                    <input
+                      type="tel"
+                      id="preferredContactPhone"
+                      value={preferredContactPhone}
+                      onChange={(e) => setPreferredContactPhone(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+
+                  {contactOptInError && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded">
+                      {contactOptInError}
+                    </div>
+                  )}
+
+                  {contactOptInSuccess && (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded">
+                      {contactOptInSuccess}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleSaveContactOptIn}
+                    disabled={savingContactOptIn}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {savingContactOptIn ? 'Saving...' : 'Save'}
+                  </button>
                 </div>
               </div>
             )}
